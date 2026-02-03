@@ -8,6 +8,7 @@ import { MealTypeSelector } from '@/components/features/meal/MealTypeSelector';
 import { MealTextInput } from '@/components/features/meal/MealTextInput';
 import { MealHistory } from '@/components/features/meal/MealHistory';
 import { DateDisplay } from '@/components/features/home/DateDisplay';
+import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
 import { getDateKey } from '@/lib/utils/dateUtils';
 
 export default function MealRecordPage() {
@@ -23,6 +24,7 @@ export default function MealRecordPage() {
   const [activeTab, setActiveTab] = useState<'record' | 'history'>('record');
   const [todayKey, setTodayKey] = useState('');
   const [editingMeal, setEditingMeal] = useState<{ id: string; type: MealType; text: string } | null>(null);
+  const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
 
   useEffect(() => {
     loadInitialData();
@@ -83,6 +85,14 @@ export default function MealRecordPage() {
           text: mealText.trim()
         });
         setSuccessMessage('食事記録を保存しました！');
+        
+        // 朝食または昼食の場合はフィードバックを表示
+        if (selectedType === 'breakfast' || selectedType === 'lunch') {
+          setShowFeedback({
+            mealType: selectedType,
+            mealText: mealText.trim()
+          });
+        }
       }
       
       // フォームをリセット
@@ -272,6 +282,15 @@ export default function MealRecordPage() {
           </p>
         </div>
       </div>
+
+      {/* 食後フィードバックモーダル */}
+      {showFeedback && (
+        <PostMealFeedback
+          mealType={showFeedback.mealType}
+          mealText={showFeedback.mealText}
+          onClose={() => setShowFeedback(null)}
+        />
+      )}
     </div>
   );
 }

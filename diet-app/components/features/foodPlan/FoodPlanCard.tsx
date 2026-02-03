@@ -114,7 +114,7 @@ export function FoodPlanCard({
       <Button
         onClick={onSelect}
         disabled={isLoading || isSelected}
-        variant={isSelected ? 'soft' : 'primary'}
+        variant={isSelected ? 'secondary' : 'primary'}
         className="w-full"
       >
         {isLoading ? (

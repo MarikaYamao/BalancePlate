@@ -65,7 +65,7 @@ export class EncryptedDietDatabase extends Dexie {
       const encrypted = await secureStore.encryptUserSettings(obj as UserSettings);
       
       // 暗号化されたオブジェクトで置き換え
-      Object.keys(obj).forEach(key => delete obj[key]);
+      Object.keys(obj).forEach(key => delete (obj as any)[key]);
       Object.assign(obj, encrypted);
     });
 
@@ -74,9 +74,9 @@ export class EncryptedDietDatabase extends Dexie {
       const toEncrypt: Partial<UserSettings> = {};
       
       if ('profile' in modifications) {
-        toEncrypt.profile = modifications.profile;
+        toEncrypt.profile = modifications.profile as any;
         delete modifications.profile;
-        modifications.profileEnc = await secureStore.encryptUserSettings({ 
+        (modifications as any).profileEnc = await secureStore.encryptUserSettings({ 
           profile: toEncrypt.profile 
         } as UserSettings).then(enc => enc.profileEnc);
       }
@@ -103,7 +103,7 @@ export class EncryptedDietDatabase extends Dexie {
       const decrypted = await secureStore.decryptUserSettings(obj);
       
       // 復号化されたオブジェクトで置き換え
-      Object.keys(obj).forEach(key => delete obj[key]);
+      Object.keys(obj).forEach(key => delete (obj as any)[key]);
       Object.assign(obj, decrypted);
     });
 
@@ -118,7 +118,7 @@ export class EncryptedDietDatabase extends Dexie {
       const encrypted = await secureStore.encryptDailyState(obj as DailyState);
       
       // 暗号化されたオブジェクトで置き換え
-      Object.keys(obj).forEach(key => delete obj[key]);
+      Object.keys(obj).forEach(key => delete (obj as any)[key]);
       Object.assign(obj, encrypted);
     });
 
@@ -153,7 +153,7 @@ export class EncryptedDietDatabase extends Dexie {
         const encrypted = await secureStore.encryptMealLog(obj as MealLog, true);
         
         // 暗号化されたオブジェクトで置き換え
-        Object.keys(obj).forEach(key => delete obj[key]);
+        Object.keys(obj).forEach(key => delete (obj as any)[key]);
         Object.assign(obj, encrypted);
       });
 
@@ -173,7 +173,7 @@ export class EncryptedDietDatabase extends Dexie {
         const decrypted = await secureStore.decryptMealLog(obj);
         
         // 復号化されたオブジェクトで置き換え
-        Object.keys(obj).forEach(key => delete obj[key]);
+        Object.keys(obj).forEach(key => delete (obj as any)[key]);
         Object.assign(obj, decrypted);
       });
     }

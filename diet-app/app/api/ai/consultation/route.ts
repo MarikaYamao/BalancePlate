@@ -115,11 +115,13 @@ export async function POST(request: NextRequest) {
         max_tokens: AI_CONFIG.maxTokens,
       });
 
-      response = completion.choices[0]?.message?.content;
+      const aiContent = completion.choices[0]?.message?.content;
       
-      if (!response) {
+      if (!aiContent) {
         throw new Error('AI応答が空です');
       }
+      
+      response = aiContent;
     }
 
     console.log('AI Response generated successfully');
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: '入力データが正しくありません。', 
-          details: error.errors 
+          details: error.issues 
         },
         { status: 400 }
       );

@@ -109,7 +109,7 @@ export default function TestAIPage() {
             <Button
               onClick={testSimpleRequest}
               disabled={isLoading}
-              variant="soft"
+              variant="secondary"
             >
               {isLoading ? 'テスト中...' : 'シンプルな相談'}
             </Button>

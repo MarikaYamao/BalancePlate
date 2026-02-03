@@ -2,7 +2,7 @@
 import type { AIPromptContext } from './prompts';
 
 export function generateMockResponse(context: AIPromptContext): string {
-  const { userProfile, todayCondition } = context;
+  const { userProfile, todayCondition, requestType } = context;
   
   // コンディションに基づく提案の調整
   const isOnPeriod = todayCondition.conditionTags.includes('period_during');
@@ -13,7 +13,50 @@ export function generateMockResponse(context: AIPromptContext): string {
   const hasWeakStomach = userProfile.bodyConstitution.includes('weak_stomach');
   const hasBloating = userProfile.bodyConstitution.includes('bloating_prone');
   const hasEdema = userProfile.bodyConstitution.includes('edema_prone');
+
+  // 食後フィードバックの場合
+  if (requestType === 'after_breakfast') {
+    const lunchSuggestions = userProfile.mealsPerDay === 3 ? `### 昼食の提案（3パターン）
+- **A. しっかり**: 鶏肉と野菜の定食、ご飯、味噌汁
+- **B. 軽め**: 野菜たっぷりのスープとパン
+- **C. 手軽**: コンビニのサラダチキンとおにぎり、野菜ジュース
+
+` : '';
+
+    return `お疲れ様でした！朝食の記録をありがとうございます。
+
+### 栄養評価
+- **良い点**: 朝からしっかり食事を摂れていて素晴らしいです
+- **改善提案**: ${hasWeakStomach ? '消化に優しいものを選んでいますが、野菜をもう少し追加できると良いですね' : 'タンパク質（卵、納豆など）を追加するとより満足感が得られます'}
+
+${lunchSuggestions}### 夕食の提案（3パターン）
+- **A. バランス重視**: ${isOnPeriod ? '鉄分豊富な赤身肉と緑黄色野菜の炒め物、玄米' : '焼き魚定食と野菜の小鉢2品'}
+- **B. 軽め**: ${hasWeakStomach ? '野菜と豆腐の雑炊、温野菜サラダ' : '鶏団子スープとサラダ、全粒粉パン'}
+- **C. 簡単**: ${isTired ? '冷凍餃子と野菜炒め、インスタント味噌汁' : 'パスタに市販ソース、袋サラダ'}
+
+### 体調管理ポイント
+- ${isStressed ? 'ストレスがあるので深呼吸や軽いストレッチを' : '水分をこまめに摂取（1.5L目安）'}
+- ${isTired ? '可能なら15分程度の仮眠を取り入れましょう' : '軽い運動で血行を促進'}`;
+  }
+
+  if (requestType === 'after_lunch') {
+    return `お疲れ様でした！昼食の記録をありがとうございます。
+
+### 栄養評価（朝食〜昼食）
+- **良い点**: 2食しっかり記録できていて、継続する姿勢が素晴らしいです
+- **改善提案**: ${isTired ? '疲れが見られるので、ビタミンB群を意識して摂取しましょう' : '午後に向けて野菜不足を補うと良いでしょう'}
+
+### 夕食の提案（3パターン）
+- **A. 栄養重視**: ${hasWeakStomach ? '白身魚と野菜の蒸し物、お粥、豆腐' : '鮭のムニエル、ひじきの煮物、野菜サラダ、玄米'}
+- **B. 軽め**: ${isOnPeriod ? 'ほうれん草と卵の雑炊、温野菜' : '豆腐サラダ、野菜スープ、全粒粉パン'}
+- **C. 簡単**: ${isTired ? 'レトルトカレー、袋サラダ、ヨーグルト' : '冷凍パスタ、カット野菜、缶スープ'}
+
+### 午後のポイント
+- ${isStressed ? '5分間の深呼吸タイムを作りましょう' : '適度な水分補給（午後だけで500ml目安）'}
+- ${hasEdema ? 'むくみ解消のため、軽く足を動かす' : '可能なら15-20分程度の軽い散歩を'}`;
+  }
   
+  // morning_planの場合（従来のロジック）
   const mockResponse = `
 プランA: しっかり整えるプラン
 バランスの取れた栄養で体調を整えるプランです。${isOnPeriod ? '生理中なので鉄分を意識しました。' : ''}${hasWeakStomach ? '胃腸に優しい食材を中心にしています。' : ''}

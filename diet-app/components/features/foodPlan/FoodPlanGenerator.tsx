@@ -163,7 +163,7 @@ export function FoodPlanGenerator({
             <Button
               onClick={generatePlans}
               disabled={isGenerating}
-              variant="soft"
+              variant="secondary"
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
             >
               {isGenerating ? (
