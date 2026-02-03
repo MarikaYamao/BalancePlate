@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { BasicSettings } from '@/components/features/settings/BasicSettings';
 import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
 import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
+import { FreeNotes } from '@/components/features/settings/FreeNotes';
 import { userSettingsRepository } from '@/lib/db/repositories';
 import type { BodyConstitutionTag, LifestyleTag } from '@/types';
 
@@ -14,6 +15,7 @@ export default function SettingsPage() {
   const [mealsPerDay, setMealsPerDay] = useState<2 | 3>(3);
   const [bodyConstitution, setBodyConstitution] = useState<BodyConstitutionTag[]>([]);
   const [lifestyle, setLifestyle] = useState<LifestyleTag[]>([]);
+  const [additionalNotes, setAdditionalNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -31,6 +33,7 @@ export default function SettingsPage() {
         setMealsPerDay(settings.mealsPerDay);
         setBodyConstitution(settings.bodyConstitution || []);
         setLifestyle(settings.lifestyle || []);
+        setAdditionalNotes(settings.additionalNotes || '');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -54,6 +57,7 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
+          additionalNotes,
         });
       } else {
         // 新規作成
@@ -62,6 +66,7 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
+          additionalNotes,
           onboardingCompleted: true,
         });
       }
@@ -111,8 +116,14 @@ export default function SettingsPage() {
           onChange={setLifestyle}
         />
         
+        {/* 自由記載欄 */}
+        <FreeNotes
+          value={additionalNotes}
+          onChange={setAdditionalNotes}
+        />
+        
         {/* 保存ボタン */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t">
+        <div className="mb-20">
           <Button
             onClick={handleSave}
             disabled={isSaving}

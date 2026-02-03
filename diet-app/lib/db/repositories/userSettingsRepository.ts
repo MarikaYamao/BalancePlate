@@ -9,6 +9,7 @@ export interface UserSettingsInput {
   profile?: UserProfile;
   bodyConstitution: BodyConstitutionTag[];
   lifestyle: LifestyleTag[];
+  additionalNotes?: string;
   onboardingCompleted: boolean;
 }
 
@@ -36,6 +37,7 @@ export class UserSettingsRepository extends BaseRepository {
         profile: input.profile,
         bodyConstitution: input.bodyConstitution,
         lifestyle: input.lifestyle,
+        additionalNotes: input.additionalNotes,
         onboardingCompleted: input.onboardingCompleted,
         createdAt: now,
         updatedAt: now

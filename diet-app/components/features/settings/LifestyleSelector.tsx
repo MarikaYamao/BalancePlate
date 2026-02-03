@@ -94,12 +94,17 @@ export function LifestyleSelector({
                 <button
                   key={tag.value}
                   onClick={() => handleToggle(tag.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5 ${
                     selected.includes(tag.value)
-                      ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                      : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                      ? 'bg-primary-50 text-primary-700 border-2 border-primary-400 font-medium'
+                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
                   }`}
                 >
+                  {selected.includes(tag.value) && (
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
                   {tag.label}
                 </button>
               ))}
@@ -107,14 +112,6 @@ export function LifestyleSelector({
           </div>
         ))}
       </div>
-      
-      {selected.length > 0 && (
-        <div className="mt-4 p-3 bg-primary-50 rounded-lg">
-          <p className="text-sm text-primary-700">
-            選択中: {selected.length}個
-          </p>
-        </div>
-      )}
     </Card>
   );
 }

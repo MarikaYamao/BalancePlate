@@ -144,6 +144,9 @@ export interface UserSettings {
   // 生活習慣（暗号化対象）
   lifestyle: LifestyleTag[];
   
+  // 自由記載
+  additionalNotes?: string; // その他の情報（任意）
+  
   // システム管理
   onboardingCompleted: boolean;
   createdAt: Date;
