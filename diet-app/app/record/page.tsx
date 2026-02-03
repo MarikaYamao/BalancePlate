@@ -27,9 +27,7 @@ export default function RecordPage() {
       icon: '⚖️',
       description: '体重の変化を記録',
       path: '/record/weight',
-      color: 'bg-purple-50 hover:bg-purple-100',
-      disabled: true,
-      comingSoon: 'Phase 10'
+      color: 'bg-purple-50 hover:bg-purple-100'
     },
     {
       title: '運動・活動',

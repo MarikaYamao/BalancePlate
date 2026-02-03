@@ -4,6 +4,7 @@ import { UserSettingsRepository } from './userSettingsRepository';
 import { DailyStateRepository } from './dailyStateRepository';
 import { MealLogRepository } from './mealLogRepository';
 import { FoodPlanRepository } from './foodPlanRepository';
+import { WeightLogRepository } from './weightLogRepository';
 import { EncryptedUserSettingsRepository } from './encryptedUserSettingsRepository';
 import { EncryptedDailyStateRepository } from './encryptedDailyStateRepository';
 
@@ -14,6 +15,7 @@ export {
   DailyStateRepository, 
   MealLogRepository,
   FoodPlanRepository,
+  WeightLogRepository,
   EncryptedUserSettingsRepository,
   EncryptedDailyStateRepository
 };
@@ -23,6 +25,7 @@ export const userSettingsRepository = new UserSettingsRepository();
 export const dailyStateRepository = new DailyStateRepository();
 export const mealLogRepository = new MealLogRepository();
 export const foodPlanRepository = new FoodPlanRepository();
+export const weightLogRepository = new WeightLogRepository();
 
 // 暗号化対応のリポジトリインスタンス
 export const encryptedUserSettingsRepository = new EncryptedUserSettingsRepository();
@@ -33,3 +36,4 @@ export type { UserSettingsInput } from './userSettingsRepository';
 export type { DailyStateInput } from './dailyStateRepository';
 export type { MealLogInput, MealAnalysis } from './mealLogRepository';
 export type { FoodPlanInput } from './foodPlanRepository';
+export type { WeightLogInput } from './weightLogRepository';
