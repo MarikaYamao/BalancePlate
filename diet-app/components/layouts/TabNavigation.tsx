@@ -19,6 +19,12 @@ const tabs: TabItem[] = [
     icon: '🏠'
   },
   {
+    id: 'food-plan',
+    label: 'AI提案',
+    href: '/food-plan',
+    icon: '🤖'
+  },
+  {
     id: 'record',
     label: '記録',
     href: '/record',
