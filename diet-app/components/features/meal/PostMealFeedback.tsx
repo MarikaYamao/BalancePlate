@@ -118,6 +118,25 @@ export function PostMealFeedback({ mealType, mealText, onClose }: PostMealFeedba
 
       const data = await response.json();
       setFeedback(data);
+      
+      // AI相談データをローカルストレージに保存（履歴で表示するため）
+      try {
+        const dateKey = getDateKey(new Date(), settings!.dayResetTime);
+        const consultationData = {
+          timestamp: new Date().toISOString(),
+          mealType,
+          mealText,
+          response: data.response ? JSON.parse(data.response) : null,
+          requestType
+        };
+        
+        const existingData = localStorage.getItem(`ai-consultation-${dateKey}`);
+        const consultations = existingData ? JSON.parse(existingData) : [];
+        consultations.push(consultationData);
+        localStorage.setItem(`ai-consultation-${dateKey}`, JSON.stringify(consultations));
+      } catch (storageError) {
+        console.warn('Failed to save consultation data:', storageError);
+      }
     } catch (err) {
       console.error('Feedback generation failed:', err);
       setError(err instanceof Error ? err.message : '予期せぬエラーが発生しました');

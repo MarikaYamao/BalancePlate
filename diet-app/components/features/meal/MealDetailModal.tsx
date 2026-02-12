@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MealLog, AIConsultationResponse } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -20,6 +20,40 @@ export function MealDetailModal({
   onClose 
 }: MealDetailModalProps) {
   const router = useRouter();
+  const [loadedAIResponse, setLoadedAIResponse] = useState<AIConsultationResponse | null>(aiResponse || null);
+  const [loadingAI, setLoadingAI] = useState(false);
+
+  // AI相談データを読み込む
+  useEffect(() => {
+    if (isOpen && mealLog && !aiResponse) {
+      loadAIConsultation();
+    }
+  }, [isOpen, mealLog, aiResponse]);
+
+  const loadAIConsultation = async () => {
+    if (!mealLog) return;
+    
+    setLoadingAI(true);
+    try {
+      // TODO: 実際のAI相談データを取得するAPIを実装
+      // 現在はローカルストレージからフォールバックとして検索
+      const storedConsultations = localStorage.getItem(`ai-consultation-${mealLog.dateKey}`);
+      if (storedConsultations) {
+        const consultations = JSON.parse(storedConsultations);
+        // 食事時刻に最も近いコンサルテーションを選択
+        const relevantConsultation = consultations.find((c: any) => 
+          Math.abs(new Date(c.timestamp).getTime() - new Date(mealLog.actualTime).getTime()) < 4 * 60 * 60 * 1000 // 4時間以内
+        );
+        if (relevantConsultation && relevantConsultation.response) {
+          setLoadedAIResponse(relevantConsultation.response);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load AI consultation:', error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   // ESCキーでモーダルを閉じる
   useEffect(() => {
@@ -150,20 +184,28 @@ export function MealDetailModal({
           )}
 
           {/* AIフィードバック */}
-          {aiResponse && (
+          {loadingAI && (
+            <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                <span className="text-sm text-blue-800">AIフィードバックを読み込んでいます...</span>
+              </div>
+            </Card>
+          )}
+          {(loadedAIResponse || aiResponse) && (
             <div className="space-y-4 mb-6">
               {/* 総合評価 */}
               <Card className="p-4 bg-green-50 border-green-200">
                 <h3 className="font-medium text-green-900 mb-2">今日の総合評価</h3>
-                <p className="text-sm text-green-800">{aiResponse.feedback.overall}</p>
+                <p className="text-sm text-green-800">{(loadedAIResponse || aiResponse)?.feedback.overall}</p>
               </Card>
 
               {/* 良かった点 */}
-              {aiResponse.feedback.positive.length > 0 && (
+              {(loadedAIResponse || aiResponse)?.feedback.positive && (loadedAIResponse || aiResponse)!.feedback.positive.length > 0 && (
                 <Card className="p-4">
                   <h3 className="font-medium text-gray-900 mb-2">良かった点</h3>
                   <ul className="text-sm text-gray-700 space-y-1">
-                    {aiResponse.feedback.positive.map((point, index) => (
+                    {(loadedAIResponse || aiResponse)!.feedback.positive.map((point, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">✓</span>
                         <span>{point}</span>
@@ -174,11 +216,11 @@ export function MealDetailModal({
               )}
 
               {/* 改善提案 */}
-              {aiResponse.feedback.suggestions.length > 0 && (
+              {(loadedAIResponse || aiResponse)?.feedback.suggestions && (loadedAIResponse || aiResponse)!.feedback.suggestions.length > 0 && (
                 <Card className="p-4 bg-yellow-50 border-yellow-200">
                   <h3 className="font-medium text-yellow-900 mb-2">改善のヒント</h3>
                   <ul className="text-sm text-yellow-800 space-y-1">
-                    {aiResponse.feedback.suggestions.map((suggestion, index) => (
+                    {(loadedAIResponse || aiResponse)!.feedback.suggestions.map((suggestion, index) => (
                       <li key={index} className="flex items-start gap-2">
                         <span className="text-yellow-500 mt-1">💡</span>
                         <span>{suggestion}</span>
@@ -189,10 +231,10 @@ export function MealDetailModal({
               )}
 
               {/* 励ましメッセージ */}
-              {aiResponse.feedback.encouragement && (
+              {(loadedAIResponse || aiResponse)?.feedback.encouragement && (
                 <Card className="p-4 bg-purple-50 border-purple-200">
                   <p className="text-sm text-purple-800 text-center font-medium">
-                    {aiResponse.feedback.encouragement}
+                    {(loadedAIResponse || aiResponse)!.feedback.encouragement}
                   </p>
                 </Card>
               )}

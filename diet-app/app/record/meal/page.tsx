@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { type MealType } from '@/types';
 import { MealTypeSelector } from '@/components/features/meal/MealTypeSelector';
 import { MealTextInput } from '@/components/features/meal/MealTextInput';
@@ -13,8 +13,9 @@ import { useMealLogs } from '@/lib/hooks/useMealLogs';
 import { useUserSettings } from '@/lib/hooks/useUserSettings';
 import { useAppStore } from '@/lib/stores/useAppStore';
 
-export default function MealRecordPage() {
+function MealRecordPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -42,6 +43,28 @@ export default function MealRecordPage() {
   const recordedTypes = mealLogs.map(m => m.mealType);
   const loading = settingsLoading || mealsLoading;
   const saving = isCreating || isUpdating;
+
+  // URLパラメータからの初期化
+  useEffect(() => {
+    const typeParam = searchParams.get('type') as MealType | null;
+    const suggestionParam = searchParams.get('suggestion');
+    const editParam = searchParams.get('edit');
+    
+    if (typeParam && ['breakfast', 'lunch', 'dinner', 'snack'].includes(typeParam)) {
+      setSelectedType(typeParam);
+    }
+    
+    if (suggestionParam) {
+      setMealText(suggestionParam);
+    }
+
+    if (editParam && mealLogs) {
+      const mealToEdit = mealLogs.find(m => m.id === editParam);
+      if (mealToEdit) {
+        handleEdit(mealToEdit);
+      }
+    }
+  }, [searchParams, mealLogs, setMealText]);
 
   useEffect(() => {
     // クリーンアップ: コンポーネントアンマウント時に一時テキストをクリア
@@ -303,5 +326,22 @@ export default function MealRecordPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function MealRecordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-green-50 p-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <MealRecordPageContent />
+    </Suspense>
   );
 }
