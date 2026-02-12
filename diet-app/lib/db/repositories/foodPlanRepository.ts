@@ -180,6 +180,29 @@ export class FoodPlanRepository extends BaseRepository {
   }
 
   /**
+   * 全てのフードプランを取得 (バックアップ用)
+   */
+  async getAll(): Promise<FoodPlan[]> {
+    try {
+      const plans = await db.foodPlans.toArray();
+      return plans;
+    } catch (error) {
+      this.handleError('FoodPlan getAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await db.foodPlans.clear();
+    } catch (error) {
+      this.handleError('FoodPlan clearAll', error);
+    }
+  }
+
+  /**
    * プラン統計取得
    */
   async getStats(): Promise<{

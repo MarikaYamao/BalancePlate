@@ -71,16 +71,17 @@ export class MealLogRepository extends BaseRepository {
         throw new Error(`MealLog not found: ${id}`);
       }
 
-      const updated: MealLog = {
-        ...existing,
+      const updateData = {
         ...updates,
-        text: updates.text ? updates.text.trim() : existing.text,
+        text: updates.text ? updates.text.trim() : undefined,
         updatedAt: new Date()
       };
 
-      await db.mealLogs.update(id, updated);
+      await db.mealLogs.update(id, updateData);
       
-      return updated;
+      const updated = await db.mealLogs.get(id);
+      
+      return updated!;
     } catch (error) {
       this.handleError('MealLog update', error);
     }
@@ -188,6 +189,29 @@ export class MealLogRepository extends BaseRepository {
       return this.filterDeleted(meals);
     } catch (error) {
       this.handleError('MealLog getByDateRange', error);
+    }
+  }
+
+  /**
+   * 全ての食事記録を取得 (バックアップ用)
+   */
+  async getAll(): Promise<MealLog[]> {
+    try {
+      const meals = await db.mealLogs.toArray();
+      return this.filterDeleted(meals);
+    } catch (error) {
+      this.handleError('MealLog getAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await db.mealLogs.clear();
+    } catch (error) {
+      this.handleError('MealLog clearAll', error);
     }
   }
 

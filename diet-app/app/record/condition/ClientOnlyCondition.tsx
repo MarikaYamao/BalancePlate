@@ -7,101 +7,74 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ConditionTagSelector } from '@/components/features/condition/ConditionTagSelector';
 import { FreeMemoInput } from '@/components/features/condition/FreeMemoInput';
-import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
-import { initializeEncryptedDatabase } from '@/lib/db/encryptedDatabase';
-import { getTodayKey } from '@/lib/utils/dateUtils';
-import { formatDateFromKey } from '@/lib/utils/dateUtils';
-import type { ConditionTag, DailyState } from '@/types';
+import { getDateKey, formatDateFromKey } from '@/lib/utils/dateUtils';
+import { useDailyState } from '@/lib/hooks/useDailyState';
+import { useUserSettings } from '@/lib/hooks/useUserSettings';
+import type { ConditionTag } from '@/types';
 
 export default function ClientOnlyConditionRecord() {
   const router = useRouter();
   const [selectedTags, setSelectedTags] = useState<ConditionTag[]>([]);
   const [freeMemo, setFreeMemo] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [existingData, setExistingData] = useState<DailyState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [todayKey, setTodayKey] = useState<string>('');
-  const [displayDate, setDisplayDate] = useState<string>('');
   const [mounted, setMounted] = useState(false);
-
-  // TODO: ユーザー設定から取得
-  const resetTime = '04:00';
+  
+  // TanStack Query hooks
+  const { settings, isLoading: settingsLoading } = useUserSettings();
+  const resetTime = settings?.dayResetTime || '04:00';
+  const todayKey = getDateKey(new Date(), resetTime);
+  const displayDate = formatDateFromKey(todayKey);
+  
+  const { 
+    dailyState,
+    isLoading: stateLoading,
+    updateDailyState,
+    isUpdating 
+  } = useDailyState(todayKey);
+  
+  const isLoading = settingsLoading || stateLoading;
+  const isSaving = isUpdating;
 
   useEffect(() => {
     setMounted(true);
-    
-    // 日付キーと表示日付をクライアントサイドで設定
-    const key = getTodayKey(resetTime);
-    setTodayKey(key);
-    setDisplayDate(formatDateFromKey(key));
-    
-    // 日付キー設定後にデータを読み込み
-    setTimeout(() => {
-      loadExistingDataWithKey(key);
-    }, 50);
   }, []);
-
-  // キーを明示的に受け取る関数
-  const loadExistingDataWithKey = async (dateKey: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // データベースの初期化
-      await initializeEncryptedDatabase();
-      
-      // 暗号化初期化の確認（念のため少し待つ）
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // 今日の既存データを取得
-      const repository = new EncryptedDailyStateRepository();
-      const today = await repository.get(dateKey);
-      
-      if (today) {
-        setExistingData(today);
-        setSelectedTags(today.conditionTags);
-        setFreeMemo(today.freeMemo || '');
-      }
-    } catch (err) {
-      console.error('Failed to load existing data:', err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(`読み込みエラー: ${errorMessage}`);
-    } finally {
-      setIsLoading(false);
+  
+  // 既存データが読み込まれたらフォームに反映
+  useEffect(() => {
+    if (dailyState) {
+      setSelectedTags(dailyState.conditionTags || []);
+      setFreeMemo(dailyState.freeMemo || '');
     }
-  };
+  }, [dailyState]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleSave = () => {
     setError(null);
     setSuccessMessage(null);
     
-    try {
-      const repository = new EncryptedDailyStateRepository();
-      
-      // todayKeyが設定されていない場合は現在の値を取得
-      const currentTodayKey = todayKey || getTodayKey(resetTime);
-      
-      await repository.upsert({
+    updateDailyState(
+      {
+        ...dailyState,
+        dateKey: todayKey,
         conditionTags: selectedTags,
         freeMemo: freeMemo,
-        dateKey: currentTodayKey
-      }, resetTime);
-      
-      setSuccessMessage('保存しました！');
-      
-      // 2秒後にホーム画面に戻る
-      setTimeout(() => {
-        router.push('/home');
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to save condition:', err);
-      setError('保存に失敗しました。もう一度お試しください。');
-    } finally {
-      setIsSaving(false);
-    }
+        actualDate: new Date(),
+        createdAt: dailyState?.createdAt || new Date(),
+        updatedAt: new Date()
+      },
+      {
+        onSuccess: () => {
+          setSuccessMessage('保存しました！');
+          // 2秒後にホーム画面に戻る
+          setTimeout(() => {
+            router.push('/home');
+          }, 2000);
+        },
+        onError: (err) => {
+          setError('保存に失敗しました。もう一度お試しください。');
+        }
+      }
+    );
   };
 
   const handleSkip = () => {
@@ -158,7 +131,7 @@ export default function ClientOnlyConditionRecord() {
         {/* メインコンテンツ */}
         <main className="px-4 py-6 space-y-6">
           {/* 既存データの通知 */}
-          {existingData && (
+          {dailyState && (
             <Card className="bg-blue-50 border-blue-200">
               <div className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

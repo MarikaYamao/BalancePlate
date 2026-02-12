@@ -224,4 +224,27 @@ export class EncryptedDailyStateRepository extends BaseRepository {
       this.handleError('DailyState deleteRange', error);
     }
   }
+
+  /**
+   * 全ての日次状態を取得 (バックアップ用)
+   */
+  async getAll(): Promise<DailyState[]> {
+    try {
+      const states = await encryptedDb.dailyStates.toArray();
+      return this.filterDeleted(states);
+    } catch (error) {
+      this.handleError('DailyState getAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await encryptedDb.dailyStates.clear();
+    } catch (error) {
+      this.handleError('DailyState clearAll', error);
+    }
+  }
 }

@@ -67,15 +67,15 @@ export class UserSettingsRepository extends BaseRepository {
         throw new Error(`UserSettings not found: ${id}`);
       }
 
-      const updatedSettings: UserSettings = {
-        ...existing,
+      const updateData = {
         ...updates,
         updatedAt: new Date()
       };
 
-      await db.userSettings.update(id, updatedSettings);
+      await db.userSettings.update(id, updateData);
       
-      return updatedSettings;
+      const updated = await db.userSettings.get(id);
+      return updated!;
     } catch (error) {
       this.handleError('UserSettings update', error);
     }
@@ -168,6 +168,17 @@ export class UserSettingsRepository extends BaseRepository {
       await db.userSettings.clear();
     } catch (error) {
       this.handleError('UserSettings deleteAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await db.userSettings.clear();
+    } catch (error) {
+      this.handleError('UserSettings clearAll', error);
     }
   }
 }

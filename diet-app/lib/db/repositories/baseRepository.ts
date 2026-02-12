@@ -82,4 +82,9 @@ export abstract class BaseRepository {
   protected filterDeleted<T extends { deletedAt?: Date }>(records: T[]): T[] {
     return records.filter(record => !record.deletedAt);
   }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  abstract clearAll(): Promise<void>;
 }

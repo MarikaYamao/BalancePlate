@@ -242,4 +242,15 @@ export class EncryptedUserSettingsRepository extends BaseRepository {
       this.handleError('UserSettings importEncrypted', error);
     }
   }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await encryptedDb.userSettings.clear();
+    } catch (error) {
+      this.handleError('UserSettings clearAll', error);
+    }
+  }
 }

@@ -2,60 +2,58 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { type MealType, type MealLog } from '@/types';
-import { mealLogRepository, encryptedUserSettingsRepository } from '@/lib/db/repositories';
+import { type MealType } from '@/types';
 import { MealTypeSelector } from '@/components/features/meal/MealTypeSelector';
 import { MealTextInput } from '@/components/features/meal/MealTextInput';
 import { MealHistory } from '@/components/features/meal/MealHistory';
 import { DateDisplay } from '@/components/features/home/DateDisplay';
 import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
 import { getDateKey } from '@/lib/utils/dateUtils';
+import { useMealLogs } from '@/lib/hooks/useMealLogs';
+import { useUserSettings } from '@/lib/hooks/useUserSettings';
+import { useAppStore } from '@/lib/stores/useAppStore';
 
 export default function MealRecordPage() {
   const router = useRouter();
-  const [resetTime, setResetTime] = useState('04:00');
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
-  const [mealText, setMealText] = useState('');
-  const [recordedTypes, setRecordedTypes] = useState<MealType[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'record' | 'history'>('record');
-  const [todayKey, setTodayKey] = useState('');
   const [editingMeal, setEditingMeal] = useState<{ id: string; type: MealType; text: string } | null>(null);
   const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
+  
+  // Zustand store
+  const { tempMealText: mealText, setTempMealText: setMealText, clearTempMealText } = useAppStore();
+  
+  // TanStack Query hooks
+  const { settings, isLoading: settingsLoading } = useUserSettings();
+  const resetTime = settings?.dayResetTime || '04:00';
+  const todayKey = getDateKey(new Date(), resetTime);
+  
+  const { 
+    mealLogs, 
+    isLoading: mealsLoading, 
+    createMealLog, 
+    updateMealLog,
+    isCreating,
+    isUpdating 
+  } = useMealLogs(todayKey);
+  
+  const recordedTypes = mealLogs.map(m => m.mealType);
+  const loading = settingsLoading || mealsLoading;
+  const saving = isCreating || isUpdating;
 
   useEffect(() => {
-    loadInitialData();
+    // クリーンアップ: コンポーネントアンマウント時に一時テキストをクリア
+    return () => {
+      if (mealText && !editingMeal) {
+        // 編集中でない場合のみクリア
+        clearTempMealText();
+      }
+    };
   }, []);
 
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      
-      // 設定を読み込み
-      const settings = await encryptedUserSettingsRepository.get();
-      const userResetTime = settings?.dayResetTime || '04:00';
-      setResetTime(userResetTime);
-      
-      // 今日のdateKeyを計算
-      const dateKey = getDateKey(new Date(), userResetTime);
-      setTodayKey(dateKey);
-      
-      // 今日の記録済みタイプを取得
-      const todayMeals = await mealLogRepository.getByDate(dateKey);
-      const types = todayMeals.map(m => m.mealType);
-      setRecordedTypes(types);
-    } catch (err) {
-      console.error('Failed to load initial data:', err);
-      setError('データの読み込みに失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!selectedType && !editingMeal) {
       setError('食事タイプを選択してください');
       return;
@@ -66,63 +64,66 @@ export default function MealRecordPage() {
       return;
     }
 
-    try {
-      setSaving(true);
-      setError(null);
+    setError(null);
 
-      if (editingMeal) {
-        // 編集モード
-        await mealLogRepository.update(editingMeal.id, {
-          text: mealText.trim()
-        });
-        setSuccessMessage('食事記録を更新しました！');
-        setEditingMeal(null);
-      } else {
-        // 新規作成モード
-        await mealLogRepository.save({
+    if (editingMeal) {
+      // 編集モード
+      updateMealLog(
+        { id: editingMeal.id, updates: { text: mealText.trim() } },
+        {
+          onSuccess: () => {
+            setSuccessMessage('食事記録を更新しました！');
+            setEditingMeal(null);
+            clearTempMealText();
+            setSelectedType(null);
+          },
+          onError: () => {
+            setError('食事記録の更新に失敗しました');
+          }
+        }
+      );
+    } else {
+      // 新規作成モード
+      createMealLog(
+        {
           dateKey: todayKey,
           mealType: selectedType!,
-          text: mealText.trim()
-        });
-        setSuccessMessage('食事記録を保存しました！');
-        
-        // 朝食または昼食の場合はフィードバックを表示
-        if (selectedType === 'breakfast' || selectedType === 'lunch') {
-          setShowFeedback({
-            mealType: selectedType,
-            mealText: mealText.trim()
-          });
+          text: mealText.trim(),
+          actualTime: new Date()
+        },
+        {
+          onSuccess: () => {
+            setSuccessMessage('食事記録を保存しました！');
+            
+            // 朝食または昼食の場合はフィードバックを表示
+            if (selectedType === 'breakfast' || selectedType === 'lunch') {
+              setShowFeedback({
+                mealType: selectedType,
+                mealText: mealText.trim()
+              });
+            }
+            
+            // フォームをリセット
+            clearTempMealText();
+            setSelectedType(null);
+          },
+          onError: () => {
+            setError('食事記録の保存に失敗しました');
+          }
         }
-      }
-      
-      // フォームをリセット
-      setSelectedType(null);
-      setMealText('');
-      
-      // 記録済みタイプを更新
-      await loadInitialData();
-
-      // 2秒後に成功メッセージを消す
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to save meal:', err);
-      setError('保存に失敗しました');
-    } finally {
-      setSaving(false);
+      );
     }
   };
 
   const handleReset = () => {
     setSelectedType(null);
-    setMealText('');
+    clearTempMealText();
     setError(null);
     setSuccessMessage(null);
     setEditingMeal(null);
   };
 
-  const handleEdit = (meal: MealLog) => {
+  const handleEdit = (meal: any) => {
     setEditingMeal({ id: meal.id, type: meal.mealType, text: meal.text });
     setSelectedType(meal.mealType);
     setMealText(meal.text);
@@ -130,6 +131,16 @@ export default function MealRecordPage() {
     setSuccessMessage(null);
     setError(null);
   };
+  
+  // 成功メッセージの自動消去
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   if (loading) {
     return (
@@ -269,7 +280,7 @@ export default function MealRecordPage() {
             <MealHistory 
               dateKey={todayKey}
               onEdit={handleEdit}
-              onDelete={() => loadInitialData()}
+              onDelete={() => {/* データは自動更新される */}}
             />
           </div>
         )}

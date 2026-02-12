@@ -139,6 +139,29 @@ export class DailyStateRepository extends BaseRepository {
   }
 
   /**
+   * 全ての日次状態を取得 (バックアップ用)
+   */
+  async getAll(): Promise<DailyState[]> {
+    try {
+      const states = await db.dailyStates.toArray();
+      return this.filterDeleted(states);
+    } catch (error) {
+      this.handleError('DailyState getAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await db.dailyStates.clear();
+    } catch (error) {
+      this.handleError('DailyState clearAll', error);
+    }
+  }
+
+  /**
    * コンディションタグの統計を取得
    */
   async getConditionStats(days: number = 30): Promise<Record<ConditionTag, number>> {

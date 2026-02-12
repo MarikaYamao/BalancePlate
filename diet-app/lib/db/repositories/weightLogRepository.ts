@@ -196,6 +196,29 @@ export class WeightLogRepository extends BaseRepository {
   }
 
   /**
+   * 全ての体重記録を取得 (バックアップ用)
+   */
+  async getAll(): Promise<WeightLog[]> {
+    try {
+      const weightLogs = await db.weightLogs.toArray();
+      return this.filterDeleted(weightLogs);
+    } catch (error) {
+      this.handleError('WeightLog getAll', error);
+    }
+  }
+
+  /**
+   * 全データをクリア (バックアップ復元時に使用)
+   */
+  async clearAll(): Promise<void> {
+    try {
+      await db.weightLogs.clear();
+    } catch (error) {
+      this.handleError('WeightLog clearAll', error);
+    }
+  }
+
+  /**
    * 日別の最新体重を取得（グラフ用）
    */
   async getDailyLatest(startKey: string, endKey: string): Promise<Array<{ dateKey: string; weight: number; timestamp: Date }>> {

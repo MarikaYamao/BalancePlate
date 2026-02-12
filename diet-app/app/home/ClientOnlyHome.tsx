@@ -4,24 +4,42 @@ import { MainLayout } from '@/components/layouts/MainLayout';
 import { DateDisplay } from '@/components/features/home/DateDisplay';
 import { QuickActions } from '@/components/features/home/QuickActions';
 import { TodaysSummary } from '@/components/features/home/TodaysSummary';
+import { useUserSettings } from '@/lib/hooks/useUserSettings';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
 export default function ClientOnlyHome() {
-  // TODO: ユーザー設定から取得
-  const resetTime = '04:00';
+  const { settings, isLoading, error } = useUserSettings();
+  const resetTime = settings?.dayResetTime || '04:00';
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner size="large" message="読み込み中..." />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen p-4">
+          <ErrorMessage 
+            message="データの読み込みに失敗しました" 
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="min-h-screen">
         {/* ヘッダー部分 */}
         <header className="bg-gradient-to-b from-pink-100 to-pink-50 pb-4">
-          <div className="pt-safe-area-top">
-            <h1 className="text-center text-2xl font-bold text-gray-800 pt-4">
-              やさしいダイエット
-            </h1>
-            <p className="text-center text-sm text-gray-600 mt-1">
-              毎日の記録をサポート
-            </p>
-          </div>
           <DateDisplay resetTime={resetTime} />
         </header>
 

@@ -82,17 +82,17 @@ export class EncryptedDietDatabase extends Dexie {
       }
       
       if ('bodyConstitution' in modifications) {
-        toEncrypt.bodyConstitution = modifications.bodyConstitution;
-        delete modifications.bodyConstitution;
-        modifications.bodyConstitutionEnc = await secureStore.encryptUserSettings({ 
+        toEncrypt.bodyConstitution = (modifications as any).bodyConstitution;
+        delete (modifications as any).bodyConstitution;
+        (modifications as any).bodyConstitutionEnc = await secureStore.encryptUserSettings({ 
           bodyConstitution: toEncrypt.bodyConstitution 
         } as UserSettings).then(enc => enc.bodyConstitutionEnc);
       }
       
       if ('lifestyle' in modifications) {
-        toEncrypt.lifestyle = modifications.lifestyle;
-        delete modifications.lifestyle;
-        modifications.lifestyleEnc = await secureStore.encryptUserSettings({ 
+        toEncrypt.lifestyle = (modifications as any).lifestyle;
+        delete (modifications as any).lifestyle;
+        (modifications as any).lifestyleEnc = await secureStore.encryptUserSettings({ 
           lifestyle: toEncrypt.lifestyle 
         } as UserSettings).then(enc => enc.lifestyleEnc);
       }
@@ -126,10 +126,10 @@ export class EncryptedDietDatabase extends Dexie {
       // freeMemoの更新時に暗号化
       if ('freeMemo' in modifications && modifications.freeMemo) {
         const encrypted = await secureStore.encryptDailyState({ 
-          freeMemo: modifications.freeMemo 
+          freeMemo: (modifications as any).freeMemo 
         } as DailyState);
-        delete modifications.freeMemo;
-        modifications.freeMemoEnc = encrypted.freeMemoEnc;
+        delete (modifications as any).freeMemo;
+        (modifications as any).freeMemoEnc = encrypted.freeMemoEnc;
       }
     });
 
@@ -161,10 +161,10 @@ export class EncryptedDietDatabase extends Dexie {
         // textの更新時に暗号化
         if ('text' in modifications && modifications.text) {
           const encrypted = await secureStore.encryptMealLog({ 
-            text: modifications.text 
+            text: (modifications as any).text 
           } as MealLog, true);
-          delete modifications.text;
-          modifications.textEnc = encrypted.textEnc;
+          delete (modifications as any).text;
+          (modifications as any).textEnc = encrypted.textEnc;
         }
       });
 

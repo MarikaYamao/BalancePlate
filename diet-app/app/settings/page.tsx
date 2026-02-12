@@ -7,6 +7,7 @@ import { BasicSettings } from '@/components/features/settings/BasicSettings';
 import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
 import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
 import { FreeNotes } from '@/components/features/settings/FreeNotes';
+import { BackupManager } from '@/components/features/backup/BackupManager';
 import { userSettingsRepository } from '@/lib/db/repositories';
 import type { BodyConstitutionTag, LifestyleTag } from '@/types';
 
@@ -121,6 +122,12 @@ export default function SettingsPage() {
           value={additionalNotes}
           onChange={setAdditionalNotes}
         />
+        
+        {/* バックアップ管理 */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">バックアップ管理</h2>
+          <BackupManager />
+        </div>
         
         {/* 保存ボタン */}
         <div className="mb-20">
