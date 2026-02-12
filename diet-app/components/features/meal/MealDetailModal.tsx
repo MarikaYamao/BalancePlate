@@ -194,50 +194,75 @@ export function MealDetailModal({
           )}
           {(loadedAIResponse || aiResponse) && (
             <div className="space-y-4 mb-6">
-              {/* 総合評価 */}
+              {/* AIフィードバック */}
               <Card className="p-4 bg-green-50 border-green-200">
-                <h3 className="font-medium text-green-900 mb-2">今日の総合評価</h3>
-                <p className="text-sm text-green-800">{(loadedAIResponse || aiResponse)?.feedback.overall}</p>
+                <h3 className="font-medium text-green-900 mb-2">🤖 AIフィードバック</h3>
+                <div className="text-sm text-green-800">
+                  <div className="prose prose-sm max-w-none">
+                    {(loadedAIResponse || aiResponse)?.split('\n').map((line, index) => {
+                      // ### で始まる行（h3見出し）
+                      if (line.startsWith('### ')) {
+                        return (
+                          <h3 key={index} className="font-bold text-gray-800 mt-4 mb-2 text-lg">
+                            {line.substring(4)}
+                          </h3>
+                        );
+                      }
+                      // #### で始まる行（h4見出し）
+                      else if (line.startsWith('#### ')) {
+                        return (
+                          <h4 key={index} className="font-semibold text-gray-700 mt-3 mb-1 text-base">
+                            {line.substring(5)}
+                          </h4>
+                        );
+                      }
+                      // **太字**の処理
+                      else if (line.startsWith('**') && line.endsWith('**')) {
+                        return (
+                          <h4 key={index} className="font-bold text-gray-800 mt-4 mb-2 text-base">
+                            {line.replace(/\*\*/g, '')}
+                          </h4>
+                        );
+                      }
+                      // - で始まるリストアイテム
+                      else if (line.startsWith('- ')) {
+                        // リスト内の**太字**も処理
+                        const content = line.substring(2);
+                        const processedContent = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                        return (
+                          <li key={index} className="text-gray-700 mb-1 ml-4 list-disc"
+                            dangerouslySetInnerHTML={{ __html: processedContent }}
+                          />
+                        );
+                      }
+                      // 絵文字付きポイント
+                      else if (line.startsWith('✨') || line.startsWith('🌱') || line.startsWith('💪') || line.startsWith('🌙') || line.startsWith('💡')) {
+                        return (
+                          <p key={index} className="text-gray-700 mb-2 font-medium">
+                            {line}
+                          </p>
+                        );
+                      }
+                      // 空行
+                      else if (line.trim() === '') {
+                        return <br key={index} />;
+                      }
+                      // 通常の文（太字のインライン処理）
+                      else {
+                        // **text** を <strong>text</strong> に変換
+                        const processedLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                        return (
+                          <p key={index} className="text-gray-700 mb-2"
+                            dangerouslySetInnerHTML={{ __html: processedLine }}
+                          />
+                        );
+                      }
+                    })}
+                  </div>
+                </div>
               </Card>
 
-              {/* 良かった点 */}
-              {(loadedAIResponse || aiResponse)?.feedback.positive && (loadedAIResponse || aiResponse)!.feedback.positive.length > 0 && (
-                <Card className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-2">良かった点</h3>
-                  <ul className="text-sm text-gray-700 space-y-1">
-                    {(loadedAIResponse || aiResponse)!.feedback.positive.map((point, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-green-500 mt-1">✓</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              )}
 
-              {/* 改善提案 */}
-              {(loadedAIResponse || aiResponse)?.feedback.suggestions && (loadedAIResponse || aiResponse)!.feedback.suggestions.length > 0 && (
-                <Card className="p-4 bg-yellow-50 border-yellow-200">
-                  <h3 className="font-medium text-yellow-900 mb-2">改善のヒント</h3>
-                  <ul className="text-sm text-yellow-800 space-y-1">
-                    {(loadedAIResponse || aiResponse)!.feedback.suggestions.map((suggestion, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-yellow-500 mt-1">💡</span>
-                        <span>{suggestion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              )}
-
-              {/* 励ましメッセージ */}
-              {(loadedAIResponse || aiResponse)?.feedback.encouragement && (
-                <Card className="p-4 bg-purple-50 border-purple-200">
-                  <p className="text-sm text-purple-800 text-center font-medium">
-                    {(loadedAIResponse || aiResponse)!.feedback.encouragement}
-                  </p>
-                </Card>
-              )}
             </div>
           )}
 

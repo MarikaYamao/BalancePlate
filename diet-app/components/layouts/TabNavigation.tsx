@@ -15,7 +15,7 @@ const tabs: TabItem[] = [
   {
     id: 'home',
     label: 'ホーム',
-    href: '/',
+    href: '/home',
     icon: '🏠'
   },
   {
@@ -54,8 +54,8 @@ export function TabNavigation() {
 
   const isActiveTab = (href: string) => {
     if (!mounted) return false;
-    if (href === '/' && pathname === '/') return true;
-    if (href !== '/' && pathname.startsWith(href)) return true;
+    if (href === '/home' && (pathname === '/home' || pathname === '/')) return true;
+    if (href !== '/home' && pathname.startsWith(href)) return true;
     return false;
   };
 

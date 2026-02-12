@@ -76,17 +76,35 @@ export function LifestyleSelector({
     }
   };
 
+  // カテゴリアイコンのマッピング
+  const categoryIcons: Record<string, string> = {
+    '仕事・活動': '💼',
+    '家族・ケア': '👨‍👩‍👧',
+    '生活パターン': '🏃',
+    '医療・健康': '🏿',
+    '喫煙・飲酒': '🍷'
+  };
+
   return (
-    <Card className="mb-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">生活習慣</h2>
+    <Card className="mb-6 border-2 border-green-100 hover:border-green-200 transition-colors">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xl">🏠</span>
+        <h2 className="text-lg font-semibold text-gray-800">生活習慣</h2>
+        {selected.length > 0 && (
+          <span className="ml-auto bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+            {selected.length}件選択中
+          </span>
+        )}
+      </div>
       <p className="text-sm text-gray-600 mb-4">
         当てはまるものを選択してください（複数選択可）
       </p>
       
       <div className="space-y-4">
         {LIFESTYLE_OPTIONS.map((category) => (
-          <div key={category.category}>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
+          <div key={category.category} className="pb-3 border-b border-gray-100 last:border-b-0">
+            <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+              <span>{categoryIcons[category.category] || '📋'}</span>
               {category.category}
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -94,10 +112,10 @@ export function LifestyleSelector({
                 <button
                   key={tag.value}
                   onClick={() => handleToggle(tag.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all flex items-center gap-1.5 transform hover:scale-105 ${
                     selected.includes(tag.value)
-                      ? 'bg-primary-50 text-primary-700 border-2 border-primary-400 font-medium'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-green-50 to-blue-50 text-green-700 border-2 border-green-400 font-medium shadow-sm'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-green-50 hover:border-green-300'
                   }`}
                 >
                   {selected.includes(tag.value) && (

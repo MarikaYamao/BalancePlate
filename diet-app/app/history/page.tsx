@@ -112,6 +112,21 @@ export default function HistoryPage() {
     setSelectedMeal(null);
   };
 
+  // 統合フィードバックデータの取得
+  const getIntegratedFeedback = (dateKey: string): any | null => {
+    try {
+      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
+      if (!storedConsultations) return null;
+      
+      const consultations = JSON.parse(storedConsultations);
+      // 統合フィードバック（isIntegratedFeedback: true）を探す
+      const integratedFeedback = consultations.find((c: any) => c.isIntegratedFeedback === true);
+      return integratedFeedback || null;
+    } catch (error) {
+      return null;
+    }
+  };
+
   // ローカルストレージからフィードバックデータの存在確認
   const checkStoredFeedback = (dateKey: string, mealTime: Date): boolean => {
     try {
@@ -120,7 +135,8 @@ export default function HistoryPage() {
       
       const consultations = JSON.parse(storedConsultations);
       return consultations.some((c: any) => 
-        Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000 // 4時間以内
+        !c.isIntegratedFeedback && // 統合フィードバック以外
+        Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000
       );
     } catch (error) {
       return false;
@@ -162,38 +178,65 @@ export default function HistoryPage() {
       <div className="min-h-screen p-4">
         {/* ヘッダー */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">履歴</h1>
-          
-          {/* コントロール */}
-          <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setViewMode('list')}
-                variant={viewMode === 'list' ? 'primary' : 'outline'}
-                size="small"
-              >
-                リスト表示
-              </Button>
-              <Button
-                onClick={() => setViewMode('calendar')}
-                variant={viewMode === 'calendar' ? 'primary' : 'outline'}
-                size="small"
-                disabled={true} // カレンダー表示は今後実装
-              >
-                カレンダー表示
-              </Button>
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-800">食事履歴</h1>
             
-            <select
-              value={daysToShow}
-              onChange={(e) => setDaysToShow(Number(e.target.value))}
-              className="border border-gray-300 rounded px-3 py-1 text-sm"
-            >
-              <option value={7}>過去7日</option>
-              <option value={14}>過去2週間</option>
-              <option value={30}>過去1ヶ月</option>
-            </select>
+            {/* 期間選択を目立たせる */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">表示期間:</span>
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                {[
+                  { value: 7, label: '7日' },
+                  { value: 14, label: '2週間' },
+                  { value: 30, label: '1ヶ月' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setDaysToShow(option.value)}
+                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                      daysToShow === option.value
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+          
+          {/* サマリー情報 */}
+          {historyData.length > 0 && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">{historyData.length}</div>
+                    <div className="text-xs text-gray-600">記録日数</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {historyData.reduce((sum, day) => sum + day.meals.length, 0)}
+                    </div>
+                    <div className="text-xs text-gray-600">食事記録</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {historyData.filter(day => getIntegratedFeedback(day.dateKey)).length}
+                    </div>
+                    <div className="text-xs text-gray-600">AI分析</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600">継続率</div>
+                  <div className="text-xl font-bold text-purple-600">
+                    {Math.round((historyData.length / daysToShow) * 100)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 履歴リスト */}
@@ -210,18 +253,47 @@ export default function HistoryPage() {
             {historyData.map((dayData) => (
               <Card key={dayData.dateKey} className="overflow-hidden">
                 <div className="p-4">
-                  {/* 日付ヘッダー */}
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-                    <div className="text-lg font-semibold text-gray-800">
-                      {dayData.date.toLocaleDateString('ja-JP', {
-                        month: 'short',
-                        day: 'numeric',
-                        weekday: 'short'
-                      })}
+                  {/* 日付ヘッダー - より目立つように */}
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg px-3 py-2">
+                        <div className="text-lg font-bold text-gray-800">
+                          {dayData.date.toLocaleDateString('ja-JP', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {dayData.date.toLocaleDateString('ja-JP', { weekday: 'short' })}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                          🍽️ {dayData.meals.length}食事
+                        </span>
+                        {(() => {
+                          const integratedFeedback = getIntegratedFeedback(dayData.dateKey);
+                          return integratedFeedback ? (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              🤖 AI分析済み
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {dayData.meals.length}件の食事記録
-                    </div>
+                    
+                    {/* 今日からの日数表示 */}
+                    {(() => {
+                      const today = new Date();
+                      const diffDays = Math.floor((today.getTime() - dayData.date.getTime()) / (1000 * 60 * 60 * 24));
+                      return diffDays === 0 ? (
+                        <span className="text-xs text-purple-600 font-medium">今日</span>
+                      ) : diffDays === 1 ? (
+                        <span className="text-xs text-gray-500">昨日</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">{diffDays}日前</span>
+                      );
+                    })()}
                   </div>
 
                   {/* コンディション */}
@@ -246,6 +318,56 @@ export default function HistoryPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* 統合フィードバックカード - より目立つように */}
+                  {(() => {
+                    const integratedFeedback = getIntegratedFeedback(dayData.dateKey);
+                    return integratedFeedback ? (
+                      <div className="mb-6">
+                        <div className="relative p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                          <div className="absolute top-2 right-2">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                          </div>
+                          
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-lg">🤖</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-bold text-gray-800">AIによる総合分析</h3>
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                                  ✨ おすすめ
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 mb-2">
+                                今日の食事バランスと体調を総合評価
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="text-sm text-gray-700 mb-3 pl-13">
+                            {integratedFeedback.response?.substring(0, 120) + '...'}
+                          </div>
+                          
+                          <button
+                            onClick={() => {
+                              // 統合フィードバックの詳細を表示
+                              if (dayData.meals.length > 0) {
+                                handleMealClick({
+                                  ...dayData.meals[0],
+                                  aiResponse: integratedFeedback.response
+                                } as any);
+                              }
+                            }}
+                            className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                          >
+                            フィードバックを読む 📖
+                          </button>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
 
                   {/* 食事記録 */}
                   {dayData.meals.length > 0 ? (

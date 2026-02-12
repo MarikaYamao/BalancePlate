@@ -20,6 +20,8 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [activeSection, setActiveSection] = useState<'profile' | 'backup'>('profile');
 
   useEffect(() => {
     loadSettings();
@@ -42,6 +44,43 @@ export default function SettingsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // プロファイル完成度を計算
+  const calculateProfileCompleteness = () => {
+    // 各項目の入力状態をチェック
+    const checks = {
+      basic: true, // 基本設定は常に完了とみなす
+      bodyInfo: bodyConstitution.includes('healthy') || bodyConstitution.length > 0,
+      lifestyle: lifestyle.length > 0,
+      notes: additionalNotes.length > 20
+    };
+    
+    // 完成した項目数から割合を計算
+    const completedCount = Object.values(checks).filter(Boolean).length;
+    const totalCount = Object.keys(checks).length;
+    
+    return Math.round((completedCount / totalCount) * 100);
+  };
+
+  // 未完成項目を取得
+  const getIncompleteItems = () => {
+    const items = [];
+    
+    // 健康体の場合も選択を促す
+    if (!bodyConstitution.includes('healthy') && bodyConstitution.length === 0) {
+      items.push('体質情報（健康体の方も「特になし」を選択してください）');
+    }
+    
+    if (lifestyle.length === 0) {
+      items.push('生活習慣');
+    }
+    
+    if (additionalNotes.length <= 20) {
+      items.push('その他の情報（任意）');
+    }
+    
+    return items;
   };
 
   const handleSave = async () => {
@@ -72,13 +111,21 @@ export default function SettingsPage() {
         });
       }
       
-      setMessage('設定を保存しました');
+      setHasChanges(false);
+      setMessage('設定を保存しました ✅');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Failed to save settings:', error);
       setMessage('設定の保存に失敗しました');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 設定変更を検知
+  const markAsChanged = () => {
+    if (!isLoading) {
+      setHasChanges(true);
     }
   };
 
@@ -94,58 +141,179 @@ export default function SettingsPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen p-4 pb-24">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">設定</h1>
-        
-        {/* 基本設定 */}
-        <BasicSettings
-          dayResetTime={dayResetTime}
-          mealsPerDay={mealsPerDay}
-          onResetTimeChange={setDayResetTime}
-          onMealsPerDayChange={setMealsPerDay}
-        />
-        
-        {/* 体質選択 */}
-        <BodyConstitutionSelector
-          selected={bodyConstitution}
-          onChange={setBodyConstitution}
-        />
-        
-        {/* 生活習慣選択 */}
-        <LifestyleSelector
-          selected={lifestyle}
-          onChange={setLifestyle}
-        />
-        
-        {/* 自由記載欄 */}
-        <FreeNotes
-          value={additionalNotes}
-          onChange={setAdditionalNotes}
-        />
-        
-        {/* バックアップ管理 */}
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">バックアップ管理</h2>
-          <BackupManager />
+      <div className="min-h-screen pb-24">
+        {/* ヘッダー with gradient background */}
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 pb-8">
+          <h1 className="text-2xl font-bold mb-2">設定</h1>
+          <p className="text-sm opacity-90">AIがより良い提案をするための情報を設定します</p>
+          
+          {/* プロファイル完成度 */}
+          <div className="mt-4 bg-white/20 backdrop-blur rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium">プロファイル完成度</span>
+              <span className="text-lg font-bold">{calculateProfileCompleteness()}%</span>
+            </div>
+            <div className="w-full bg-white/30 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-white h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${calculateProfileCompleteness()}%` }}
+              />
+            </div>
+            {calculateProfileCompleteness() < 100 ? (
+              <div className="mt-2">
+                <p className="text-xs opacity-90 mb-1">
+                  未入力項目：
+                </p>
+                <ul className="text-xs opacity-80 space-y-0.5">
+                  {getIncompleteItems().map((item, index) => (
+                    <li key={index} className="flex items-start gap-1">
+                      <span>・</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-xs mt-2 opacity-90">
+                ✨ プロファイル完成！AIが最適な提案をお届けします
+              </p>
+            )}
+          </div>
         </div>
         
-        {/* 保存ボタン */}
-        <div className="mb-20">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full"
+        {/* タブ切り替え */}
+        <div className="flex gap-2 px-4 -mt-4 mb-4 relative z-10">
+          <button
+            onClick={() => setActiveSection('profile')}
+            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+              activeSection === 'profile'
+                ? 'bg-white shadow-lg text-purple-600 border-2 border-purple-200'
+                : 'bg-white/80 text-gray-600 border border-gray-200'
+            }`}
           >
-            {isSaving ? '保存中...' : '設定を保存'}
-          </Button>
-          {message && (
-            <p className={`mt-2 text-sm text-center ${
-              message.includes('失敗') ? 'text-red-600' : 'text-green-600'
-            }`}>
-              {message}
-            </p>
-          )}
+            <span className="text-lg mb-1 block">👤</span>
+            <span className="text-sm">プロファイル</span>
+          </button>
+          <button
+            onClick={() => setActiveSection('backup')}
+            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+              activeSection === 'backup'
+                ? 'bg-white shadow-lg text-purple-600 border-2 border-purple-200'
+                : 'bg-white/80 text-gray-600 border border-gray-200'
+            }`}
+          >
+            <span className="text-lg mb-1 block">💾</span>
+            <span className="text-sm">バックアップ</span>
+          </button>
         </div>
+        
+        <div className="px-4">
+        {activeSection === 'profile' ? (
+          <>
+            {/* AIのメリット説明 */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-start gap-2">
+                <span className="text-lg">🤖</span>
+                <div className="flex-1">
+                  <p className="text-sm text-purple-800 font-medium">AI分析の精度向上</p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    あなたの体質や生活習慣を理解することで、より適切な食事アドバイスを提供できます
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* 基本設定 */}
+            <BasicSettings
+              dayResetTime={dayResetTime}
+              mealsPerDay={mealsPerDay}
+              onResetTimeChange={(value) => {
+                setDayResetTime(value);
+                markAsChanged();
+              }}
+              onMealsPerDayChange={(value) => {
+                setMealsPerDay(value);
+                markAsChanged();
+              }}
+            />
+            
+            {/* 体質選択 */}
+            <BodyConstitutionSelector
+              selected={bodyConstitution}
+              onChange={(value) => {
+                setBodyConstitution(value);
+                markAsChanged();
+              }}
+            />
+            
+            {/* 生活習慣選択 */}
+            <LifestyleSelector
+              selected={lifestyle}
+              onChange={(value) => {
+                setLifestyle(value);
+                markAsChanged();
+              }}
+            />
+            
+            {/* 自由記載欄 */}
+            <FreeNotes
+              value={additionalNotes}
+              onChange={(value) => {
+                setAdditionalNotes(value);
+                markAsChanged();
+              }}
+            />
+          </>
+        ) : (
+          <>
+            {/* バックアップセクション */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <div className="flex items-start gap-2">
+                <span className="text-lg">🔒</span>
+                <div className="flex-1">
+                  <p className="text-sm text-green-800 font-medium">データの安全性</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    定期的なバックアップでデータを安全に保護しましょう
+                  </p>
+                </div>
+              </div>
+            </div>
+            <BackupManager />
+          </>
+        )}
+        </div>
+        
+        {/* 固定保存ボタン（プロファイルタブのみ） */}
+        {activeSection === 'profile' && (
+          <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !hasChanges}
+              className={`w-full ${
+                hasChanges 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
+                  : ''
+              }`}
+            >
+              {isSaving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span> 保存中...
+                </span>
+              ) : hasChanges ? (
+                '💾 設定を保存'
+              ) : (
+                '✅ 保存済み'
+              )}
+            </Button>
+            {message && (
+              <p className={`mt-2 text-sm text-center font-medium animate-fade-in ${
+                message.includes('失敗') ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {message}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </MainLayout>
   );

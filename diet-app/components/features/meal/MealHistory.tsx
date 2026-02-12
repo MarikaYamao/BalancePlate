@@ -71,7 +71,22 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // フィードバックデータの存在確認
+  // 統合フィードバックデータの取得
+  const getIntegratedFeedback = (dateKey: string): any | null => {
+    try {
+      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
+      if (!storedConsultations) return null;
+      
+      const consultations = JSON.parse(storedConsultations);
+      // 統合フィードバック（isIntegratedFeedback: true）を探す
+      const integratedFeedback = consultations.find((c: any) => c.isIntegratedFeedback === true);
+      return integratedFeedback || null;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // フィードバックデータの存在確認（個別食事用）
   const checkStoredFeedback = (dateKey: string, mealTime: Date): boolean => {
     try {
       const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
@@ -79,6 +94,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
       
       const consultations = JSON.parse(storedConsultations);
       return consultations.some((c: any) => 
+        !c.isIntegratedFeedback && // 統合フィードバック以外
         Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000
       );
     } catch (error) {
@@ -113,8 +129,52 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
     );
   }
 
+  // 統合フィードバックを取得
+  const integratedFeedback = getIntegratedFeedback(dateKey);
+
   return (
     <div className="space-y-3">
+      {/* 統合フィードバックカード */}
+      {integratedFeedback && (
+        <div className="p-4 border rounded-lg bg-blue-50 border-blue-200 hover:bg-blue-100">
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🤖</span>
+              <span className="font-medium">統合AIフィードバック</span>
+              <span className="text-sm text-gray-500">
+                今日の食事分析
+              </span>
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+                💬 統合分析
+              </span>
+            </div>
+          </div>
+          
+          <div className="text-gray-700 whitespace-pre-wrap text-sm">
+            {integratedFeedback.response?.substring(0, 100) + '...'}
+          </div>
+          
+          <button
+            onClick={() => {
+              // 統合フィードバックの詳細を表示するモーダルを開く
+              if (onEdit) {
+                // 代表として最初の食事を使用（モーダル表示のため）
+                const representativeMeal = meals[0];
+                if (representativeMeal) {
+                  onEdit({
+                    ...representativeMeal,
+                    aiResponse: integratedFeedback.response
+                  } as any);
+                }
+              }
+            }}
+            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+          >
+            詳細を見る →
+          </button>
+        </div>
+      )}
+      
       {meals.map((meal) => {
         const typeInfo = mealTypeLabels[meal.mealType];
         const isDeleting = deletingId === meal.id;

@@ -124,18 +124,71 @@ export function PostMealFeedback({ mealType, mealText, onClose }: PostMealFeedba
       // AI相談データをローカルストレージに保存（履歴で表示するため）
       try {
         const dateKey = getDateKey(new Date(), settings!.dayResetTime);
-        const consultationData = {
-          timestamp: new Date().toISOString(),
-          mealType,
-          mealText,
-          response: data.response ? JSON.parse(data.response) : null,
-          requestType
-        };
-        
+        const currentTime = new Date();
         const existingData = localStorage.getItem(`ai-consultation-${dateKey}`);
         const consultations = existingData ? JSON.parse(existingData) : [];
-        consultations.push(consultationData);
+        
+        // 複数食事の場合は各食事に対してフィードバックを関連付け
+        if (mealText.includes('【')) {
+          // 複数食事の統合フィードバックの場合
+          const bulkSavedMeals = (window as any).bulkSavedMeals;
+          const mealSections = mealText.split('\n\n').filter(section => section.includes('【'));
+          
+          mealSections.forEach((section, index) => {
+            // 日本語文字に対応したパターンに修正
+            const mealTypeMatch = section.match(/【([^】]+)】/);
+            
+            if (mealTypeMatch) {
+              const sectionMealLabel = mealTypeMatch[1]; // 朝食、昼食、夕食
+              
+              // 日本語ラベルを英語のMealTypeに変換
+              const mealTypeMappings: Record<string, string> = {
+                '朝食': 'breakfast',
+                '昼食': 'lunch', 
+                '夕食': 'dinner',
+                '間食': 'snack'
+              };
+              const sectionMealType = mealTypeMappings[sectionMealLabel] || sectionMealLabel;
+              
+              // 実際に保存された食事記録のタイムスタンプを使用
+              let actualTimestamp = currentTime.toISOString();
+              if (bulkSavedMeals && bulkSavedMeals[index] && bulkSavedMeals[index].actualTime) {
+                // actualTimeがDate型の場合とISO文字列の場合に対応
+                const mealActualTime = bulkSavedMeals[index].actualTime;
+                actualTimestamp = mealActualTime instanceof Date 
+                  ? mealActualTime.toISOString() 
+                  : new Date(mealActualTime).toISOString();
+              }
+              
+              const consultationData = {
+                timestamp: actualTimestamp,
+                mealType: sectionMealType,
+                mealText: section,
+                response: data.response || null,
+                requestType,
+                isIntegratedFeedback: true
+              };
+              
+              consultations.push(consultationData);
+            }
+          });
+          
+          // グローバル変数をクリーンアップ
+          delete (window as any).bulkSavedMeals;
+        } else {
+          // 単一食事の場合
+          const consultationData = {
+            timestamp: currentTime.toISOString(),
+            mealType,
+            mealText,
+            response: data.response || null,
+            requestType
+          };
+          consultations.push(consultationData);
+        }
+        
         localStorage.setItem(`ai-consultation-${dateKey}`, JSON.stringify(consultations));
+        
       } catch (storageError) {
         console.warn('Failed to save consultation data:', storageError);
       }

@@ -66,6 +66,7 @@ export default function ClientOnlyHome() {
     try {
       const mealEntries = Object.entries(meals).filter(([_, content]) => content.trim());
       
+      // 食事記録を保存し、保存されたデータを取得
       const promises = mealEntries.map(([mealType, content]) => 
         mealLogRepository.save({
           mealType: mealType as MealType,
@@ -73,13 +74,13 @@ export default function ClientOnlyHome() {
         }, resetTime)
       );
       
-      await Promise.all(promises);
+      const savedMeals = await Promise.all(promises);
       await loadMealData(); // リロードしてUI更新
       setShowBulkInput(false);
 
       // 複数食事の統合フィードバックを表示（売りポイント）
       if (mealEntries.length > 0) {
-        // 複数食事の場合は全体をまとめてフィードバック
+        // 保存された食事データを使用してタイムスタンプを正確に取得
         const combinedMealText = mealEntries
           .map(([mealType, content]) => {
             const mealLabels = {
@@ -94,6 +95,9 @@ export default function ClientOnlyHome() {
         
         // 代表として最後の食事タイプを使用（表示用）
         const [lastMealType] = mealEntries[mealEntries.length - 1];
+        
+        // 保存された食事データをフィードバックコンポーネントに渡すため、グローバルに保存
+        (window as any).bulkSavedMeals = savedMeals;
         
         setShowFeedback({
           mealType: lastMealType as MealType,
@@ -132,46 +136,239 @@ export default function ClientOnlyHome() {
     );
   }
 
+  // 今日の進捗状況を計算
+  const todayProgress = {
+    total: 3, // 朝昼夕
+    completed: mealLogs.length,
+    percentage: Math.round((mealLogs.length / 3) * 100)
+  };
+
+  // AI分析の有無をチェック
+  const hasAIAnalysis = () => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const consultations = localStorage.getItem(`ai-consultation-${today}`);
+      return consultations && JSON.parse(consultations).length > 0;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen">
-        {/* ヘッダー部分 */}
-        <header className="bg-gradient-to-b from-pink-100 to-pink-50 pb-4">
-          <DateDisplay resetTime={resetTime} />
+        {/* ヘッダー部分 - より魅力的に */}
+        <header className="bg-gradient-to-br from-green-100 via-blue-50 to-purple-100 pb-6">
+          <div className="px-4 pt-6">
+            <DateDisplay resetTime={resetTime} />
+            
+            {/* 進捗とモチベーション */}
+            <div className="mt-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🎯</span>
+                  <div>
+                    <h2 className="font-bold text-gray-800">今日の進捗</h2>
+                    <p className="text-xs text-gray-600">目標：3食の記録</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-600">{todayProgress.percentage}%</div>
+                  <div className="text-xs text-gray-500">{todayProgress.completed}/3食</div>
+                </div>
+              </div>
+              
+              {/* プログレスバー */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    todayProgress.percentage === 100 ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                    todayProgress.percentage >= 66 ? 'bg-gradient-to-r from-blue-400 to-green-400' :
+                    todayProgress.percentage >= 33 ? 'bg-gradient-to-r from-yellow-400 to-blue-400' :
+                    'bg-gradient-to-r from-gray-300 to-yellow-400'
+                  }`}
+                  style={{ width: `${todayProgress.percentage}%` }}
+                ></div>
+              </div>
+              
+              {/* モチベーションメッセージ */}
+              <div className="text-center">
+                {todayProgress.percentage === 100 ? (
+                  <span className="text-sm text-green-600 font-medium">🎉 素晴らしい！今日も完璧です</span>
+                ) : todayProgress.percentage >= 66 ? (
+                  <span className="text-sm text-blue-600 font-medium">💪 もう少しで完了です！</span>
+                ) : todayProgress.percentage >= 33 ? (
+                  <span className="text-sm text-yellow-600 font-medium">🌱 良いスタートです</span>
+                ) : (
+                  <span className="text-sm text-gray-600">📝 今日も記録を始めましょう</span>
+                )}
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* メインコンテンツ */}
-        <main className="pb-6">
-          {/* 今日のサマリー */}
+        <main className="px-4 pb-6 -mt-2">
+          {/* AI機能の価値訴求セクション */}
+          {hasAIAnalysis() && (
+            <section className="mb-6">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-4 shadow-lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-xl">🤖</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold">AI分析が完了しました！</h3>
+                    <p className="text-blue-100 text-sm">あなたの食事バランスを分析しました</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => window.location.href = '/history'}
+                  className="w-full mt-2 bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg transition-colors font-medium"
+                >
+                  分析結果を見る ✨
+                </button>
+              </div>
+            </section>
+          )}
+
+
+          {/* メインアクションエリア */}
           <section className="mb-6">
-            <TodaysSummary resetTime={resetTime} />
-          </section>
-
-          {/* 複数食事の一括入力 */}
-          {showBulkInput && !isLoadingMeals && (
-            <section className="mb-6">
-              <BulkMealInput
-                missedMeals={missedMeals}
-                onSubmit={handleBulkMealSubmit}
-                onCancel={handleBulkInputCancel}
-              />
-            </section>
-          )}
-
-          {/* AI食事提案 */}
-          {!showBulkInput && suggestions && unrecordedMealTypes.length > 0 && (
-            <section className="mb-6">
-              <MealSuggestions
-                suggestions={suggestions}
-                unrecordedMeals={unrecordedMealTypes as MealType[]}
-                resetTime={resetTime}
-              />
-            </section>
-          )}
-
-          {/* クイックアクション */}
-          <section>
-            <QuickActions />
+            {showBulkInput && !isLoadingMeals ? (
+              /* 複数食事の一括入力 - より目立つように */
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-1 shadow-sm">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">⚡</span>
+                    <h3 className="font-bold text-gray-800">まとめて記録</h3>
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                      時短機能
+                    </span>
+                  </div>
+                  <BulkMealInput
+                    missedMeals={missedMeals}
+                    onSubmit={handleBulkMealSubmit}
+                    onCancel={handleBulkInputCancel}
+                  />
+                </div>
+              </div>
+            ) : suggestions && unrecordedMealTypes.length > 0 ? (
+              /* AI食事提案 - より魅力的に */
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-1 shadow-sm">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xl">🧠</span>
+                    <h3 className="font-bold text-gray-800">AI提案</h3>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
+                      おすすめ
+                    </span>
+                  </div>
+                  <MealSuggestions
+                    suggestions={suggestions}
+                    unrecordedMeals={unrecordedMealTypes as MealType[]}
+                    resetTime={resetTime}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* 統合された食事記録・アクションエリア */
+              <div className="space-y-4">
+                {/* 統合された食事記録とアクション */}
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🍽️</span>
+                      <div>
+                        <h3 className="font-bold text-gray-800">今日の食事</h3>
+                        <p className="text-sm text-gray-600">
+                          {todayProgress.percentage === 0 ? '今日最初の食事を記録しましょう' :
+                           todayProgress.percentage === 100 ? '素晴らしい！すべて記録済みです' :
+                           `残り${3 - todayProgress.completed}食の記録をしましょう`}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* 詳細画面へのリンク */}
+                    {mealLogs.length > 0 && (
+                      <button 
+                        onClick={() => window.location.href = '/record/meal'}
+                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      >
+                        詳しく見る →
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* 食事記録の状況とアクション */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {['breakfast', 'lunch', 'dinner'].map((mealType) => {
+                      const isRecorded = mealLogs.some(log => log.mealType === mealType);
+                      const labels = { breakfast: '朝食', lunch: '昼食', dinner: '夕食' };
+                      const icons = { breakfast: '🌅', lunch: '☀️', dinner: '🌙' };
+                      
+                      if (isRecorded) {
+                        // 記録済みの場合：記録内容のプレビュー
+                        const meal = mealLogs.find(log => log.mealType === mealType);
+                        return (
+                          <div
+                            key={mealType}
+                            className="p-3 rounded-lg text-center bg-green-100 border-2 border-green-200"
+                          >
+                            <div className="text-lg mb-1">{icons[mealType as keyof typeof icons]}</div>
+                            <div className="text-xs font-medium text-green-700 mb-1">
+                              {labels[mealType as keyof typeof labels]}
+                            </div>
+                            <div className="text-xs text-green-600">
+                              {meal?.actualTime ? 
+                                new Date(meal.actualTime).toLocaleTimeString('ja-JP', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                }) : '記録済み'
+                              }
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // 未記録の場合：記録ボタン
+                        return (
+                          <button
+                            key={mealType}
+                            onClick={() => window.location.href = `/record/meal?type=${mealType}`}
+                            className="p-3 rounded-lg text-center bg-white border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                          >
+                            <div className="text-lg mb-1">{icons[mealType as keyof typeof icons]}</div>
+                            <div className="text-xs font-medium text-gray-700 mb-1">
+                              {labels[mealType as keyof typeof labels]}
+                            </div>
+                            <div className="text-xs text-blue-600 font-medium">
+                              記録する
+                            </div>
+                          </button>
+                        );
+                      }
+                    })}
+                  </div>
+                  
+                  {/* 全て記録済みの場合の追加アクション */}
+                  {todayProgress.percentage === 100 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="text-center text-sm text-gray-600 mb-2">
+                        間食も記録しますか？
+                      </div>
+                      <button
+                        onClick={() => window.location.href = '/record/meal?type=snack'}
+                        className="w-full py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        🍪 間食を追加
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <QuickActions />
+              </div>
+            )}
           </section>
         </main>
 
