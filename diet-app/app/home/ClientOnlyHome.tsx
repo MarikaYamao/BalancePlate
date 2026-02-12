@@ -7,6 +7,7 @@ import { QuickActions } from '@/components/features/home/QuickActions';
 import { TodaysSummary } from '@/components/features/home/TodaysSummary';
 import { BulkMealInput } from '@/components/features/meal/BulkMealInput';
 import { MealSuggestions } from '@/components/features/home/MealSuggestions';
+import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
 import { useUserSettings } from '@/lib/hooks/useUserSettings';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -24,6 +25,7 @@ export default function ClientOnlyHome() {
   const [missedMeals, setMissedMeals] = useState<MealType[]>([]);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
   const [unrecordedMealTypes, setUnrecordedMealTypes] = useState<string[]>([]);
+  const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
   
   // AI提案のフック
   const { suggestions } = useMealSuggestions(unrecordedMealTypes, resetTime);
@@ -62,18 +64,27 @@ export default function ClientOnlyHome() {
 
   const handleBulkMealSubmit = async (meals: Record<MealType, string>) => {
     try {
-      const promises = Object.entries(meals)
-        .filter(([_, content]) => content.trim())
-        .map(([mealType, content]) => 
-          mealLogRepository.save({
-            mealType: mealType as MealType,
-            text: content
-          }, resetTime)
-        );
+      const mealEntries = Object.entries(meals).filter(([_, content]) => content.trim());
+      
+      const promises = mealEntries.map(([mealType, content]) => 
+        mealLogRepository.save({
+          mealType: mealType as MealType,
+          text: content
+        }, resetTime)
+      );
       
       await Promise.all(promises);
       await loadMealData(); // リロードしてUI更新
       setShowBulkInput(false);
+
+      // 最後に記録した食事でフィードバックを表示（売りポイント）
+      if (mealEntries.length > 0) {
+        const [lastMealType, lastMealText] = mealEntries[mealEntries.length - 1];
+        setShowFeedback({
+          mealType: lastMealType as MealType,
+          mealText: lastMealText
+        });
+      }
     } catch (error) {
       console.error('Failed to save bulk meals:', error);
     }
@@ -148,6 +159,15 @@ export default function ClientOnlyHome() {
             <QuickActions />
           </section>
         </main>
+
+        {/* 食後フィードバックモーダル */}
+        {showFeedback && (
+          <PostMealFeedback
+            mealType={showFeedback.mealType}
+            mealText={showFeedback.mealText}
+            onClose={() => setShowFeedback(null)}
+          />
+        )}
       </div>
     </MainLayout>
   );
