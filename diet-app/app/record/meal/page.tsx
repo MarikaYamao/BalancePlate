@@ -118,13 +118,11 @@ function MealRecordPageContent() {
           onSuccess: () => {
             setSuccessMessage('食事記録を保存しました！');
             
-            // 朝食または昼食の場合はフィードバックを表示
-            if (selectedType === 'breakfast' || selectedType === 'lunch') {
-              setShowFeedback({
-                mealType: selectedType,
-                mealText: mealText.trim()
-              });
-            }
+            // すべての食事でフィードバックを表示（売りポイントなので）
+            setShowFeedback({
+              mealType: selectedType!,
+              mealText: mealText.trim()
+            });
             
             // フォームをリセット
             clearTempMealText();

@@ -64,7 +64,9 @@ export function PostMealFeedback({ mealType, mealText, onClose }: PostMealFeedba
       const previousMeals = await mealLogRepository.getByDate(previousDateKey);
       
       // リクエストタイプを決定
-      const requestType = mealType === 'breakfast' ? 'after_breakfast' : 'after_lunch';
+      const requestType = mealType === 'breakfast' ? 'after_breakfast' : 
+                          mealType === 'lunch' ? 'after_lunch' : 
+                          'consultation'; // 夕食や間食は一般的な相談として扱う
       
       // 今日の食事データを整形（現在記録した食事も含む）
       const todayMealData = [
