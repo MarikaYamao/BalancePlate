@@ -18,8 +18,59 @@ export const SYSTEM_PROMPT = `
 - 励まし、肯定的なトーン
 - 「〜しなければならない」という表現は避ける
 - 体調が悪い時は無理をしない提案
-- 必ず指定されたフォーマットに従って回答する
-- マークダウンの見出し（###）と太字（**）を適切に使う
+- 必ず指定されたJSON形式で回答する
+`;
+
+// JSON形式でのレスポンス要求プロンプト
+export const JSON_RESPONSE_PROMPT = `
+必ず以下のJSON形式で回答してください。
+テキストではなくJSON形式での返答を厳守してください。
+JSONの構造は以下の通りです：
+
+{
+  "feedback": {
+    "overall": "総合的な評価をここに記載",
+    "positive": ["良かった点1", "良かった点2"],
+    "suggestions": ["改善提案1", "改善提案2"],
+    "encouragement": "励ましのメッセージ"
+  },
+  "mealPlans": {
+    "breakfast": {
+      "menu": ["メニュー項目1", "メニュー項目2"],
+      "preparation": "簡単" | "普通" | "手間",
+      "alternatives": ["代替案1", "代替案2"],
+      "reason": "この提案をする理由",
+      "calories": 推定カロリー数値,
+      "timing": "推奨時間"
+    },
+    "lunch": {
+      同様の構造
+    },
+    "dinner": {
+      同様の構造
+    },
+    "snack": {
+      同様の構造（必要に応じて）
+    }
+  },
+  "nutritionAdvice": {
+    "focus": ["重視すべき栄養素1", "栄養素2"],
+    "avoid": ["控えめにすべきもの1", "もの2"],
+    "hydration": "水分摂取に関するアドバイス"
+  },
+  "metadata": {
+    "generatedAt": "現在時刻のISO文字列",
+    "conditionTags": ["入力されたコンディションタグ"],
+    "context": "morning" | "meal" | "evening"
+  }
+}
+
+重要：
+- 必ずValidなJSONとして出力
+- 文字列内の改行は\\nでエスケープ
+- ダブルクォートは\\"でエスケープ
+- mealPlansは提案が必要な食事のみ含める
+- caloriesは数値型で出力
 `;
 
 // 体質タグの日本語ラベル

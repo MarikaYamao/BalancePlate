@@ -1,14 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database';
 import { BaseRepository } from './baseRepository';
-import type { FoodPlan, MealSuggestion } from '@/types';
+import type { FoodPlan, FoodPlanMealSuggestion } from '@/types';
 
 export interface FoodPlanInput {
   dateKey: string;
   planType: 'A' | 'B' | 'C';
   planName: string;
   description: string;
-  meals: MealSuggestion[];
+  meals: FoodPlanMealSuggestion[];
 }
 
 export class FoodPlanRepository extends BaseRepository {

@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
+import { MealDetailModal } from '@/components/features/meal/MealDetailModal';
 import { getTodayKey } from '@/lib/utils/dateUtils';
 import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
 import { mealLogRepository } from '@/lib/db/repositories';
 import { initializeEncryptedDatabase } from '@/lib/db/encryptedDatabase';
 import { conditionTagsInfo } from '@/lib/constants/conditionTags';
-import type { DailyState, MealLog } from '@/types';
+import type { DailyState, MealLog, MealType, AIConsultationResponse } from '@/types';
 
 interface TodaysSummaryProps {
   resetTime?: string;
@@ -18,6 +20,9 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<MealLog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -56,6 +61,28 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
   const hasLunch = recordedMeals.includes('lunch');
   const hasDinner = recordedMeals.includes('dinner');
 
+  // 各食事の記録を取得
+  const breakfastMeal = meals.find(meal => meal.mealType === 'breakfast');
+  const lunchMeal = meals.find(meal => meal.mealType === 'lunch');
+  const dinnerMeal = meals.find(meal => meal.mealType === 'dinner');
+
+  // 食事カードクリック時の処理
+  const handleMealCardClick = (mealType: MealType, mealLog?: MealLog) => {
+    if (mealLog) {
+      // 記録済みの場合はモーダルで詳細表示
+      setSelectedMeal(mealLog);
+      setIsModalOpen(true);
+    } else {
+      // 未記録の場合は記録画面に遷移
+      router.push(`/record/meal?type=${mealType}`);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedMeal(null);
+  };
+
   // SSRの場合またはローディング中はスケルトンを表示
   if (!mounted || loading) {
     return (
@@ -75,9 +102,10 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
   }
 
   return (
-    <div className="px-4">
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">今日のサマリー</h3>
+    <>
+      <div className="px-4">
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">今日のサマリー</h3>
         
         {/* コンディション */}
         <div className="mb-4">
@@ -108,50 +136,62 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
         <div className="mb-4">
           <div className="text-sm text-gray-600 mb-2">食事記録</div>
           <div className="grid grid-cols-3 gap-2">
-            <div
+            <button
+              onClick={() => handleMealCardClick('breakfast', breakfastMeal)}
               className={`
-                text-center p-2 rounded-lg border-2
+                text-center p-2 rounded-lg border-2 transition-all duration-200
+                hover:shadow-md active:scale-95
                 ${hasBreakfast 
-                  ? 'border-green-400 bg-green-50' 
-                  : 'border-gray-200 bg-gray-50'}
+                  ? 'border-green-400 bg-green-50 hover:bg-green-100' 
+                  : 'border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-300'}
               `}
             >
               <div className="text-lg mb-1">{mealTypes.breakfast.icon}</div>
               <div className="text-xs">{mealTypes.breakfast.label}</div>
-              {hasBreakfast && (
+              {hasBreakfast ? (
                 <div className="text-green-600 text-xs mt-1">✓</div>
+              ) : (
+                <div className="text-blue-600 text-xs mt-1">+</div>
               )}
-            </div>
+            </button>
             
-            <div
+            <button
+              onClick={() => handleMealCardClick('lunch', lunchMeal)}
               className={`
-                text-center p-2 rounded-lg border-2
+                text-center p-2 rounded-lg border-2 transition-all duration-200
+                hover:shadow-md active:scale-95
                 ${hasLunch 
-                  ? 'border-green-400 bg-green-50' 
-                  : 'border-gray-200 bg-gray-50'}
+                  ? 'border-green-400 bg-green-50 hover:bg-green-100' 
+                  : 'border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-300'}
               `}
             >
               <div className="text-lg mb-1">{mealTypes.lunch.icon}</div>
               <div className="text-xs">{mealTypes.lunch.label}</div>
-              {hasLunch && (
+              {hasLunch ? (
                 <div className="text-green-600 text-xs mt-1">✓</div>
+              ) : (
+                <div className="text-blue-600 text-xs mt-1">+</div>
               )}
-            </div>
+            </button>
             
-            <div
+            <button
+              onClick={() => handleMealCardClick('dinner', dinnerMeal)}
               className={`
-                text-center p-2 rounded-lg border-2
+                text-center p-2 rounded-lg border-2 transition-all duration-200
+                hover:shadow-md active:scale-95
                 ${hasDinner 
-                  ? 'border-green-400 bg-green-50' 
-                  : 'border-gray-200 bg-gray-50'}
+                  ? 'border-green-400 bg-green-50 hover:bg-green-100' 
+                  : 'border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-300'}
               `}
             >
               <div className="text-lg mb-1">{mealTypes.dinner.icon}</div>
               <div className="text-xs">{mealTypes.dinner.label}</div>
-              {hasDinner && (
+              {hasDinner ? (
                 <div className="text-green-600 text-xs mt-1">✓</div>
+              ) : (
+                <div className="text-blue-600 text-xs mt-1">+</div>
               )}
-            </div>
+            </button>
           </div>
         </div>
 
@@ -164,6 +204,13 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
           </p>
         </div>
       </Card>
-    </div>
+      </div>
+
+      <MealDetailModal
+        isOpen={isModalOpen}
+        mealLog={selectedMeal}
+        onClose={handleModalClose}
+      />
+    </>
   );
 }

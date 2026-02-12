@@ -1,4 +1,4 @@
-import type { FoodPlan, MealSuggestion, MealType } from '@/types';
+import type { FoodPlan, FoodPlanMealSuggestion, MealType } from '@/types';
 
 // AI応答からプランを抽出するパーサー
 export class FoodPlanParser {
@@ -102,8 +102,8 @@ export class FoodPlanParser {
   /**
    * 食事内容を抽出
    */
-  private static extractMeals(text: string): MealSuggestion[] {
-    const meals: MealSuggestion[] = [];
+  private static extractMeals(text: string): FoodPlanMealSuggestion[] {
+    const meals: FoodPlanMealSuggestion[] = [];
     const lines = text.split('\n');
 
     let currentMealType: MealType | null = null;
@@ -267,7 +267,7 @@ export class FoodPlanParser {
   /**
    * デフォルト食事作成
    */
-  private static createDefaultMeals(): MealSuggestion[] {
+  private static createDefaultMeals(): FoodPlanMealSuggestion[] {
     return [
       {
         mealType: 'breakfast',
