@@ -71,6 +71,21 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  // フィードバックデータの存在確認
+  const checkStoredFeedback = (dateKey: string, mealTime: Date): boolean => {
+    try {
+      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
+      if (!storedConsultations) return false;
+      
+      const consultations = JSON.parse(storedConsultations);
+      return consultations.some((c: any) => 
+        Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000
+      );
+    } catch (error) {
+      return false;
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -103,14 +118,17 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
       {meals.map((meal) => {
         const typeInfo = mealTypeLabels[meal.mealType];
         const isDeleting = deletingId === meal.id;
+        const hasFeedback = meal.aiAnalysis || checkStoredFeedback(dateKey, meal.actualTime);
 
         return (
           <div
             key={meal.id}
             className={`
-              p-4 bg-white border rounded-lg
+              p-4 border rounded-lg transition-all
               ${isDeleting ? 'opacity-50' : ''}
-              hover:shadow-md transition-shadow
+              ${hasFeedback 
+                ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
+                : 'bg-white border-gray-200 hover:shadow-md'}
             `}
           >
             <div className="flex justify-between items-start mb-2">
@@ -120,6 +138,11 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
                 <span className="text-sm text-gray-500">
                   {formatTime(meal.actualTime)}
                 </span>
+                {hasFeedback && (
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+                    💬 フィードバック
+                  </span>
+                )}
               </div>
               
               <div className="flex gap-2">

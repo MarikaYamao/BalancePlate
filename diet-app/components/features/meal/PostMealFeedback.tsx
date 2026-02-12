@@ -170,9 +170,11 @@ export function PostMealFeedback({ mealType, mealText, onClose }: PostMealFeedba
         <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-xl font-bold mb-2">🍽️ {getMealTypeLabel(mealType)}のフィードバック</h2>
+              <h2 className="text-xl font-bold mb-2">
+                🍽️ {mealText.includes('【') ? '今日の食事フィードバック' : `${getMealTypeLabel(mealType)}のフィードバック`}
+              </h2>
               <p className="text-green-100 text-sm">
-                記録内容: {mealText.length > 50 ? `${mealText.substring(0, 50)}...` : mealText}
+                {mealText.includes('【') ? '複数食事の統合分析' : `記録内容: ${mealText.length > 50 ? `${mealText.substring(0, 50)}...` : mealText}`}
               </p>
             </div>
             <button

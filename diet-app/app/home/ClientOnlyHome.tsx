@@ -77,12 +77,27 @@ export default function ClientOnlyHome() {
       await loadMealData(); // リロードしてUI更新
       setShowBulkInput(false);
 
-      // 最後に記録した食事でフィードバックを表示（売りポイント）
+      // 複数食事の統合フィードバックを表示（売りポイント）
       if (mealEntries.length > 0) {
-        const [lastMealType, lastMealText] = mealEntries[mealEntries.length - 1];
+        // 複数食事の場合は全体をまとめてフィードバック
+        const combinedMealText = mealEntries
+          .map(([mealType, content]) => {
+            const mealLabels = {
+              breakfast: '朝食',
+              lunch: '昼食', 
+              dinner: '夕食',
+              snack: '間食'
+            };
+            return `【${mealLabels[mealType as MealType]}】${content}`;
+          })
+          .join('\n\n');
+        
+        // 代表として最後の食事タイプを使用（表示用）
+        const [lastMealType] = mealEntries[mealEntries.length - 1];
+        
         setShowFeedback({
           mealType: lastMealType as MealType,
-          mealText: lastMealText
+          mealText: combinedMealText
         });
       }
     } catch (error) {

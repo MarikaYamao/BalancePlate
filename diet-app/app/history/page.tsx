@@ -112,6 +112,21 @@ export default function HistoryPage() {
     setSelectedMeal(null);
   };
 
+  // ローカルストレージからフィードバックデータの存在確認
+  const checkStoredFeedback = (dateKey: string, mealTime: Date): boolean => {
+    try {
+      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
+      if (!storedConsultations) return false;
+      
+      const consultations = JSON.parse(storedConsultations);
+      return consultations.some((c: any) => 
+        Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000 // 4時間以内
+      );
+    } catch (error) {
+      return false;
+    }
+  };
+
   const mealTypeLabels = {
     breakfast: { label: '朝食', icon: '🌅' },
     lunch: { label: '昼食', icon: '☀️' },
@@ -238,11 +253,19 @@ export default function HistoryPage() {
                       {dayData.meals.map((meal) => {
                         const mealInfo = mealTypeLabels[meal.mealType];
                         
+                        // AIフィードバックがあるかチェック
+                        const hasFeedback = meal.aiAnalysis || checkStoredFeedback(meal.dateKey, meal.actualTime);
+                        
                         return (
                           <button
                             key={meal.id}
                             onClick={() => handleMealClick(meal)}
-                            className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                            className={`
+                              w-full text-left p-3 border rounded-lg transition-colors
+                              ${hasFeedback 
+                                ? 'border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300' 
+                                : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'}
+                            `}
                           >
                             <div className="flex items-start gap-3">
                               <div className="text-lg mt-0.5">{mealInfo.icon}</div>
@@ -260,6 +283,11 @@ export default function HistoryPage() {
                                   {meal.followedPlan && (
                                     <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded">
                                       プラン準拠
+                                    </span>
+                                  )}
+                                  {hasFeedback && (
+                                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+                                      💬 フィードバックあり
                                     </span>
                                   )}
                                 </div>
