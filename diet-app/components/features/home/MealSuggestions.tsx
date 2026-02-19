@@ -50,21 +50,21 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
   };
 
   return (
-    <Card className="mx-4 mb-4 bg-gradient-to-br from-green-50 to-blue-50 border-green-200">
+    <Card className="mx-4 mb-4 bg-[var(--color-bg-subtle)] border-[var(--color-border-light)]">
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">
           <div className="text-lg">✨</div>
-          <h3 className="text-lg font-semibold text-green-900">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
             おすすめの食事
           </h3>
-          <div className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full ml-auto">
+          <div className="text-xs font-semibold text-[var(--color-brand-primary)] bg-[var(--color-bg-elevated)] px-2 py-1 rounded-full ml-auto border border-[var(--color-border-light)]">
             AI提案
           </div>
         </div>
 
         {suggestions.feedback.overall && (
-          <div className="mb-4 p-3 bg-white/70 rounded-lg">
-            <p className="text-sm text-green-800">
+          <div className="mb-4 p-3 bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border-light)]">
+            <p className="text-sm font-medium text-[var(--color-text-secondary)]">
               {suggestions.feedback.overall}
             </p>
           </div>
@@ -77,10 +77,10 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
             const mealInfo = mealLabels[mealType];
             const isExpanded = expandedMeal === mealType;
             const colorClasses = {
-              yellow: 'border-yellow-300 bg-yellow-50 text-yellow-900',
-              orange: 'border-orange-300 bg-orange-50 text-orange-900',
-              purple: 'border-purple-300 bg-purple-50 text-purple-900',
-              pink: 'border-pink-300 bg-pink-50 text-pink-900'
+              yellow: 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]',
+              orange: 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]',
+              purple: 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]',
+              pink: 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)] text-[var(--color-text-primary)]'
             };
 
             return (
@@ -102,8 +102,8 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{mealInfo.icon}</span>
                     <div className="flex-1">
-                      <div className="font-medium text-sm">{mealInfo.label}</div>
-                      <div className="text-xs opacity-75">
+                      <div className="font-semibold text-sm">{mealInfo.label}</div>
+                      <div className="text-xs text-[var(--color-text-secondary)] font-medium">
                         {plan.menu.slice(0, 2).join('、')}
                         {plan.menu.length > 2 && '...'}
                       </div>
@@ -121,15 +121,15 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
                 </button>
 
                 {isExpanded && (
-                  <div className="px-3 pb-3 bg-white/50">
+                  <div className="px-3 pb-3 bg-[var(--color-bg-elevated)]">
                     {/* メニュー詳細 */}
                     <div className="mb-3">
-                      <div className="text-xs font-medium text-gray-700 mb-1">メニュー</div>
+                      <div className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">メニュー</div>
                       <ul className="text-sm space-y-1">
                         {plan.menu.map((item, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <span className="text-gray-400 text-xs mt-0.5">•</span>
-                            <span>{item}</span>
+                            <span className="text-[var(--color-text-tertiary)] text-xs mt-0.5">•</span>
+                            <span className="text-[var(--color-text-primary)] font-medium">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -138,8 +138,8 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
                     {/* 理由 */}
                     {plan.reason && (
                       <div className="mb-3">
-                        <div className="text-xs font-medium text-gray-700 mb-1">おすすめ理由</div>
-                        <p className="text-sm text-gray-600">{plan.reason}</p>
+                        <div className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">おすすめ理由</div>
+                        <p className="text-sm text-[var(--color-text-secondary)] font-medium">{plan.reason}</p>
                       </div>
                     )}
 
@@ -147,21 +147,21 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
                     <div className="flex gap-4 mb-3 text-xs">
                       {plan.calories && (
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-500">🔥</span>
-                          <span>{plan.calories}kcal</span>
+                          <span className="text-[var(--color-text-tertiary)]">🔥</span>
+                          <span className="text-[var(--color-text-secondary)] font-medium">{plan.calories}kcal</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <span className="text-gray-500">⏱️</span>
-                        <span>{plan.preparation}</span>
+                        <span className="text-[var(--color-text-tertiary)]">⏱️</span>
+                        <span className="text-[var(--color-text-secondary)] font-medium">{plan.preparation}</span>
                       </div>
                     </div>
 
                     {/* 代替案 */}
                     {plan.alternatives && plan.alternatives.length > 0 && (
                       <div className="mb-3">
-                        <div className="text-xs font-medium text-gray-700 mb-1">代替案</div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">代替案</div>
+                        <div className="text-sm text-[var(--color-text-secondary)] font-medium">
                           {plan.alternatives.join('、')}
                         </div>
                       </div>
@@ -194,8 +194,8 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
 
         {/* 励ましメッセージ */}
         {suggestions.feedback.encouragement && (
-          <div className="mt-4 p-3 bg-white/70 rounded-lg text-center">
-            <p className="text-sm text-green-800 font-medium">
+          <div className="mt-4 p-3 bg-[var(--color-bg-surface)] rounded-xl text-center border border-[var(--color-border-light)]">
+            <p className="text-sm text-[var(--color-text-secondary)] font-semibold">
               {suggestions.feedback.encouragement}
             </p>
           </div>

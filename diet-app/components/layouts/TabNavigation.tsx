@@ -61,17 +61,17 @@ export function TabNavigation() {
 
   if (!mounted) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-teal-500 border-t border-teal-600 safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-default)] safe-area-pb shadow-[0_-2px_10px_rgba(15,61,62,0.08)]">
         <div className="max-w-screen-xl mx-auto">
           <ul className="flex justify-around items-center h-16">
             {tabs.map((tab) => (
               <li key={tab.id} className="flex-1">
                 <Link
                   href={tab.href}
-                  className="flex flex-col items-center justify-center h-full text-sand-100"
+                  className="flex flex-col items-center justify-center h-full py-2 text-[var(--color-text-tertiary)]"
                 >
-                  <span className="text-xl mb-1">{tab.icon}</span>
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <span className="text-xl mb-1 opacity-70">{tab.icon}</span>
+                  <span className="text-[12px] font-semibold">{tab.label}</span>
                 </Link>
               </li>
             ))}
@@ -82,7 +82,7 @@ export function TabNavigation() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-default)] safe-area-pb shadow-[0_-2px_10px_rgba(15,61,62,0.08)]">
       <div className="max-w-screen-xl mx-auto">
         <ul className="flex justify-around items-center h-16">
           {tabs.map((tab) => {
@@ -92,16 +92,16 @@ export function TabNavigation() {
                 <Link
                   href={tab.href}
                   className={`
-                    flex flex-col items-center justify-center h-full
-                    transition-colors duration-200
+                    flex flex-col items-center justify-center h-full py-2
+                    transition-all duration-200
                     ${isActive 
-                      ? 'text-white bg-teal-600 rounded-lg' 
-                      : 'text-teal-100 hover:text-white'
+                      ? 'text-[var(--color-brand-primary)]' 
+                      : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
                     }
                   `}
                 >
-                  <span className="text-xl mb-1">{tab.icon}</span>
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <span className={`text-xl mb-1 transition-all ${isActive ? 'scale-110' : 'opacity-70'}`}>{tab.icon}</span>
+                  <span className={`text-[12px] font-semibold ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
                 </Link>
               </li>
             );

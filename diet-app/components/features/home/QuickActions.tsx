@@ -49,7 +49,7 @@ export function QuickActions() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-700 px-4">クイックアクション</h3>
+      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] px-4">クイックアクション</h3>
       <div className="space-y-3 px-4">
         {quickActions.map((action) => (
           <Card key={action.id} padding="none" className="overflow-hidden">
@@ -64,7 +64,7 @@ export function QuickActions() {
                 <span className="text-2xl flex-shrink-0">{action.icon}</span>
                 <div className="flex-1">
                   <div className="font-semibold">{action.label}</div>
-                  <div className="text-sm opacity-90">{action.description}</div>
+                  <div className="text-sm font-medium opacity-95">{action.description}</div>
                 </div>
                 <svg
                   className="w-5 h-5 flex-shrink-0"

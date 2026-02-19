@@ -31,8 +31,8 @@ export function DateDisplay({ resetTime = '04:00' }: DateDisplayProps) {
     return (
       <div className="text-center py-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
+          <div className="h-8 bg-[var(--color-border-light)] rounded-lg w-48 mx-auto mb-2"></div>
+          <div className="h-4 bg-[var(--color-border-light)] rounded-lg w-24 mx-auto"></div>
         </div>
       </div>
     );
@@ -62,20 +62,20 @@ export function DateDisplay({ resetTime = '04:00' }: DateDisplayProps) {
   return (
     <div className="text-center py-6">
       <div className="mb-2">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
           {displayDateFormatted.dateString}
-          <span className="text-pink-500 ml-1">{displayDateFormatted.weekDay}</span>
+          <span className="text-[var(--color-brand-primary)] ml-1">{displayDateFormatted.weekDay}</span>
         </h2>
         {!isAfterReset && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
             ※ リセット時間前のため前日として記録されます
           </p>
         )}
       </div>
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-[var(--color-text-secondary)]">
         現在時刻: {time}
       </div>
-      <div className="text-xs text-gray-400 mt-1">
+      <div className="text-xs text-[var(--color-text-tertiary)] mt-1">
         リセット時間: {resetTime}
       </div>
     </div>

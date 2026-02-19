@@ -199,7 +199,7 @@ export function MealDetailModal({
                 <h3 className="font-medium text-green-900 mb-2">🤖 AIフィードバック</h3>
                 <div className="text-sm text-green-800">
                   <div className="prose prose-sm max-w-none">
-                    {(loadedAIResponse || aiResponse)?.split('\n').map((line, index) => {
+                    {((loadedAIResponse || aiResponse) as unknown as string)?.split('\n').map((line: string, index: number) => {
                       // ### で始まる行（h3見出し）
                       if (line.startsWith('### ')) {
                         return (

@@ -22,15 +22,15 @@ export function Card({
   
   const shadowClasses = {
     none: '',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg'
+    sm: 'shadow-[var(--shadow-sm)]',
+    md: 'shadow-[var(--shadow-md)]',
+    lg: 'shadow-[var(--shadow-lg)]'
   };
   
   return (
     <div
       className={`
-        bg-white rounded-xl
+        bg-[var(--color-bg-surface)] rounded-2xl border border-[var(--color-border-light)]
         ${paddingClasses[padding]}
         ${shadowClasses[shadow]}
         ${className}

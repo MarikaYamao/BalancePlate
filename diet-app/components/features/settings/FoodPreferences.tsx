@@ -62,15 +62,15 @@ export function FoodPreferences({
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-6">
       {/* 好きな食材・料理 */}
-      <div className="bg-white rounded-lg p-4 shadow-sm">
+      <div className="bg-[var(--color-bg-surface)] rounded-lg p-4 shadow-[var(--shadow-sm)] border border-[var(--color-border-light)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">😍</span>
-          <h3 className="font-bold text-gray-800">好きな食材・料理</h3>
+          <h3 className="font-bold text-[var(--color-text-primary)]">好きな食材・料理</h3>
         </div>
         
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-3">
           AIが優先的に提案する食材・料理を登録できます
         </p>
 
@@ -83,12 +83,12 @@ export function FoodPreferences({
               onChange={(e) => setFavoriteInput(e.target.value)}
               onKeyPress={handleFavoriteKeyPress}
               placeholder="カレー、トマト、鶏肉など（複数可）"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="flex-1 px-3 py-2 border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-success)] text-[var(--color-text-primary)] font-medium"
             />
             <button
               onClick={() => favoriteInput.trim() && addFavorite(favoriteInput)}
               disabled={!favoriteInput.trim()}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-600 transition-colors"
+              className="px-4 py-2 bg-[var(--color-success)] text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity shadow-sm"
             >
               追加
             </button>
@@ -100,12 +100,12 @@ export function FoodPreferences({
           {favoriteFoods.map((food) => (
             <span
               key={food}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+              className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--color-bg-elevated)] text-[var(--color-success)] border border-[var(--color-success)] border-opacity-30 rounded-full text-sm font-medium"
             >
               {food}
               <button
                 onClick={() => removeFavorite(food)}
-                className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
+                className="hover:bg-[var(--color-bg-subtle)] rounded-full p-0.5 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -116,13 +116,13 @@ export function FoodPreferences({
       </div>
 
       {/* 嫌い・アレルギーのある食材 */}
-      <div className="bg-white rounded-lg p-4 shadow-sm">
+      <div className="bg-[var(--color-bg-surface)] rounded-lg p-4 shadow-[var(--shadow-sm)] border border-[var(--color-border-light)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🚫</span>
-          <h3 className="font-bold text-gray-800">嫌い・アレルギーのある食材</h3>
+          <h3 className="font-bold text-[var(--color-text-primary)]">嫌い・アレルギーのある食材</h3>
         </div>
         
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-3">
           AIが避けて提案する食材・料理を登録できます
         </p>
 
@@ -135,12 +135,12 @@ export function FoodPreferences({
               onChange={(e) => setDislikeInput(e.target.value)}
               onKeyPress={handleDislikeKeyPress}
               placeholder="きのこ、生魚、小麦など（複数可）"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="flex-1 px-3 py-2 border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)] text-[var(--color-text-primary)] font-medium"
             />
             <button
               onClick={() => dislikeInput.trim() && addDislike(dislikeInput)}
               disabled={!dislikeInput.trim()}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 transition-colors"
+              className="px-4 py-2 bg-[var(--color-danger)] text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--color-danger-hover)] transition-colors shadow-sm"
             >
               追加
             </button>
@@ -152,12 +152,12 @@ export function FoodPreferences({
           {dislikedFoods.map((food) => (
             <span
               key={food}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"
+              className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--color-bg-elevated)] text-[var(--color-danger)] border border-[var(--color-danger)] border-opacity-30 rounded-full text-sm font-medium"
             >
               {food}
               <button
                 onClick={() => removeDislike(food)}
-                className="hover:bg-red-200 rounded-full p-0.5 transition-colors"
+                className="hover:bg-[var(--color-bg-subtle)] rounded-full p-0.5 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -166,8 +166,8 @@ export function FoodPreferences({
         </div>
 
         {/* アレルギー注意書き */}
-        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-xs text-yellow-800">
+        <div className="mt-3 p-2 bg-[var(--color-bg-subtle)] border border-[var(--color-warning)] border-opacity-30 rounded-lg">
+          <p className="text-xs text-[var(--color-warning)] font-medium">
             ⚠️ アレルギーがある場合は必ず登録してください。
             AIはこの情報を基に安全な食事提案を行います。
           </p>

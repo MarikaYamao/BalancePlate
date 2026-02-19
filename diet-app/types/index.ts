@@ -116,6 +116,7 @@ export type ConditionTag =
   | 'stomach_weak' // 胃腸が弱っている
   
   // その他
+  | 'normal' // 普通・特になし
   | 'stressed' // ストレスあり
   | 'craving_sweet' // 甘いものが欲しい
   | 'low_appetite' // 食欲なし

@@ -51,7 +51,7 @@ export class DietDatabase extends Dexie {
       dietGoals: 'id, userId, goalType, createdAt, updatedAt'
     }).upgrade(async trans => {
       // 既存のUserSettingsに新しいフィールドを追加
-      await trans.userSettings.toCollection().modify(settings => {
+      await trans.table('userSettings').toCollection().modify(settings => {
         if (!settings.favoriteFoods) settings.favoriteFoods = [];
         if (!settings.dislikedFoods) settings.dislikedFoods = [];
       });

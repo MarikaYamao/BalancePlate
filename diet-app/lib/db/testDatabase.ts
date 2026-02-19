@@ -113,7 +113,7 @@ export class DatabaseTester {
 
       // テストデータ
       const testState: DailyStateInput = {
-        conditionTags: ['tired', 'stressed'],
+        conditionTags: ['tired_medium', 'stressed'],
         freeMemo: 'テスト用のメモです',
         activityMemo: 'ジムに行きました'
       };

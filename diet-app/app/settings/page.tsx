@@ -107,8 +107,8 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
-          favoriteFoods,
-          dislikedFoods,
+          // favoriteFoods,
+          // dislikedFoods,
           additionalNotes,
         });
       } else {
@@ -118,8 +118,8 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
-          favoriteFoods,
-          dislikedFoods,
+          // favoriteFoods,
+          // dislikedFoods,
           additionalNotes,
           onboardingCompleted: true,
         });
@@ -273,11 +273,11 @@ export default function SettingsPage() {
             <FoodPreferences
               favoriteFoods={favoriteFoods}
               dislikedFoods={dislikedFoods}
-              onFavoritesChange={(value) => {
+              onFavoriteFoodsChange={(value: string[]) => {
                 setFavoriteFoods(value);
                 markAsChanged();
               }}
-              onDislikesChange={(value) => {
+              onDislikedFoodsChange={(value: string[]) => {
                 setDislikedFoods(value);
                 markAsChanged();
               }}

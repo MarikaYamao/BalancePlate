@@ -29,7 +29,7 @@ export default function TestAIPage() {
           additionalNotes: 'コーヒーが好きです',
         },
         todayCondition: {
-          conditionTags: ['tired', 'stressed'],
+          conditionTags: ['tired_medium', 'stressed'],
           freeMemo: '今日は疲れています',
         },
         goals: {

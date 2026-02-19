@@ -1,0 +1,204 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { conditionTagsInfo } from '@/lib/constants/conditionTags';
+import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
+import type { ConditionTag } from '@/types';
+
+interface ConditionModalProps {
+  isOpen: boolean;
+  onClose?: () => void;
+  resetTime: string;
+  onSave?: () => void;
+}
+
+export function ConditionModal({ isOpen, onClose, resetTime, onSave }: ConditionModalProps) {
+  const [selectedTags, setSelectedTags] = useState<ConditionTag[]>([]);
+  const [memo, setMemo] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // モーダルが開いた時にボディのスクロールを無効化
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleTagToggle = (tagId: ConditionTag) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tagId)) {
+        return prev.filter(id => id !== tagId);
+      }
+      return [...prev, tagId];
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const repository = new EncryptedDailyStateRepository();
+      const todayState = await repository.getToday(resetTime);
+      
+      // 何も選択されていない場合は空配列で記録
+      await repository.upsert({
+        conditionTags: selectedTags,
+        freeMemo: memo || (todayState?.freeMemo || '')
+      }, resetTime);
+
+      if (onSave) {
+        onSave();
+      }
+      
+      if (onClose) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Failed to save condition:', error);
+      alert('コンディションの保存に失敗しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    // 強制モーダルの場合はバックドロップクリックで閉じない
+    if (!onClose) return;
+    
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 p-4 pt-8"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-[var(--color-bg-surface)] rounded-2xl w-full max-w-md max-h-[calc(100vh-100px)] overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-[var(--color-border-default)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[var(--color-brand-primary)] bg-opacity-10 rounded-full flex items-center justify-center">
+              <span className="text-xl">💭</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
+                今日のコンディション
+              </h2>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                体調を記録してください
+              </p>
+            </div>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-[var(--color-bg-subtle)] transition-colors"
+            >
+              <X className="w-5 h-5 text-[var(--color-text-tertiary)]" />
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto max-h-[calc(100vh-280px)]">
+          {/* 重要性の説明 */}
+          <div className="mb-4 p-3 bg-[var(--color-bg-subtle)] rounded-xl border border-[var(--color-border-light)]">
+            <p className="text-sm text-[var(--color-text-secondary)] font-medium">
+              🎯 コンディション記録は、AIがあなたに最適な食事を提案するための重要な情報です
+            </p>
+          </div>
+
+          {/* タグ選択 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">
+              該当するものを選択（複数可・未選択でも記録可能）
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {conditionTagsInfo.map((tag) => {
+                const isSelected = selectedTags.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => handleTagToggle(tag.id as ConditionTag)}
+                    className={`
+                      px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+                      flex items-center gap-1.5 border
+                      ${isSelected
+                        ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] shadow-md scale-105'
+                        : 'bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-default)] hover:border-[var(--color-brand-primary)] hover:shadow-sm'
+                      }
+                    `}
+                  >
+                    <span className="text-base">{tag.icon}</span>
+                    <span>{tag.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {selectedTags.length === 0 && (
+              <p className="text-xs text-[var(--color-text-tertiary)] font-medium mt-2">
+                💡 記録するとAIがあなたに合った食事を提案できます（未選択でもOK）
+              </p>
+            )}
+          </div>
+
+          {/* メモ欄（オプション） */}
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">
+              メモ（任意）
+            </h3>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="気分や体調について自由に記録..."
+              className="w-full p-3 border border-[var(--color-border-default)] rounded-xl text-sm text-[var(--color-text-primary)] font-medium resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-[var(--color-border-default)] bg-[var(--color-bg-subtle)]">
+          <div className="flex gap-3">
+            {onClose && (
+              <Button
+                onClick={onClose}
+                variant="outline"
+                className="flex-1"
+                disabled={isSaving}
+              >
+                キャンセル
+              </Button>
+            )}
+            <Button
+              onClick={handleSave}
+              variant="primary"
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? '保存中...' : '記録する'}
+            </Button>
+          </div>
+          
+          {!onClose && (
+            <p className="text-xs text-[var(--color-text-tertiary)] text-center mt-2 font-medium">
+              ※ コンディションを記録すると続行できます
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

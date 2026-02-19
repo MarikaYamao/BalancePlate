@@ -100,6 +100,13 @@ JSONの構造は以下の通りです：
 
 // 体質タグの日本語ラベル
 export const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
+  // 健康状態
+  'healthy': '特に問題なし',
+  'good_digestion': '消化が良い',
+  'high_metabolism': '代謝が良い',
+  'good_stamina': '体力がある',
+  'good_sleep': '睡眠の質が良い',
+  
   // 循環・代謝
   'edema_prone': 'むくみやすい',
   'cold_sensitivity': '冷えやすい',
@@ -212,6 +219,7 @@ export const CONDITION_LABELS: Record<ConditionTag, string> = {
   'stomach_weak': '胃腸が弱っている',
   
   // その他
+  'normal': '普通・特になし',
   'stressed': 'ストレスあり',
   'craving_sweet': '甘いものが欲しい',
   'low_appetite': '食欲なし',

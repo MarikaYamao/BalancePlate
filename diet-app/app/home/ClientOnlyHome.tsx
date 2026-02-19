@@ -8,14 +8,16 @@ import { TodaysSummary } from '@/components/features/home/TodaysSummary';
 import { BulkMealInput } from '@/components/features/meal/BulkMealInput';
 import { MealSuggestions } from '@/components/features/home/MealSuggestions';
 import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
+import { ConditionModal } from '@/components/features/condition/ConditionModal';
 import { useUserSettings } from '@/lib/hooks/useUserSettings';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { mealLogRepository } from '@/lib/db/repositories';
 import { initializeEncryptedDatabase } from '@/lib/db/encryptedDatabase';
 import { detectMissedMeals, shouldShowBulkInput } from '@/lib/utils/mealUtils';
 import { useMealSuggestions } from '@/lib/hooks/useAIConsultations';
-import type { MealType, MealLog } from '@/types';
+import type { MealType, MealLog, ConditionTag } from '@/types';
 
 export default function ClientOnlyHome() {
   const { settings, isLoading, error } = useUserSettings();
@@ -26,11 +28,15 @@ export default function ClientOnlyHome() {
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
   const [unrecordedMealTypes, setUnrecordedMealTypes] = useState<string[]>([]);
   const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
+  const [hasCondition, setHasCondition] = useState<boolean | null>(null); // nullで初期化（ローディング中）
+  const [showConditionModal, setShowConditionModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   // AI提案のフック
   const { suggestions } = useMealSuggestions(unrecordedMealTypes, resetTime);
 
   useEffect(() => {
+    setMounted(true);
     if (settings) {
       loadMealData();
     }
@@ -42,6 +48,22 @@ export default function ClientOnlyHome() {
       await initializeEncryptedDatabase();
       const todayMeals = await mealLogRepository.getToday(resetTime);
       setMealLogs(todayMeals);
+      
+      // コンディション登録状態をチェック
+      const repository = new EncryptedDailyStateRepository();
+      const todayState = await repository.getToday(resetTime);
+      // todayStateがnullまたは未定義の場合の処理
+      const hasConditionTags = todayState && todayState.conditionTags && todayState.conditionTags.length > 0;
+      
+      console.log('Condition check:', { todayState, hasConditionTags });
+      
+      setHasCondition(hasConditionTags);
+      
+      // コンディション未登録の場合はモーダルを表示
+      if (!hasConditionTags) {
+        console.log('Setting showConditionModal to true');
+        setShowConditionModal(true);
+      }
       
       const currentTime = new Date();
       const recordedTypes = todayMeals.map(meal => meal.mealType);
@@ -161,6 +183,32 @@ export default function ClientOnlyHome() {
         <header className="bg-gradient-to-br from-green-100 via-blue-50 to-purple-100 pb-6">
           <div className="px-4 pt-6">
             <DateDisplay resetTime={resetTime} />
+            
+            {/* デバッグ用ボタン - クライアントのみ */}
+            {mounted && (
+              <div className="flex gap-2 mb-4">
+                <button 
+                  onClick={() => setShowConditionModal(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
+                >
+                  モーダルを開く（テスト）
+                </button>
+                <button 
+                  onClick={async () => {
+                    const repository = new EncryptedDailyStateRepository();
+                    await repository.upsert({
+                      conditionTags: [] as ConditionTag[],
+                      freeMemo: ''
+                    }, resetTime);
+                    alert('コンディションをリセットしました');
+                    window.location.reload();
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm"
+                >
+                  コンディションをリセット
+                </button>
+              </div>
+            )}
             
             {/* 進捗とモチベーション */}
             <div className="mt-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm">
@@ -380,6 +428,18 @@ export default function ClientOnlyHome() {
             onClose={() => setShowFeedback(null)}
           />
         )}
+        
+        {/* コンディション登録モーダル */}
+        <ConditionModal
+          isOpen={showConditionModal}
+          onClose={undefined} // 強制モーダル（閉じるボタンなし）
+          resetTime={resetTime}
+          onSave={() => {
+            setShowConditionModal(false);
+            setHasCondition(true);
+            loadMealData(); // データを再読み込み
+          }}
+        />
       </div>
     </MainLayout>
   );

@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={`${notoSansJP.variable} font-sans antialiased`}>
+      <body className={`${notoSansJP.variable} font-sans antialiased`} suppressHydrationWarning={true}>
         <QueryProvider>
           <div className="min-h-screen bg-sand-300 text-teal-500">
             {children}

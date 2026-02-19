@@ -9,6 +9,15 @@ export interface ConditionTagInfo {
 }
 
 export const conditionTagsInfo: ConditionTagInfo[] = [
+  // 一般的なコンディション
+  {
+    id: 'normal',
+    label: '普通・特になし',
+    icon: '😊',
+    category: 'physical',
+    color: 'green'
+  },
+  
   // 身体的コンディション
   {
     id: 'period_before',
@@ -32,15 +41,15 @@ export const conditionTagsInfo: ConditionTagInfo[] = [
     color: 'blue'
   },
   {
-    id: 'tired',
+    id: 'tired_medium',
     label: '疲れている',
     icon: '😴',
     category: 'physical',
     color: 'gray'
   },
   {
-    id: 'sleepy',
-    label: '眠い',
+    id: 'sleep_bad',
+    label: '眠い・寝不足',
     icon: '😪',
     category: 'physical',
     color: 'indigo'

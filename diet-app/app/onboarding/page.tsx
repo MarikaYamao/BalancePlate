@@ -179,7 +179,7 @@ export default function OnboardingPage() {
             <BasicSettings
               dayResetTime={tempSettings.dayResetTime || '04:00'}
               mealsPerDay={tempSettings.mealsPerDay || 3}
-              onDayResetTimeChange={(time) => 
+              onResetTimeChange={(time: string) => 
                 setTempSettings({ ...tempSettings, dayResetTime: time })
               }
               onMealsPerDayChange={(meals) => 

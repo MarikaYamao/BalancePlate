@@ -16,20 +16,20 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
   
   const variantClasses = {
-    primary: 'bg-teal-500 text-white hover:bg-teal-600 focus:ring-teal-500 disabled:bg-teal-300',
-    secondary: 'bg-silver-400 text-white hover:bg-silver-500 focus:ring-silver-400 disabled:bg-silver-200',
-    outline: 'border-2 border-teal-500 text-teal-500 hover:bg-teal-50 focus:ring-teal-500 disabled:border-gray-300 disabled:text-gray-300',
-    ghost: 'text-teal-700 hover:bg-sand-200 focus:ring-teal-500 disabled:text-gray-300',
-    danger: 'bg-coral-500 text-white hover:bg-coral-600 focus:ring-coral-500 disabled:bg-coral-300'
+    primary: 'bg-[var(--color-brand-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-brand-primary-hover)] focus:ring-[var(--color-brand-primary)] shadow-md disabled:opacity-50',
+    secondary: 'bg-transparent border border-[var(--color-brand-primary)] text-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)] hover:text-[var(--color-text-inverse)] focus:ring-[var(--color-brand-primary)] disabled:opacity-50',
+    outline: 'bg-[var(--color-bg-surface)] border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)] disabled:opacity-50',
+    ghost: 'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-subtle)] hover:text-[var(--color-text-primary)] focus:ring-[var(--color-brand-primary)] shadow-none disabled:opacity-50',
+    danger: 'bg-[var(--color-danger)] text-[var(--color-text-inverse)] hover:bg-[var(--color-danger-hover)] focus:ring-[var(--color-danger)] shadow-md disabled:opacity-50'
   };
   
   const sizeClasses = {
-    small: 'px-3 py-1.5 text-sm',
-    medium: 'px-4 py-2 text-base',
-    large: 'px-6 py-3 text-lg'
+    small: 'px-3 py-1.5 text-sm font-medium',
+    medium: 'px-4 py-2.5 text-[15px] font-semibold',
+    large: 'px-6 py-3.5 text-base font-semibold'
   };
   
   const widthClass = fullWidth ? 'w-full' : '';

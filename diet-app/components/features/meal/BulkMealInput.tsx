@@ -83,16 +83,16 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
   }
 
   return (
-    <Card className="mx-4 mb-4 bg-blue-50 border-blue-200">
+    <Card className="mx-4 mb-4 bg-[var(--color-bg-subtle)] border-[var(--color-border-default)]">
       <div className="p-4">
         <div className="flex items-center gap-2 mb-4">
           <div className="text-lg">📝</div>
-          <h3 className="text-lg font-semibold text-blue-900">
+          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
             未入力の食事を記録
           </h3>
         </div>
         
-        <p className="text-sm text-blue-700 mb-4">
+        <p className="text-sm text-[var(--color-text-secondary)] font-medium mb-4">
           {missedMeals.length}つの食事が未記録です。まとめて入力できます。
         </p>
 
@@ -103,11 +103,11 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
             return (
               <div key={mealType} className={`
                 border rounded-lg p-3 transition-all duration-200
-                ${isSkipped ? 'border-gray-200 bg-gray-50 opacity-60' : 'border-blue-200 bg-white'}
+                ${isSkipped ? 'border-[var(--color-border-light)] bg-[var(--color-bg-subtle)] opacity-60' : 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)]'}
               `}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">{mealLabels[mealType].icon}</span>
-                  <span className="font-medium text-gray-700">
+                  <span className="font-semibold text-[var(--color-text-primary)]">
                     {mealLabels[mealType].label}
                   </span>
                   <div className="flex-1" />
@@ -115,10 +115,10 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
                     type="button"
                     onClick={() => handleSkipToggle(mealType)}
                     className={`
-                      px-2 py-1 text-xs rounded transition-colors duration-200
+                      px-2 py-1 text-xs rounded font-medium transition-colors duration-200
                       ${isSkipped 
-                        ? 'bg-gray-200 text-gray-600' 
-                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}
+                        ? 'bg-[var(--color-bg-subtle)] text-[var(--color-text-tertiary)]' 
+                        : 'bg-[var(--color-warning)] bg-opacity-20 text-[var(--color-warning)] hover:bg-opacity-30'}
                     `}
                   >
                     {isSkipped ? '記録する' : 'スキップ'}
@@ -131,10 +131,10 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
                   disabled={isSkipped}
                   placeholder={isSkipped ? 'スキップされました' : `${mealLabels[mealType].time}に食べたものを入力してください...`}
                   className={`
-                    w-full p-2 border rounded text-sm resize-none
+                    w-full p-2 border rounded text-sm resize-none font-medium
                     ${isSkipped 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500'}
+                      ? 'bg-[var(--color-bg-subtle)] text-[var(--color-text-tertiary)] cursor-not-allowed' 
+                      : 'border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]'}
                   `}
                   rows={2}
                 />
@@ -162,7 +162,7 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
           </Button>
         </div>
 
-        <p className="text-xs text-gray-500 mt-2 text-center">
+        <p className="text-xs text-[var(--color-text-tertiary)] font-medium mt-2 text-center">
           空欄の食事は記録されません
         </p>
       </div>
