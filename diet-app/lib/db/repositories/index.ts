@@ -7,6 +7,7 @@ import { FoodPlanRepository } from './foodPlanRepository';
 import { WeightLogRepository } from './weightLogRepository';
 import { EncryptedUserSettingsRepository } from './encryptedUserSettingsRepository';
 import { EncryptedDailyStateRepository } from './encryptedDailyStateRepository';
+import { FridgeItemRepository } from './fridgeItemRepository';
 
 // Repository classes export
 export { 
@@ -17,7 +18,8 @@ export {
   FoodPlanRepository,
   WeightLogRepository,
   EncryptedUserSettingsRepository,
-  EncryptedDailyStateRepository
+  EncryptedDailyStateRepository,
+  FridgeItemRepository
 };
 
 // Repository instances export (シングルトンパターン)
@@ -30,6 +32,9 @@ export const weightLogRepository = new WeightLogRepository();
 // 暗号化対応のリポジトリインスタンス
 export const encryptedUserSettingsRepository = new EncryptedUserSettingsRepository();
 export const encryptedDailyStateRepository = new EncryptedDailyStateRepository();
+
+// 冷蔵庫管理リポジトリインスタンス
+export const fridgeItemRepository = new FridgeItemRepository();
 
 // Type exports
 export type { UserSettingsInput } from './userSettingsRepository';

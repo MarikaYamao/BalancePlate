@@ -8,6 +8,7 @@ interface MealHistoryProps {
   dateKey: string;
   onEdit?: (meal: MealLog) => void;
   onDelete?: (meal: MealLog) => void;
+  onShowDetail?: (meal: MealLog, aiResponse?: any) => void;
 }
 
 const mealTypeLabels: Record<MealType, { label: string; icon: string }> = {
@@ -17,7 +18,7 @@ const mealTypeLabels: Record<MealType, { label: string; icon: string }> = {
   snack: { label: '間食', icon: '🍿' }
 };
 
-export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
+export function MealHistory({ dateKey, onEdit, onDelete, onShowDetail }: MealHistoryProps) {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,14 +158,11 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
           <button
             onClick={() => {
               // 統合フィードバックの詳細を表示するモーダルを開く
-              if (onEdit) {
+              if (onShowDetail) {
                 // 代表として最初の食事を使用（モーダル表示のため）
                 const representativeMeal = meals[0];
                 if (representativeMeal) {
-                  onEdit({
-                    ...representativeMeal,
-                    aiResponse: integratedFeedback.response
-                  } as any);
+                  onShowDetail(representativeMeal, integratedFeedback.response);
                 }
               }
             }}

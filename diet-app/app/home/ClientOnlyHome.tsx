@@ -1,37 +1,40 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layouts/MainLayout';
-import { DateDisplay } from '@/components/features/home/DateDisplay';
-import { QuickActions } from '@/components/features/home/QuickActions';
-import { TodaysSummary } from '@/components/features/home/TodaysSummary';
-import { BulkMealInput } from '@/components/features/meal/BulkMealInput';
-import { MealSuggestions } from '@/components/features/home/MealSuggestions';
-import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
-import { ConditionModal } from '@/components/features/condition/ConditionModal';
-import { useUserSettings } from '@/lib/hooks/useUserSettings';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
-import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { mealLogRepository } from '@/lib/db/repositories';
-import { initializeEncryptedDatabase } from '@/lib/db/encryptedDatabase';
-import { detectMissedMeals, shouldShowBulkInput } from '@/lib/utils/mealUtils';
-import { useMealSuggestions } from '@/lib/hooks/useAIConsultations';
-import type { MealType, MealLog, ConditionTag } from '@/types';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layouts/MainLayout";
+import { DateDisplay } from "@/components/features/home/DateDisplay";
+import { QuickActions } from "@/components/features/home/QuickActions";
+import { TodaysSummary } from "@/components/features/home/TodaysSummary";
+import { BulkMealInput } from "@/components/features/meal/BulkMealInput";
+import { MealSuggestions } from "@/components/features/home/MealSuggestions";
+import { PostMealFeedback } from "@/components/features/meal/PostMealFeedback";
+import { ConditionModal } from "@/components/features/condition/ConditionModal";
+import { useUserSettings } from "@/lib/hooks/useUserSettings";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { EncryptedDailyStateRepository } from "@/lib/db/repositories/encryptedDailyStateRepository";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { mealLogRepository } from "@/lib/db/repositories";
+import { initializeEncryptedDatabase } from "@/lib/db/encryptedDatabase";
+import { detectMissedMeals, shouldShowBulkInput } from "@/lib/utils/mealUtils";
+import { useMealSuggestions } from "@/lib/hooks/useAIConsultations";
+import type { MealType, MealLog, ConditionTag } from "@/types";
 
 export default function ClientOnlyHome() {
   const { settings, isLoading, error } = useUserSettings();
-  const resetTime = settings?.dayResetTime || '04:00';
+  const resetTime = settings?.dayResetTime || "04:00";
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [missedMeals, setMissedMeals] = useState<MealType[]>([]);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
   const [unrecordedMealTypes, setUnrecordedMealTypes] = useState<string[]>([]);
-  const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
+  const [showFeedback, setShowFeedback] = useState<{
+    mealType: MealType;
+    mealText: string;
+  } | null>(null);
   const [hasCondition, setHasCondition] = useState<boolean | null>(null); // nullで初期化（ローディング中）
   const [showConditionModal, setShowConditionModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
+
   // AI提案のフック
   const { suggestions } = useMealSuggestions(unrecordedMealTypes, resetTime);
 
@@ -48,37 +51,44 @@ export default function ClientOnlyHome() {
       await initializeEncryptedDatabase();
       const todayMeals = await mealLogRepository.getToday(resetTime);
       setMealLogs(todayMeals);
-      
+
       // コンディション登録状態をチェック
       const repository = new EncryptedDailyStateRepository();
       const todayState = await repository.getToday(resetTime);
       // todayStateがnullまたは未定義の場合の処理
-      const hasConditionTags = todayState && todayState.conditionTags && todayState.conditionTags.length > 0;
-      
-      console.log('Condition check:', { todayState, hasConditionTags });
-      
+      const hasConditionTags =
+        todayState &&
+        todayState.conditionTags &&
+        todayState.conditionTags.length > 0;
+
+      console.log("Condition check:", { todayState, hasConditionTags });
+
       setHasCondition(hasConditionTags);
-      
+
       // コンディション未登録の場合はモーダルを表示
       if (!hasConditionTags) {
-        console.log('Setting showConditionModal to true');
+        console.log("Setting showConditionModal to true");
         setShowConditionModal(true);
       }
-      
+
       const currentTime = new Date();
-      const recordedTypes = todayMeals.map(meal => meal.mealType);
+      const recordedTypes = todayMeals.map((meal) => meal.mealType);
       const missed = detectMissedMeals(currentTime, resetTime, recordedTypes);
       setMissedMeals(missed);
-      
+
       // すべてのメインの食事タイプから未記録のものを取得
-      const allMealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
-      const unrecorded = allMealTypes.filter(type => !recordedTypes.includes(type));
+      const allMealTypes: MealType[] = ["breakfast", "lunch", "dinner"];
+      const unrecorded = allMealTypes.filter(
+        (type) => !recordedTypes.includes(type),
+      );
       setUnrecordedMealTypes(unrecorded);
-      
+
       // 2つ以上の食事が未記録の場合にバルク入力を表示
-      setShowBulkInput(shouldShowBulkInput(currentTime, resetTime, recordedTypes, 2));
+      setShowBulkInput(
+        shouldShowBulkInput(currentTime, resetTime, recordedTypes, 2),
+      );
     } catch (error) {
-      console.error('Failed to load meal data:', error);
+      console.error("Failed to load meal data:", error);
     } finally {
       setIsLoadingMeals(false);
     }
@@ -86,16 +96,21 @@ export default function ClientOnlyHome() {
 
   const handleBulkMealSubmit = async (meals: Record<MealType, string>) => {
     try {
-      const mealEntries = Object.entries(meals).filter(([_, content]) => content.trim());
-      
-      // 食事記録を保存し、保存されたデータを取得
-      const promises = mealEntries.map(([mealType, content]) => 
-        mealLogRepository.save({
-          mealType: mealType as MealType,
-          text: content
-        }, resetTime)
+      const mealEntries = Object.entries(meals).filter(([_, content]) =>
+        content.trim(),
       );
-      
+
+      // 食事記録を保存し、保存されたデータを取得
+      const promises = mealEntries.map(([mealType, content]) =>
+        mealLogRepository.save(
+          {
+            mealType: mealType as MealType,
+            text: content,
+          },
+          resetTime,
+        ),
+      );
+
       const savedMeals = await Promise.all(promises);
       await loadMealData(); // リロードしてUI更新
       setShowBulkInput(false);
@@ -106,28 +121,28 @@ export default function ClientOnlyHome() {
         const combinedMealText = mealEntries
           .map(([mealType, content]) => {
             const mealLabels = {
-              breakfast: '朝食',
-              lunch: '昼食', 
-              dinner: '夕食',
-              snack: '間食'
+              breakfast: "朝食",
+              lunch: "昼食",
+              dinner: "夕食",
+              snack: "間食",
             };
             return `【${mealLabels[mealType as MealType]}】${content}`;
           })
-          .join('\n\n');
-        
+          .join("\n\n");
+
         // 代表として最後の食事タイプを使用（表示用）
         const [lastMealType] = mealEntries[mealEntries.length - 1];
-        
+
         // 保存された食事データをフィードバックコンポーネントに渡すため、グローバルに保存
         (window as any).bulkSavedMeals = savedMeals;
-        
+
         setShowFeedback({
           mealType: lastMealType as MealType,
-          mealText: combinedMealText
+          mealText: combinedMealText,
         });
       }
     } catch (error) {
-      console.error('Failed to save bulk meals:', error);
+      console.error("Failed to save bulk meals:", error);
     }
   };
 
@@ -149,8 +164,8 @@ export default function ClientOnlyHome() {
     return (
       <MainLayout>
         <div className="min-h-screen p-4">
-          <ErrorMessage 
-            message="データの読み込みに失敗しました" 
+          <ErrorMessage
+            message="データの読み込みに失敗しました"
             onRetry={() => window.location.reload()}
           />
         </div>
@@ -162,12 +177,12 @@ export default function ClientOnlyHome() {
   const todayProgress = {
     total: 3, // 朝昼夕
     completed: mealLogs.length,
-    percentage: Math.round((mealLogs.length / 3) * 100)
+    percentage: Math.round((mealLogs.length / 3) * 100),
   };
 
   // AI分析の有無をチェック
   const hasAIAnalysis = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     try {
       const consultations = localStorage.getItem(`ai-consultation-${today}`);
       return consultations && JSON.parse(consultations).length > 0;
@@ -182,34 +197,6 @@ export default function ClientOnlyHome() {
         {/* ヘッダー部分 - より魅力的に */}
         <header className="bg-gradient-to-br from-green-100 via-blue-50 to-purple-100 pb-6">
           <div className="px-4 pt-6">
-            <DateDisplay resetTime={resetTime} />
-            
-            {/* デバッグ用ボタン - クライアントのみ */}
-            {mounted && (
-              <div className="flex gap-2 mb-4">
-                <button 
-                  onClick={() => setShowConditionModal(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
-                >
-                  モーダルを開く（テスト）
-                </button>
-                <button 
-                  onClick={async () => {
-                    const repository = new EncryptedDailyStateRepository();
-                    await repository.upsert({
-                      conditionTags: [] as ConditionTag[],
-                      freeMemo: ''
-                    }, resetTime);
-                    alert('コンディションをリセットしました');
-                    window.location.reload();
-                  }}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm"
-                >
-                  コンディションをリセット
-                </button>
-              </div>
-            )}
-            
             {/* 進捗とモチベーション */}
             <div className="mt-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
@@ -221,34 +208,49 @@ export default function ClientOnlyHome() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-green-600">{todayProgress.percentage}%</div>
-                  <div className="text-xs text-gray-500">{todayProgress.completed}/3食</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {todayProgress.percentage}%
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {todayProgress.completed}/3食
+                  </div>
                 </div>
               </div>
-              
+
               {/* プログレスバー */}
               <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div 
+                <div
                   className={`h-2 rounded-full transition-all duration-500 ${
-                    todayProgress.percentage === 100 ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
-                    todayProgress.percentage >= 66 ? 'bg-gradient-to-r from-blue-400 to-green-400' :
-                    todayProgress.percentage >= 33 ? 'bg-gradient-to-r from-yellow-400 to-blue-400' :
-                    'bg-gradient-to-r from-gray-300 to-yellow-400'
+                    todayProgress.percentage === 100
+                      ? "bg-gradient-to-r from-green-400 to-emerald-500"
+                      : todayProgress.percentage >= 66
+                        ? "bg-gradient-to-r from-blue-400 to-green-400"
+                        : todayProgress.percentage >= 33
+                          ? "bg-gradient-to-r from-yellow-400 to-blue-400"
+                          : "bg-gradient-to-r from-gray-300 to-yellow-400"
                   }`}
                   style={{ width: `${todayProgress.percentage}%` }}
                 ></div>
               </div>
-              
+
               {/* モチベーションメッセージ */}
               <div className="text-center">
                 {todayProgress.percentage === 100 ? (
-                  <span className="text-sm text-green-600 font-medium">🎉 素晴らしい！今日も完璧です</span>
+                  <span className="text-sm text-green-600 font-medium">
+                    🎉 素晴らしい！今日も完璧です
+                  </span>
                 ) : todayProgress.percentage >= 66 ? (
-                  <span className="text-sm text-blue-600 font-medium">💪 もう少しで完了です！</span>
+                  <span className="text-sm text-blue-600 font-medium">
+                    💪 もう少しで完了です！
+                  </span>
                 ) : todayProgress.percentage >= 33 ? (
-                  <span className="text-sm text-yellow-600 font-medium">🌱 良いスタートです</span>
+                  <span className="text-sm text-yellow-600 font-medium">
+                    🌱 良いスタートです
+                  </span>
                 ) : (
-                  <span className="text-sm text-gray-600">📝 今日も記録を始めましょう</span>
+                  <span className="text-sm text-gray-600">
+                    📝 今日も記録を始めましょう
+                  </span>
                 )}
               </div>
             </div>
@@ -267,11 +269,13 @@ export default function ClientOnlyHome() {
                   </div>
                   <div>
                     <h3 className="font-bold">AI分析が完了しました！</h3>
-                    <p className="text-blue-100 text-sm">あなたの食事バランスを分析しました</p>
+                    <p className="text-blue-100 text-sm">
+                      あなたの食事バランスを分析しました
+                    </p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => window.location.href = '/history'}
+                <button
+                  onClick={() => (window.location.href = "/history")}
                   className="w-full mt-2 bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg transition-colors font-medium"
                 >
                   分析結果を見る ✨
@@ -279,7 +283,6 @@ export default function ClientOnlyHome() {
               </div>
             </section>
           )}
-
 
           {/* メインアクションエリア */}
           <section className="mb-6">
@@ -330,50 +333,69 @@ export default function ClientOnlyHome() {
                       <div>
                         <h3 className="font-bold text-gray-800">今日の食事</h3>
                         <p className="text-sm text-gray-600">
-                          {todayProgress.percentage === 0 ? '今日最初の食事を記録しましょう' :
-                           todayProgress.percentage === 100 ? '素晴らしい！すべて記録済みです' :
-                           `残り${3 - todayProgress.completed}食の記録をしましょう`}
+                          {todayProgress.percentage === 0
+                            ? "今日最初の食事を記録しましょう"
+                            : todayProgress.percentage === 100
+                              ? "素晴らしい！すべて記録済みです"
+                              : `残り${3 - todayProgress.completed}食の記録をしましょう`}
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* 詳細画面へのリンク */}
                     {mealLogs.length > 0 && (
-                      <button 
-                        onClick={() => window.location.href = '/record/meal'}
+                      <button
+                        onClick={() => (window.location.href = "/record/meal")}
                         className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                       >
                         詳しく見る →
                       </button>
                     )}
                   </div>
-                  
+
                   {/* 食事記録の状況とアクション */}
                   <div className="grid grid-cols-3 gap-3">
-                    {['breakfast', 'lunch', 'dinner'].map((mealType) => {
-                      const isRecorded = mealLogs.some(log => log.mealType === mealType);
-                      const labels = { breakfast: '朝食', lunch: '昼食', dinner: '夕食' };
-                      const icons = { breakfast: '🌅', lunch: '☀️', dinner: '🌙' };
-                      
+                    {["breakfast", "lunch", "dinner"].map((mealType) => {
+                      const isRecorded = mealLogs.some(
+                        (log) => log.mealType === mealType,
+                      );
+                      const labels = {
+                        breakfast: "朝食",
+                        lunch: "昼食",
+                        dinner: "夕食",
+                      };
+                      const icons = {
+                        breakfast: "🌅",
+                        lunch: "☀️",
+                        dinner: "🌙",
+                      };
+
                       if (isRecorded) {
                         // 記録済みの場合：記録内容のプレビュー
-                        const meal = mealLogs.find(log => log.mealType === mealType);
+                        const meal = mealLogs.find(
+                          (log) => log.mealType === mealType,
+                        );
                         return (
                           <div
                             key={mealType}
                             className="p-3 rounded-lg text-center bg-green-100 border-2 border-green-200"
                           >
-                            <div className="text-lg mb-1">{icons[mealType as keyof typeof icons]}</div>
+                            <div className="text-lg mb-1">
+                              {icons[mealType as keyof typeof icons]}
+                            </div>
                             <div className="text-xs font-medium text-green-700 mb-1">
                               {labels[mealType as keyof typeof labels]}
                             </div>
                             <div className="text-xs text-green-600">
-                              {meal?.actualTime ? 
-                                new Date(meal.actualTime).toLocaleTimeString('ja-JP', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                }) : '記録済み'
-                              }
+                              {meal?.actualTime
+                                ? new Date(meal.actualTime).toLocaleTimeString(
+                                    "ja-JP",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )
+                                : "記録済み"}
                             </div>
                           </div>
                         );
@@ -382,10 +404,14 @@ export default function ClientOnlyHome() {
                         return (
                           <button
                             key={mealType}
-                            onClick={() => window.location.href = `/record/meal?type=${mealType}`}
+                            onClick={() =>
+                              (window.location.href = `/record/meal?type=${mealType}`)
+                            }
                             className="p-3 rounded-lg text-center bg-white border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
                           >
-                            <div className="text-lg mb-1">{icons[mealType as keyof typeof icons]}</div>
+                            <div className="text-lg mb-1">
+                              {icons[mealType as keyof typeof icons]}
+                            </div>
                             <div className="text-xs font-medium text-gray-700 mb-1">
                               {labels[mealType as keyof typeof labels]}
                             </div>
@@ -397,7 +423,7 @@ export default function ClientOnlyHome() {
                       }
                     })}
                   </div>
-                  
+
                   {/* 全て記録済みの場合の追加アクション */}
                   {todayProgress.percentage === 100 && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
@@ -405,7 +431,9 @@ export default function ClientOnlyHome() {
                         間食も記録しますか？
                       </div>
                       <button
-                        onClick={() => window.location.href = '/record/meal?type=snack'}
+                        onClick={() =>
+                          (window.location.href = "/record/meal?type=snack")
+                        }
                         className="w-full py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         🍪 間食を追加
@@ -413,7 +441,7 @@ export default function ClientOnlyHome() {
                     </div>
                   )}
                 </div>
-                
+
                 <QuickActions />
               </div>
             )}
@@ -428,7 +456,7 @@ export default function ClientOnlyHome() {
             onClose={() => setShowFeedback(null)}
           />
         )}
-        
+
         {/* コンディション登録モーダル */}
         <ConditionModal
           isOpen={showConditionModal}

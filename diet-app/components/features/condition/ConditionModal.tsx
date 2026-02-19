@@ -81,7 +81,7 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 p-4 pt-8"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-gray-900/30 p-4 pt-8"
       onClick={handleBackdropClick}
     >
       <div className="bg-[var(--color-bg-surface)] rounded-2xl w-full max-w-md max-h-[calc(100vh-100px)] overflow-hidden shadow-2xl">

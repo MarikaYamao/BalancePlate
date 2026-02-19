@@ -5,7 +5,8 @@ import type {
   MealLog, 
   FoodPlan, 
   WeightLog,
-  DietGoals 
+  DietGoals,
+  FridgeItem 
 } from '@/types';
 
 export class DietDatabase extends Dexie {
@@ -16,6 +17,7 @@ export class DietDatabase extends Dexie {
   foodPlans!: Table<FoodPlan>;
   weightLogs!: Table<WeightLog>;
   dietGoals!: Table<DietGoals>;
+  fridgeItems!: Table<FridgeItem>;
 
   constructor() {
     super('DietDatabase');
@@ -55,6 +57,17 @@ export class DietDatabase extends Dexie {
         if (!settings.favoriteFoods) settings.favoriteFoods = [];
         if (!settings.dislikedFoods) settings.dislikedFoods = [];
       });
+    });
+
+    // Version 3: 冷蔵庫管理機能追加
+    this.version(3).stores({
+      userSettings: 'id, onboardingCompleted, createdAt, updatedAt',
+      dailyStates: 'dateKey, actualDate, createdAt, updatedAt',
+      mealLogs: 'id, dateKey, [dateKey+mealType], mealType, actualTime, createdAt',
+      foodPlans: '[dateKey+planType], dateKey, planType, selected, createdAt',
+      weightLogs: 'id, dateKey, timestamp, createdAt',
+      dietGoals: 'id, userId, goalType, createdAt, updatedAt',
+      fridgeItems: 'id, name, category, createdAt, updatedAt, expirationDate, deletedAt'
     });
   }
 }

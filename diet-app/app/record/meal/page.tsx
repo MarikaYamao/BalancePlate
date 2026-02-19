@@ -7,6 +7,7 @@ import { MealTypeSelector } from '@/components/features/meal/MealTypeSelector';
 import { MealTextInput } from '@/components/features/meal/MealTextInput';
 import { MealHistory } from '@/components/features/meal/MealHistory';
 import { PostMealFeedback } from '@/components/features/meal/PostMealFeedback';
+import { MealDetailModal } from '@/components/features/meal/MealDetailModal';
 import { getDateKey } from '@/lib/utils/dateUtils';
 import { useMealLogs } from '@/lib/hooks/useMealLogs';
 import { useUserSettings } from '@/lib/hooks/useUserSettings';
@@ -21,6 +22,7 @@ function MealRecordPageContent() {
   const [activeTab, setActiveTab] = useState<'record' | 'history'>('record');
   const [editingMeal, setEditingMeal] = useState<{ id: string; type: MealType; text: string } | null>(null);
   const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
+  const [showMealDetail, setShowMealDetail] = useState<{ meal: any; aiResponse?: any } | null>(null);
   const [mounted, setMounted] = useState(false);
   
   // Zustand store
@@ -157,6 +159,10 @@ function MealRecordPageContent() {
     setActiveTab('record');
     setSuccessMessage(null);
     setError(null);
+  };
+
+  const handleShowMealDetail = (meal: any, aiResponse?: any) => {
+    setShowMealDetail({ meal, aiResponse });
   };
   
   // 成功メッセージの自動消去
@@ -461,6 +467,7 @@ function MealRecordPageContent() {
               dateKey={todayKey}
               onEdit={handleEdit}
               onDelete={() => {/* データは自動更新される */}}
+              onShowDetail={handleShowMealDetail}
             />
           </div>
         )}
@@ -473,6 +480,16 @@ function MealRecordPageContent() {
           mealType={showFeedback.mealType}
           mealText={showFeedback.mealText}
           onClose={() => setShowFeedback(null)}
+        />
+      )}
+
+      {/* 食事詳細モーダル */}
+      {showMealDetail && (
+        <MealDetailModal
+          isOpen={true}
+          mealLog={showMealDetail.meal}
+          aiResponse={showMealDetail.aiResponse}
+          onClose={() => setShowMealDetail(null)}
         />
       )}
     </div>
