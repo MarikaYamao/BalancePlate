@@ -151,6 +151,10 @@ export interface UserSettings {
   // 生活習慣（暗号化対象）
   lifestyle: LifestyleTag[];
   
+  // 食材の好み（暗号化対象）
+  favoriteFoods?: string[]; // 好きな食材・料理
+  dislikedFoods?: string[]; // 嫌い・アレルギーのある食材
+  
   // 自由記載
   additionalNotes?: string; // その他の情報（任意）
   

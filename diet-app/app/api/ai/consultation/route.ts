@@ -14,6 +14,8 @@ const RequestSchema = z.object({
     activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']).optional(),
     bodyConstitution: z.array(z.string()),
     lifestyle: z.array(z.string()),
+    favoriteFoods: z.array(z.string()).optional(),
+    dislikedFoods: z.array(z.string()).optional(),
     mealsPerDay: z.union([z.literal(2), z.literal(3)]),
     additionalNotes: z.string().optional(),
   }),

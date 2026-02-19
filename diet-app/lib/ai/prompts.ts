@@ -18,6 +18,8 @@ export const SYSTEM_PROMPT = `
 - 励まし、肯定的なトーン
 - 「〜しなければならない」という表現は避ける
 - 体調が悪い時は無理をしない提案
+- ユーザーの好きな食材を積極的に取り入れる
+- ユーザーの嫌いな食材・アレルギー食材は絶対に避ける
 - 必ず指定されたJSON形式で回答する
 `;
 
@@ -191,6 +193,8 @@ export interface AIPromptContext {
     activityLevel?: ActivityLevel;
     bodyConstitution: BodyConstitutionTag[];
     lifestyle: LifestyleTag[];
+    favoriteFoods?: string[];
+    dislikedFoods?: string[];
     mealsPerDay: 2 | 3;
     additionalNotes?: string;
   };
@@ -229,6 +233,10 @@ export function buildPrompt(context: AIPromptContext): string {
   const conditionJa = context.todayCondition.conditionTags
     .map(tag => CONDITION_LABELS[tag])
     .join('、');
+  
+  // 食材の好みを整形
+  const favoriteFoodsJa = context.userProfile.favoriteFoods?.join('、') || '';
+  const dislikedFoodsJa = context.userProfile.dislikedFoods?.join('、') || '';
 
   // 基本情報の整形
   const profile = context.userProfile;
@@ -364,6 +372,8 @@ ${context.previousDayData?.meals && context.previousDayData.meals.length > 0 ? `
 ${basicInfo.join('\n')}
 体質: ${bodyConstitutionJa || 'なし'}
 生活: ${lifestyleJa || 'なし'}
+好きな食材・料理: ${favoriteFoodsJa || 'なし'}
+嫌い・アレルギーのある食材: ${dislikedFoodsJa || 'なし'}
 食事回数: ${context.userProfile.mealsPerDay}食
 ${context.userProfile.additionalNotes ? `その他の情報: ${context.userProfile.additionalNotes}` : ''}
 

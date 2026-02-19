@@ -40,6 +40,22 @@ export class DietDatabase extends Dexie {
       // DietGoals - 目標設定
       dietGoals: 'id, userId, goalType, createdAt, updatedAt'
     });
+    
+    // Version 2: 食材の好み追加
+    this.version(2).stores({
+      userSettings: 'id, onboardingCompleted, createdAt, updatedAt',
+      dailyStates: 'dateKey, actualDate, createdAt, updatedAt',
+      mealLogs: 'id, dateKey, [dateKey+mealType], mealType, actualTime, createdAt',
+      foodPlans: '[dateKey+planType], dateKey, planType, selected, createdAt',
+      weightLogs: 'id, dateKey, timestamp, createdAt',
+      dietGoals: 'id, userId, goalType, createdAt, updatedAt'
+    }).upgrade(async trans => {
+      // 既存のUserSettingsに新しいフィールドを追加
+      await trans.userSettings.toCollection().modify(settings => {
+        if (!settings.favoriteFoods) settings.favoriteFoods = [];
+        if (!settings.dislikedFoods) settings.dislikedFoods = [];
+      });
+    });
   }
 }
 

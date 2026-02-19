@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { BasicSettings } from '@/components/features/settings/BasicSettings';
 import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
 import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
+import { FoodPreferences } from '@/components/features/settings/FoodPreferences';
 import { FreeNotes } from '@/components/features/settings/FreeNotes';
 import { BackupManager } from '@/components/features/backup/BackupManager';
 import { userSettingsRepository } from '@/lib/db/repositories';
@@ -16,6 +17,8 @@ export default function SettingsPage() {
   const [mealsPerDay, setMealsPerDay] = useState<2 | 3>(3);
   const [bodyConstitution, setBodyConstitution] = useState<BodyConstitutionTag[]>([]);
   const [lifestyle, setLifestyle] = useState<LifestyleTag[]>([]);
+  const [favoriteFoods, setFavoriteFoods] = useState<string[]>([]);
+  const [dislikedFoods, setDislikedFoods] = useState<string[]>([]);
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,6 +39,8 @@ export default function SettingsPage() {
         setMealsPerDay(settings.mealsPerDay);
         setBodyConstitution(settings.bodyConstitution || []);
         setLifestyle(settings.lifestyle || []);
+        setFavoriteFoods(settings.favoriteFoods || []);
+        setDislikedFoods(settings.dislikedFoods || []);
         setAdditionalNotes(settings.additionalNotes || '');
       }
     } catch (error) {
@@ -53,6 +58,7 @@ export default function SettingsPage() {
       basic: true, // 基本設定は常に完了とみなす
       bodyInfo: bodyConstitution.includes('healthy') || bodyConstitution.length > 0,
       lifestyle: lifestyle.length > 0,
+      foodPreferences: favoriteFoods.length > 0 || dislikedFoods.length > 0,
       notes: additionalNotes.length > 20
     };
     
@@ -76,6 +82,10 @@ export default function SettingsPage() {
       items.push('生活習慣');
     }
     
+    if (favoriteFoods.length === 0 && dislikedFoods.length === 0) {
+      items.push('食材の好み（任意だが推奨）');
+    }
+    
     if (additionalNotes.length <= 20) {
       items.push('その他の情報（任意）');
     }
@@ -97,6 +107,8 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
+          favoriteFoods,
+          dislikedFoods,
           additionalNotes,
         });
       } else {
@@ -106,6 +118,8 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
+          favoriteFoods,
+          dislikedFoods,
           additionalNotes,
           onboardingCompleted: true,
         });
@@ -251,6 +265,20 @@ export default function SettingsPage() {
               selected={lifestyle}
               onChange={(value) => {
                 setLifestyle(value);
+                markAsChanged();
+              }}
+            />
+            
+            {/* 食材の好み */}
+            <FoodPreferences
+              favoriteFoods={favoriteFoods}
+              dislikedFoods={dislikedFoods}
+              onFavoritesChange={(value) => {
+                setFavoriteFoods(value);
+                markAsChanged();
+              }}
+              onDislikesChange={(value) => {
+                setDislikedFoods(value);
                 markAsChanged();
               }}
             />
