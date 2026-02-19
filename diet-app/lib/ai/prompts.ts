@@ -30,6 +30,29 @@ export const JSON_RESPONSE_PROMPT = `
 JSONの構造は以下の通りです：
 
 {
+  "todayGuideline": "今日の方針（1行）：例「むくみ対策優先で、夜は塩分と炭水化物を軽め」",
+  "mealSuggestions": {
+    "breakfast": {
+      "convenience": "コンビニメニュー",
+      "simpleCooking": "簡単自炊メニュー",
+      "normalCooking": "普通に自炊メニュー"
+    },
+    "lunch": {
+      "convenience": "コンビニメニュー",
+      "simpleCooking": "簡単自炊メニュー",
+      "normalCooking": "普通に自炊メニュー"
+    },
+    "dinner": {
+      "convenience": "コンビニメニュー",
+      "simpleCooking": "簡単自炊メニュー",
+      "normalCooking": "普通に自炊メニュー"
+    }
+  },
+  "avoidToday": [
+    "NG/注意1：例「夜の汁物」",
+    "NG/注意2：例「加工肉は控えめ」"
+  ],
+  "adjustmentRule": "調整ルール（ログ反映の計算結果）：例「朝が重かったので昼は主食を半分＋タンパク質優先」",
   "feedback": {
     "overall": "総合的な評価をここに記載",
     "positive": ["良かった点1", "良かった点2"],
@@ -82,6 +105,7 @@ export const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
   'cold_sensitivity': '冷えやすい',
   'low_blood_pressure': '低血圧',
   'anemic': '貧血気味',
+  'poor_circulation': '血行不良',
   
   // 消化器系
   'weak_stomach': '胃腸が弱い',
@@ -108,10 +132,18 @@ export const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
   'gluten_sensitive': 'グルテン過敏症',
   'food_allergies': '食物アレルギーあり',
   
+  // 女性特有
+  'pms_severe': 'PMS強め',
+  'irregular_periods': '生理不順',
+  'heavy_periods': '生理が重い',
+  'menopause': '更年期',
+  
   // その他
   'prone_to_headaches': '頭痛持ち',
   'skin_problems': '肌荒れしやすい',
   'sleep_issues': '睡眠障害',
+  'sensitive_to_caffeine': 'カフェインに敏感',
+  'water_retention': '水分を溜めやすい',
 };
 
 // 生活習慣タグの日本語ラベル
@@ -138,6 +170,8 @@ export const LIFESTYLE_LABELS: Record<LifestyleTag, string> = {
   'high_stress': '高ストレス',
   'frequent_travel': '出張・旅行が多い',
   'frequent_dining_out': '外食が多い',
+  'prefer_cooking': '自炊派',
+  'budget_conscious': '節約志向',
   
   // 医療・健康
   'taking_oral_contraceptives': 'ピル服用中',
@@ -154,15 +188,41 @@ export const LIFESTYLE_LABELS: Record<LifestyleTag, string> = {
 
 // コンディションタグの日本語ラベル
 export const CONDITION_LABELS: Record<ConditionTag, string> = {
+  // 生理関連
   'period_before': '生理前',
   'period_during': '生理中',
   'period_after': '生理後',
-  'tired': '疲れている',
-  'stressed': 'ストレスあり',
-  'sleepy': '眠い',
-  'craving_sweet': '甘いものが欲しい',
+  'ovulation': '排卵期っぽい',
+  
+  // 睡眠・疲労
+  'sleep_good': 'よく寝た',
+  'sleep_normal': '睡眠普通',
+  'sleep_bad': '寝不足',
+  'tired_low': '疲労感低い',
+  'tired_medium': '疲労感中程度',
+  'tired_high': '疲労感高い',
+  
+  // 体調
+  'edema_low': 'むくみ低い',
+  'edema_medium': 'むくみ中程度',
+  'edema_high': 'むくみ高い',
+  'stomach_good': '胃腸快調',
+  'constipated': '便秘気味',
+  'diarrhea': '下し気味',
   'stomach_weak': '胃腸が弱っている',
-  'drinking_planned': '飲酒予定',
+  
+  // その他
+  'stressed': 'ストレスあり',
+  'craving_sweet': '甘いものが欲しい',
+  'low_appetite': '食欲なし',
+  'high_appetite': '食欲旺盛',
+  
+  // 今日の予定
+  'dining_out': '外食予定',
+  'drinking_planned': '飲み会予定',
+  'exercise_planned': '運動予定',
+  'travel_day': '移動多い日',
+  'work_from_home': '在宅日',
   'hangover': '二日酔い',
 };
 
@@ -279,71 +339,54 @@ export function buildPrompt(context: AIPromptContext): string {
   // リクエストタイプ別のプロンプト
   const requestPrompts: Record<typeof context.requestType, string> = {
     'morning_plan': `
-今日一日の食事プランを3パターン提案してください。
-それぞれ異なるアプローチで、以下の形式で提案してください：
+今日の食事プランを提案してください。
+新しいフォーマットで、以下の内容を含めてください：
 
-プランA: バランス重視プラン
-プランB: 手軽さ重視プラン
-プランC: 体調配慮プラン
+1. 今日の方針（1行）：例「むくみ対策優先で、夜は塩分と炭水化物を軽め」
 
-各プランには：
-- プラン名と簡単な説明
-- ${profile.mealsPerDay}食分の具体的な食事内容
-- なぜこのプランがおすすめなのかの理由
+2. ${profile.mealsPerDay === 2 ? '朝夕' : '朝昼晩'}の例メニュー（各3案）:
+   - コンビニ案：コンビニで買えるメニュー
+   - 簡単自炊案：10分以内で作れるメニュー  
+   - 普通自炊案：しっかり作るメニュー
+   ${profile.mealsPerDay === 2 ? '※2食の場合は朝食（ブランチ）と夕食で提案' : ''}
+
+3. NG/注意（最大2つ）：例「夜の汁物・加工肉は控えめ」
+
+4. 調整ルール：前日の食事記録を踏まえた調整内容
 `,
     'after_breakfast': `
-朝食を食べた後のフィードバックをお願いします。
+朝食後のフィードバックをお願いします。
 記録された朝食内容: ${context.previousDayData?.meals.find(m => m.type === 'breakfast')?.content || '内容不明'}
 
-必ず以下のテンプレートフォーマットで回答してください：
+新しいフォーマットで、以下の内容を含めてください：
 
-お疲れ様でした！朝食の記録をありがとうございます。
+1. 朝食の評価と調整方針（1行）
 
-### 栄養評価
-- **良い点**: [朝食の良い点を1つ具体的に]
-- **改善提案**: [改善できる点を1つ具体的に]
+2. ${profile.mealsPerDay === 2 ? '夕食' : '昼食と夕食'}の提案（各3案）:
+   - コンビニ案
+   - 簡単自炊案  
+   - 普通自炊案
+   ${profile.mealsPerDay === 2 ? '※朝食を踏まえて夕食を調整' : '※朝食を踏まえて昼食・夕食を調整'}
 
-### ${profile.mealsPerDay === 3 ? '昼食の提案（3パターン）' : '夕食の提案（3パターン）'}
-${profile.mealsPerDay === 3 ? `- **A. しっかり**: [ボリューム満点のメニュー]
-- **B. 軽め**: [消化に優しいメニュー]
-- **C. 手軽**: [簡単に用意できるメニュー]
-
-### 夕食の提案（3パターン）` : ''}- **A. バランス重視**: [栄養バランスの良いメニュー]
-- **B. 軽め**: [消化に優しい軽めのメニュー]
-- **C. 簡単**: [手軽に作れるメニュー]
-
-### 体調管理ポイント
-- [今日の体調に合わせた具体的なアドバイス1]
-- [今日の体調に合わせた具体的なアドバイス2]
-
-※ [  ]の部分を実際の内容に置き換えてください。
-※ 各パターンは1行で簡潔に記載してください。
+3. 調整ルール：朝食の内容を踏まえた栄養バランス調整
 `,
     'after_lunch': `
-昼食を食べた後のフィードバックをお願いします。
+${profile.mealsPerDay === 2 ? '※2食設定のため昼食フィードバックはスキップ' : `
+昼食後のフィードバックをお願いします。
 記録された昼食内容: ${context.previousDayData?.meals.find(m => m.type === 'lunch')?.content || '内容不明'}
 朝食内容: ${context.previousDayData?.meals.find(m => m.type === 'breakfast')?.content || 'なし'}
 
-必ず以下のテンプレートフォーマットで回答してください：
+新しいフォーマットで、以下の内容を含めてください：
 
-お疲れ様でした！昼食の記録をありがとうございます。
+1. 朝食・昼食の評価と調整方針（1行）
 
-### 栄養評価（朝食〜昼食）
-- **良い点**: [今日の食事の良い点を1つ具体的に]
-- **改善提案**: [改善できる点を1つ具体的に]
+2. 夕食の提案（3案）:
+   - コンビニ案
+   - 簡単自炊案  
+   - 普通自炊案
 
-### 夕食の提案（3パターン）
-- **A. 栄養重視**: [今日不足している栄養を補うメニュー]
-- **B. 軽め**: [胃腸に優しい軽めのメニュー]
-- **C. 簡単**: [手軽に作れるメニュー]
-
-### 午後のポイント
-- [体調に合わせたアドバイス1]
-- [体調に合わせたアドバイス2]
-
-※ [  ]の部分を実際の内容に置き換えてください。
-※ 各パターンは1行で簡潔に記載してください。
-`,
+3. 調整ルール：朝食・昼食の内容を踏まえた夕食の調整
+`}`,
     'consultation': `
 ${context.previousDayData?.meals && context.previousDayData.meals.length > 0 ? `
 記録された食事内容をもとにフィードバックをお願いします。

@@ -13,6 +13,7 @@ export type BodyConstitutionTag =
   | 'cold_sensitivity' // 冷えやすい
   | 'low_blood_pressure' // 低血圧
   | 'anemic' // 貧血気味
+  | 'poor_circulation' // 血行不良
   
   // 消化器系
   | 'weak_stomach' // 胃腸が弱い
@@ -39,10 +40,18 @@ export type BodyConstitutionTag =
   | 'gluten_sensitive' // グルテン過敏症
   | 'food_allergies' // 食物アレルギーあり
   
+  // 女性特有
+  | 'pms_severe' // PMS強め
+  | 'irregular_periods' // 生理不順
+  | 'heavy_periods' // 生理が重い
+  | 'menopause' // 更年期
+  
   // その他
   | 'prone_to_headaches' // 頭痛持ち
   | 'skin_problems' // 肌荒れしやすい
-  | 'sleep_issues'; // 睡眠障害
+  | 'sleep_issues' // 睡眠障害
+  | 'sensitive_to_caffeine' // カフェインに敏感
+  | 'water_retention'; // 水分を溜めやすい
 
 export type LifestyleTag =
   // 仕事・活動
@@ -67,6 +76,8 @@ export type LifestyleTag =
   | 'high_stress' // 高ストレス
   | 'frequent_travel' // 出張・旅行が多い
   | 'frequent_dining_out' // 外食が多い
+  | 'prefer_cooking' // 自炊派
+  | 'budget_conscious' // 節約志向
   
   // 医療・健康
   | 'taking_oral_contraceptives' // ピル服用中
@@ -81,15 +92,41 @@ export type LifestyleTag =
   | 'non_drinker'; // 飲酒しない
 
 export type ConditionTag = 
+  // 生理関連
   | 'period_before' // 生理前
   | 'period_during' // 生理中
   | 'period_after' // 生理後
-  | 'tired' // 疲れている
-  | 'stressed' // ストレスあり
-  | 'sleepy' // 眠い
-  | 'craving_sweet' // 甘いものが欲しい
+  | 'ovulation' // 排卵期っぽい
+  
+  // 睡眠・疲労
+  | 'sleep_good' // よく寝た
+  | 'sleep_normal' // 普通
+  | 'sleep_bad' // 寝不足
+  | 'tired_low' // 疲労感低い
+  | 'tired_medium' // 疲労感中程度
+  | 'tired_high' // 疲労感高い
+  
+  // 体調
+  | 'edema_low' // むくみ低い
+  | 'edema_medium' // むくみ中程度
+  | 'edema_high' // むくみ高い
+  | 'stomach_good' // 胃腸快調
+  | 'constipated' // 便秘気味
+  | 'diarrhea' // 下し気味
   | 'stomach_weak' // 胃腸が弱っている
-  | 'drinking_planned' // 飲酒予定
+  
+  // その他
+  | 'stressed' // ストレスあり
+  | 'craving_sweet' // 甘いものが欲しい
+  | 'low_appetite' // 食欲なし
+  | 'high_appetite' // 食欲旺盛
+  
+  // 今日の予定
+  | 'dining_out' // 外食予定
+  | 'drinking_planned' // 飲み会予定
+  | 'exercise_planned' // 運動予定
+  | 'travel_day' // 移動多い日
+  | 'work_from_home' // 在宅日
   | 'hangover'; // 二日酔い
 
 export type HormoneStatus = 

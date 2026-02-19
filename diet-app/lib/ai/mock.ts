@@ -7,12 +7,18 @@ export function generateMockResponse(context: AIPromptContext): string {
   // コンディションに基づく提案の調整
   const isOnPeriod = todayCondition.conditionTags.includes('period_during');
   const isStressed = todayCondition.conditionTags.includes('stressed');
-  const isTired = todayCondition.conditionTags.includes('tired') || todayCondition.conditionTags.includes('sleepy');
+  const isTired = todayCondition.conditionTags.includes('tired_high') || 
+                   todayCondition.conditionTags.includes('tired_medium') ||
+                   todayCondition.conditionTags.includes('sleep_bad');
+  const hasEdemaToday = todayCondition.conditionTags.includes('edema_high') || 
+                        todayCondition.conditionTags.includes('edema_medium');
   
   // 体質に基づく配慮
   const hasWeakStomach = userProfile.bodyConstitution.includes('weak_stomach');
   const hasBloating = userProfile.bodyConstitution.includes('bloating_prone');
   const hasEdema = userProfile.bodyConstitution.includes('edema_prone');
+  const hasPMS = userProfile.bodyConstitution.includes('pms_severe');
+  const is2Meals = userProfile.mealsPerDay === 2;
 
   // 食後フィードバックの場合
   if (requestType === 'after_breakfast') {
@@ -72,85 +78,86 @@ ${lunchSuggestions}### 夕食の提案（3パターン）
 今日もお疲れ様でした！${isTired ? '疲れている中でも食事記録を続けているあなたは本当に素晴らしいです。' : '継続は力なり、あなたの努力がきっと良い結果に繋がります。'}明日も無理をせず、自分のペースで続けていきましょう🌟`;
   }
   
-  // morning_planの場合（従来のロジック）
-  const mockResponse = `
-プランA: しっかり整えるプラン
-バランスの取れた栄養で体調を整えるプランです。${isOnPeriod ? '生理中なので鉄分を意識しました。' : ''}${hasWeakStomach ? '胃腸に優しい食材を中心にしています。' : ''}
+  // morning_planの場合（新フォーマット）
+  const todayGuideline = hasEdemaToday 
+    ? "むくみ対策優先で、夜は塩分と炭水化物を軽め"
+    : isOnPeriod 
+    ? "生理中のため鉄分とタンパク質を意識、温かい食事中心"
+    : isTired
+    ? "疲労回復優先、ビタミンB群と消化に良いメニュー"
+    : "バランス良く、野菜多めで胃腸に優しいメニュー";
 
-朝食: 
-- 和定食（ご飯、味噌汁、焼き魚）
-- ほうれん草のお浸し
-- 納豆
-※ 朝からしっかりと栄養を摂って一日をスタートしましょう
+  const avoidToday = [];
+  if (hasEdemaToday || hasEdema) avoidToday.push("夜の汁物・加工肉は控えめ");
+  if (hasWeakStomach) avoidToday.push("揚げ物・香辛料の強いものは避ける");
+  if (avoidToday.length === 0) avoidToday.push("特になし");
 
-昼食:
-- 鶏肉と野菜の煮物定食
-- サラダ
-- 玄米ご飯
-※ ${hasWeakStomach ? '消化に良い煮物で胃腸を労わります' : 'タンパク質とビタミンをバランスよく摂取'}
+  const adjustmentRule = context.previousDayData?.meals && context.previousDayData.meals.length > 0
+    ? "昨日の食事を踏まえて野菜を増やし、塩分を控えめに調整"
+    : "初日なのでバランス重視で基本的な栄養配分";
 
-夕食:
-- 白身魚の蒸し物
-- 温野菜
-- 雑穀ご飯
-※ ${isOnPeriod ? '鉄分豊富な食材で貧血予防' : '消化に良い調理法で夜の負担を軽減'}
+  const mealSuggestions = is2Meals ? {
+    "breakfast": {
+      "convenience": "サンドイッチ、ヨーグルト、野菜ジュース",
+      "simpleCooking": "卵かけご飯、インスタント味噌汁、冷凍ほうれん草",
+      "normalCooking": "焼き鮭定食、ひじきの煮物、味噌汁"
+    },
+    "dinner": {
+      "convenience": "コンビニ弁当（野菜多め）、サラダ、ヨーグルト",
+      "simpleCooking": "豚肉と野菜の炒め物、ご飯、インスタントスープ",
+      "normalCooking": "鶏肉の照り焼き、野菜の煮物、玄米、味噌汁"
+    }
+  } : {
+    "breakfast": {
+      "convenience": "おにぎり2個、ゆで卵、野菜ジュース",
+      "simpleCooking": "トースト、目玉焼き、インスタントスープ",
+      "normalCooking": "和定食（ご飯、焼き魚、味噌汁、納豆）"
+    },
+    "lunch": {
+      "convenience": "コンビニパスタ、サラダチキン、野菜スープ",
+      "simpleCooking": "チャーハン、わかめスープ、冷凍餃子",
+      "normalCooking": "鶏肉と野菜の煮物定食、サラダ"
+    },
+    "dinner": {
+      "convenience": "コンビニ弁当、サラダ、ヨーグルト",
+      "simpleCooking": "パスタ（市販ソース）、袋サラダ",
+      "normalCooking": "白身魚の蒸し物、温野菜、雑穀ご飯"
+    }
+  };
 
----
+  const mockResponse = JSON.stringify({
+    "todayGuideline": todayGuideline,
+    "mealSuggestions": mealSuggestions,
+    "avoidToday": avoidToday.slice(0, 2),
+    "adjustmentRule": adjustmentRule,
+    "feedback": {
+      "overall": "今日も食事管理お疲れ様です！",
+      "positive": ["継続できていることが素晴らしいです"],
+      "suggestions": ["水分をこまめに摂りましょう"],
+      "encouragement": "無理せず自分のペースで続けていきましょう"
+    },
+    "nutritionAdvice": {
+      "focus": [hasEdemaToday ? "カリウム" : "ビタミン", "タンパク質"],
+      "avoid": hasEdemaToday ? ["塩分", "加工食品"] : ["揚げ物"],
+      "hydration": "1日1.5〜2Lを目安に水分補給"
+    },
+    "metadata": {
+      "generatedAt": new Date().toISOString(),
+      "conditionTags": todayCondition.conditionTags,
+      "context": "morning"
+    }
+  }, null, 2);
 
-プランB: 手軽さ重視プラン
-忙しい日でも続けやすい、簡単で栄養のあるプランです。${isStressed ? 'ストレスがあるときは無理をしないことが大切です。' : ''}
-
-朝食:
-- バナナとヨーグルト
-- 全粒粉パン1枚
-- ハーブティー
-※ 手軽に準備できて栄養価も十分です
-
-昼食: 
-- コンビニのサラダチキン
-- おにぎり（梅干し）
-- 野菜スープ
-※ ${hasEdema ? 'むくみが気になるので塩分控えめを意識' : '外出先でも手に入りやすい食材'}
-
-夕食:
-- 冷凍野菜炒め
-- 豆腐
-- お茶漬け
-※ 疲れた日でも5分で準備できます
-
----
-
-プランC: 体調配慮プラン
-今日のコンディションに特に配慮した優しいプランです。${isTired ? '疲れているときは消化の良いものを選びました。' : ''}
-
-朝食:
-- おかゆ
-- 梅干し
-- 白湯
-※ ${hasWeakStomach ? '胃腸が弱っているときは優しい食事から' : '体調が優れないときの定番メニュー'}
-
-昼食:
-- うどん（温かい）
-- 卵
-- 青菜のお浸し
-※ 消化が良く、体を温めてくれます
-
-夕食:
-- 鶏肉のスープ
-- 蒸しパン
-- カモミールティー
-※ ${isStressed ? 'ストレス解消に役立つカモミールでリラックス' : '体を温めて早めの就寝を心がけましょう'}
-`;
-
-  return mockResponse.trim();
+  return mockResponse;
 }
 
-// モック機能が有効かどうかを確認
+// モック機能の有効/無効を切り替える
 export function isMockEnabled(): boolean {
-  return process.env.ENABLE_MOCK_AI === 'true';
+  return process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true' || 
+         process.env.NODE_ENV === 'development';
 }
 
-// 遅延を追加してリアルなAPI感を演出
+// 遅延を入れてリアルなAPI感を演出
 export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
