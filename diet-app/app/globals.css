@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Deep Teal × Soft Sand × Silver カラーテーマ */
+  --color-teal-main: #0F3D3E;
+  --color-teal-light: #339797;
+  --color-teal-lighter: #66B1B1;
+  --color-teal-dark: #0C3132;
+  
+  --color-sand-main: #F5F3EF;
+  --color-sand-light: #F9F8F6;
+  --color-sand-dark: #EDE9E2;
+  
+  --color-silver-main: #C7CCD6;
+  --color-lavender: #A7B0C4;
+  --color-silver-light: #EBEDF1;
+  --color-silver-dark: #6F7A92;
+  
+  --color-coral-main: #D96C6C;
+  --color-coral-light: #F3A0A0;
+  --color-coral-dark: #C54E4E;
+  
+  --background: #F5F3EF;
+  --foreground: #0F3D3E;
 }
 
 @theme inline {
@@ -10,13 +29,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -44,7 +56,7 @@ body {
 /* Custom focus styles for better accessibility */
 @layer utilities {
   .focus-visible-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2;
   }
 }
 

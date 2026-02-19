@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { MainLayout } from '@/components/layouts/MainLayout';
+import { OnboardingChecker } from '@/components/features/onboarding/OnboardingChecker';
 
 // SSRを無効化してクライアントサイドのみでレンダリング
 const ClientOnlyHome = dynamic(
@@ -22,5 +23,9 @@ const ClientOnlyHome = dynamic(
 );
 
 export default function HomePage() {
-  return <ClientOnlyHome />;
+  return (
+    <OnboardingChecker>
+      <ClientOnlyHome />
+    </OnboardingChecker>
+  );
 }

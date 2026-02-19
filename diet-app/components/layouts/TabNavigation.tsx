@@ -61,14 +61,14 @@ export function TabNavigation() {
 
   if (!mounted) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 bg-teal-500 border-t border-teal-600 safe-area-pb">
         <div className="max-w-screen-xl mx-auto">
           <ul className="flex justify-around items-center h-16">
             {tabs.map((tab) => (
               <li key={tab.id} className="flex-1">
                 <Link
                   href={tab.href}
-                  className="flex flex-col items-center justify-center h-full text-gray-400"
+                  className="flex flex-col items-center justify-center h-full text-sand-100"
                 >
                   <span className="text-xl mb-1">{tab.icon}</span>
                   <span className="text-xs font-medium">{tab.label}</span>
@@ -95,8 +95,8 @@ export function TabNavigation() {
                     flex flex-col items-center justify-center h-full
                     transition-colors duration-200
                     ${isActive 
-                      ? 'text-pink-500' 
-                      : 'text-gray-400 hover:text-gray-600'
+                      ? 'text-white bg-teal-600 rounded-lg' 
+                      : 'text-teal-100 hover:text-white'
                     }
                   `}
                 >

@@ -10,15 +10,15 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "やさしいダイエット",
+  title: "BalancePlate",
   description: "体質と習慣に寄り添うダイエット支援アプリ",
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/icon-192x192.png",
+    apple: "/logo.png",
   },
 };
 
@@ -27,7 +27,7 @@ export function generateViewport() {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
-    themeColor: '#10b981',
+    themeColor: '#0F3D3E',
   };
 }
 
@@ -40,7 +40,7 @@ export default function RootLayout({
     <html lang="ja">
       <body className={`${notoSansJP.variable} font-sans antialiased`}>
         <QueryProvider>
-          <div className="min-h-screen bg-white text-gray-900">
+          <div className="min-h-screen bg-sand-300 text-teal-500">
             {children}
           </div>
         </QueryProvider>

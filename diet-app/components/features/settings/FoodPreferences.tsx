@@ -6,16 +6,16 @@ import { X } from 'lucide-react';
 interface FoodPreferencesProps {
   favoriteFoods: string[];
   dislikedFoods: string[];
-  onFavoritesChange: (foods: string[]) => void;
-  onDislikesChange: (foods: string[]) => void;
+  onFavoriteFoodsChange: (foods: string[]) => void;
+  onDislikedFoodsChange: (foods: string[]) => void;
 }
 
 
 export function FoodPreferences({
   favoriteFoods,
   dislikedFoods,
-  onFavoritesChange,
-  onDislikesChange
+  onFavoriteFoodsChange,
+  onDislikedFoodsChange
 }: FoodPreferencesProps) {
   const [favoriteInput, setFavoriteInput] = useState('');
   const [dislikeInput, setDislikeInput] = useState('');
@@ -25,13 +25,13 @@ export function FoodPreferences({
     const foods = food.split('、').map(f => f.trim()).filter(f => f);
     const newFoods = foods.filter(f => !favoriteFoods.includes(f));
     if (newFoods.length > 0) {
-      onFavoritesChange([...favoriteFoods, ...newFoods]);
+      onFavoriteFoodsChange([...favoriteFoods, ...newFoods]);
     }
     setFavoriteInput('');
   };
 
   const removeFavorite = (food: string) => {
-    onFavoritesChange(favoriteFoods.filter(f => f !== food));
+    onFavoriteFoodsChange(favoriteFoods.filter(f => f !== food));
   };
 
   const addDislike = (food: string) => {
@@ -39,13 +39,13 @@ export function FoodPreferences({
     const foods = food.split('、').map(f => f.trim()).filter(f => f);
     const newFoods = foods.filter(f => !dislikedFoods.includes(f));
     if (newFoods.length > 0) {
-      onDislikesChange([...dislikedFoods, ...newFoods]);
+      onDislikedFoodsChange([...dislikedFoods, ...newFoods]);
     }
     setDislikeInput('');
   };
 
   const removeDislike = (food: string) => {
-    onDislikesChange(dislikedFoods.filter(f => f !== food));
+    onDislikedFoodsChange(dislikedFoods.filter(f => f !== food));
   };
 
   const handleFavoriteKeyPress = (e: React.KeyboardEvent) => {
