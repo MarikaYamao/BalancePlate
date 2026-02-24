@@ -35,6 +35,9 @@ export interface AIConsultationResponse {
     generatedAt: string;
     conditionTags: ConditionTag[];
     context: 'morning' | 'meal' | 'evening';
+    // Phase19: 食材情報
+    fridgeItemsUsed?: number;
+    fallback?: boolean;
   };
 }
 

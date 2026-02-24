@@ -125,6 +125,50 @@ export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: Mea
 
                 {isExpanded && (
                   <div className="px-3 pb-3 bg-[var(--color-bg-elevated)]">
+                    {/* 食材利用状況 - Phase19 */}
+                    {(plan.availableIngredients || plan.missingIngredients) && (
+                      <div className="mb-3 p-2 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border-light)]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm">{plan.canMakeNow ? '✅' : '🛒'}</span>
+                          <span className="text-xs font-semibold text-[var(--color-text-primary)]">
+                            {plan.canMakeNow ? '今すぐ作れる料理' : '買い足しが必要'}
+                          </span>
+                        </div>
+                        
+                        {plan.availableIngredients && plan.availableIngredients.length > 0 && (
+                          <div className="mb-2">
+                            <div className="text-xs text-[var(--color-text-tertiary)] mb-1">手持ち食材</div>
+                            <div className="flex flex-wrap gap-1">
+                              {plan.availableIngredients.map((ingredient, idx) => (
+                                <span 
+                                  key={idx} 
+                                  className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded border border-green-200"
+                                >
+                                  {ingredient}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {plan.missingIngredients && plan.missingIngredients.length > 0 && (
+                          <div>
+                            <div className="text-xs text-[var(--color-text-tertiary)] mb-1">必要な食材</div>
+                            <div className="flex flex-wrap gap-1">
+                              {plan.missingIngredients.map((ingredient, idx) => (
+                                <span 
+                                  key={idx} 
+                                  className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded border border-orange-200"
+                                >
+                                  {ingredient}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* メニュー詳細 */}
                     <div className="mb-3">
                       <div className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">メニュー</div>

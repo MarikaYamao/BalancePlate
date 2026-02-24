@@ -70,6 +70,10 @@ export interface MealPlanDetail {
   reason: string;           // この提案の理由
   calories?: number;        // カロリー目安
   timing?: string;          // 推奨時間
+  // Phase19: 食材利用可能性情報
+  availableIngredients?: string[];   // 利用可能な食材
+  missingIngredients?: string[];     // 不足している食材
+  canMakeNow?: boolean;              // 今すぐ作れるかどうか
 }
 
 export interface MealSuggestion {

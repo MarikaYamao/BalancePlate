@@ -39,6 +39,12 @@ const RequestSchema = z.object({
   }).optional(),
   requestType: z.enum(['morning_plan', 'after_breakfast', 'after_lunch', 'consultation']),
   consultationText: z.string().optional(),
+  // Phase19: 冷蔵庫食材情報の追加
+  fridgeItems: z.array(z.object({
+    name: z.string(),
+    category: z.string(),
+    available: z.boolean(),
+  })).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -88,6 +94,8 @@ export async function POST(request: NextRequest) {
         ...validatedData.todayCondition,
         conditionTags: validatedData.todayCondition.conditionTags as any,
       },
+      // Phase19: 冷蔵庫食材情報を追加
+      fridgeItems: validatedData.fridgeItems,
     };
 
     console.log('AI Request:', {

@@ -456,6 +456,12 @@ export interface AIPromptContext {
     weight?: number;
     activityMemo?: string;
   };
+  // Phase19: 冷蔵庫食材情報
+  fridgeItems?: {
+    name: string;
+    category: string;
+    available: boolean;
+  }[];
   requestType: 'morning_plan' | 'after_breakfast' | 'after_lunch' | 'consultation';
 }
 
@@ -633,6 +639,25 @@ ${constraintPrompts}
     }
   }
 
+  // Phase19: 冷蔵庫食材情報の構築
+  let fridgeItemsInfo = '';
+  if (context.fridgeItems && context.fridgeItems.length > 0) {
+    const availableItems = context.fridgeItems
+      .filter(item => item.available)
+      .map(item => item.name);
+    const unavailableItems = context.fridgeItems
+      .filter(item => !item.available)
+      .map(item => item.name);
+    
+    fridgeItemsInfo = `
+【手持ち食材情報】
+✅ 利用可能な食材: ${availableItems.length > 0 ? availableItems.join('、') : 'なし'}
+❌ 使い切った食材: ${unavailableItems.length > 0 ? unavailableItems.join('、') : 'なし'}
+
+${availableItems.length > 0 ? FRIDGE_AWARE_PROMPT.replace('{availableIngredients}', availableItems.join('、')) : ''}
+`;
+  }
+
   return `
 【ユーザー情報】
 ${basicInfo.join('\n')}
@@ -647,6 +672,7 @@ ${goalInfo.length > 0 ? '【目標】\n' + goalInfo.join('\n') + '\n' : ''}
 ${goalModeInfo}
 ${constraintInfo}
 ${gainModeDetection}
+${fridgeItemsInfo}
 
 【今日の状態】
 コンディション: ${conditionJa || '通常'}
