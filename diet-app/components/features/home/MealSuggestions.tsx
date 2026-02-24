@@ -13,7 +13,10 @@ interface MealSuggestionsProps {
 }
 
 export function MealSuggestions({ suggestions, unrecordedMeals, resetTime }: MealSuggestionsProps) {
-  const [expandedMeal, setExpandedMeal] = useState<MealType | null>(null);
+  // 最初の未記録食事を初期展開状態にする
+  const [expandedMeal, setExpandedMeal] = useState<MealType | null>(
+    unrecordedMeals.length > 0 ? unrecordedMeals[0] : null
+  );
   const router = useRouter();
 
   const mealLabels = {

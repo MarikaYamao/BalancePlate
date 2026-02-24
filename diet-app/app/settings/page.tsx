@@ -9,6 +9,7 @@ import { LifestyleSelector } from '@/components/features/settings/LifestyleSelec
 import { FoodPreferences } from '@/components/features/settings/FoodPreferences';
 import { FreeNotes } from '@/components/features/settings/FreeNotes';
 import { BackupManager } from '@/components/features/backup/BackupManager';
+import { GoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/GoalSettings';
 import { userSettingsRepository } from '@/lib/db/repositories';
 import type { BodyConstitutionTag, LifestyleTag } from '@/types';
 
@@ -20,6 +21,10 @@ export default function SettingsPage() {
   const [favoriteFoods, setFavoriteFoods] = useState<string[]>([]);
   const [dislikedFoods, setDislikedFoods] = useState<string[]>([]);
   const [additionalNotes, setAdditionalNotes] = useState('');
+  const [goalType, setGoalType] = useState<GoalType | undefined>();
+  const [currentWeight, setCurrentWeight] = useState<number | undefined>();
+  const [targetWeight, setTargetWeight] = useState<number | undefined>();
+  const [goalPeriod, setGoalPeriod] = useState<GoalPeriod>('no_limit');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -42,6 +47,13 @@ export default function SettingsPage() {
         setFavoriteFoods(settings.favoriteFoods || []);
         setDislikedFoods(settings.dislikedFoods || []);
         setAdditionalNotes(settings.additionalNotes || '');
+        // 目標設定を読み込み
+        if (settings.profile) {
+          setCurrentWeight(settings.profile.currentWeight);
+          setGoalType(settings.profile.goalType as GoalType);
+          setTargetWeight(settings.profile.targetWeight);
+          setGoalPeriod(settings.profile.goalPeriod as GoalPeriod || 'no_limit');
+        }
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -56,6 +68,7 @@ export default function SettingsPage() {
     // 各項目の入力状態をチェック
     const checks = {
       basic: true, // 基本設定は常に完了とみなす
+      goal: !!goalType, // 目標設定
       bodyInfo: bodyConstitution.includes('healthy') || bodyConstitution.length > 0,
       lifestyle: lifestyle.length > 0,
       foodPreferences: favoriteFoods.length > 0 || dislikedFoods.length > 0,
@@ -72,6 +85,10 @@ export default function SettingsPage() {
   // 未完成項目を取得
   const getIncompleteItems = () => {
     const items = [];
+    
+    if (!goalType) {
+      items.push('目標設定');
+    }
     
     // 健康体の場合も選択を促す
     if (!bodyConstitution.includes('healthy') && bodyConstitution.length === 0) {
@@ -110,6 +127,13 @@ export default function SettingsPage() {
           // favoriteFoods,
           // dislikedFoods,
           additionalNotes,
+          profile: {
+            ...existingSettings.profile,
+            currentWeight,
+            goalType: goalType as any,
+            targetWeight,
+            goalPeriod: goalPeriod as any,
+          },
         });
       } else {
         // 新規作成
@@ -250,6 +274,33 @@ export default function SettingsPage() {
                 markAsChanged();
               }}
             />
+            
+            {/* 目標設定 */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">🎯 目標設定</h2>
+              <GoalSettings
+                goalType={goalType}
+                currentWeight={currentWeight}
+                targetWeight={targetWeight}
+                goalPeriod={goalPeriod}
+                onGoalTypeChange={(value) => {
+                  setGoalType(value);
+                  markAsChanged();
+                }}
+                onCurrentWeightChange={(value) => {
+                  setCurrentWeight(value);
+                  markAsChanged();
+                }}
+                onTargetWeightChange={(value) => {
+                  setTargetWeight(value);
+                  markAsChanged();
+                }}
+                onGoalPeriodChange={(value) => {
+                  setGoalPeriod(value);
+                  markAsChanged();
+                }}
+              />
+            </div>
             
             {/* 体質選択 */}
             <BodyConstitutionSelector

@@ -41,6 +41,8 @@ export function SimpleFridgeModal({
     useState<FridgeItemCategory>("vegetables");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addedCount, setAddedCount] = useState(0);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const createMutation = useCreateFridgeItem();
@@ -85,23 +87,51 @@ export function SimpleFridgeModal({
     setName("");
     setPredictedCategory("vegetables");
     setShowSuggestions(false);
+    setIsAdding(false);
+    setAddedCount(0);
     onClose();
   };
 
   const handleAdd = async () => {
     if (!name.trim()) return;
 
-    try {
-      await createMutation.mutateAsync({
-        name: name.trim(),
-        category: predictedCategory,
-        available: true, // 手持ちあり状態で追加
-      });
+    // 区切り文字で分割（、,　半角/全角スペース）
+    const items = name
+      .split(/[、,，\s　]+/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
 
-      onSuccess?.();
-      handleClose();
+    if (items.length === 0) return;
+
+    setIsAdding(true);
+    setAddedCount(0);
+
+    try {
+      // 複数のアイテムを並列で追加
+      const promises = items.map(itemName => 
+        createMutation.mutateAsync({
+          name: itemName,
+          category: predictCategory(itemName),
+          available: true,
+        })
+      );
+
+      await Promise.all(promises);
+      setAddedCount(items.length);
+      
+      // 複数追加の場合は成功メッセージを表示してから閉じる
+      if (items.length > 1) {
+        setTimeout(() => {
+          onSuccess?.();
+          handleClose();
+        }, 1000);
+      } else {
+        onSuccess?.();
+        handleClose();
+      }
     } catch (error) {
-      console.error("Failed to add item:", error);
+      console.error("Failed to add items:", error);
+      setIsAdding(false);
     }
   };
 
@@ -153,7 +183,8 @@ export function SimpleFridgeModal({
 
           {/* 説明 */}
           <p className="text-sm text-gray-600 mb-4">
-            今手元にある食材を教えてください。AIがおすすめレシピを優先的に提案します。
+            今手元にある食材を教えてください。<br />
+            <span className="text-teal-600 font-medium">「、」や「スペース」で複数の食材をまとめて追加できます。</span>
           </p>
 
           {/* 食材名入力 */}
@@ -170,7 +201,7 @@ export function SimpleFridgeModal({
                 onKeyPress={handleKeyPress}
                 onFocus={() => setShowSuggestions(name.length > 0)}
                 className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg text-center"
-                placeholder="例: にんじん, 鶏肉, 卵..."
+                placeholder="例: しめじ、卵、豆腐、玄米、鮭"
               />
 
               {/* カテゴリ表示 */}
@@ -228,17 +259,21 @@ export function SimpleFridgeModal({
             <Button
               variant="secondary"
               onClick={handleClose}
-              disabled={createMutation.isPending}
+              disabled={isAdding && addedCount === 0}
               className="flex-1"
             >
               キャンセル
             </Button>
             <Button
               onClick={handleAdd}
-              disabled={!name.trim() || createMutation.isPending}
+              disabled={!name.trim() || isAdding}
               className="flex-2"
             >
-              {createMutation.isPending ? "追加中..." : "追加"}
+              {addedCount > 0 
+                ? `${addedCount}個追加しました✨` 
+                : isAdding 
+                  ? "追加中..." 
+                  : "追加"}
             </Button>
           </div>
         </div>

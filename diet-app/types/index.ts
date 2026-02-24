@@ -160,7 +160,7 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export interface UserProfile {
   // 性別関連情報（包括的設計）
-  assignedSexAtBirth: 'male' | 'female'; // 出生時に割り当てられた性別（必須）
+  assignedSexAtBirth?: 'male' | 'female'; // 出生時に割り当てられた性別（任意）
   currentHormoneStatus?: HormoneStatus; // 現在のホルモン状態（任意）
   hormoneTherapyDuration?: HormoneTherapyDuration; // ホルモン治療期間
   
@@ -171,6 +171,11 @@ export interface UserProfile {
   // 現在の状態
   currentWeight?: number; // kg単位（最新の体重とは別管理）
   activityLevel?: ActivityLevel; // 活動レベル
+  
+  // 目標設定
+  goalType?: string; // 目標タイプ（health, weight_loss, weight_gain等）
+  targetWeight?: number; // 目標体重（kg単位）
+  goalPeriod?: string; // 目標期間（1_month, 3_months, 6_months, 1_year, no_limit）
 }
 
 export interface UserSettings {

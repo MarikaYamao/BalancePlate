@@ -5,6 +5,9 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { conditionTagsInfo } from '@/lib/constants/conditionTags';
 import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
+import { EncryptedUserSettingsRepository } from '@/lib/db/repositories/encryptedUserSettingsRepository';
+import { fridgeItemRepository } from '@/lib/db/repositories/fridgeItemRepository';
+import { getTodayKey } from '@/lib/utils/dateUtils';
 import type { ConditionTag } from '@/types';
 
 interface ConditionModalProps {
@@ -54,6 +57,140 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
         conditionTags: selectedTags,
         freeMemo: memo || (todayState?.freeMemo || '')
       }, resetTime);
+
+      // AI食事提案を生成
+      console.log('✅ コンディション保存完了、AI提案を開始します...');
+      try {
+        // 暗号化DBを初期化
+        const { initializeEncryptedDatabase } = await import('@/lib/db/encryptedDatabase');
+        await initializeEncryptedDatabase();
+        
+        const userSettingsRepo = new EncryptedUserSettingsRepository();
+        const userSettings = await userSettingsRepo.get();
+        console.log('👤 ユーザー設定取得:', userSettings ? 'あり' : 'なし');
+        
+        if (userSettings) {
+          // 手持ち食材を取得
+          const fridgeItems = await fridgeItemRepository.getAvailableFridgeItems();
+          const availableIngredients = fridgeItems.map(item => item.name);
+          
+          console.log('🍽️ 手持ち食材:', availableIngredients);
+          console.log('👤 ユーザー設定:', {
+            bodyConstitution: userSettings.bodyConstitution,
+            lifestyle: userSettings.lifestyle,
+            currentWeight: userSettings.profile?.currentWeight,
+            goalType: userSettings.profile?.goalType
+          });
+          console.log('💭 今日のコンディション:', selectedTags);
+
+          // APIリクエストボディを構築
+          const requestBody = {
+            userProfile: {
+              age: userSettings.profile?.birthYear 
+                ? new Date().getFullYear() - userSettings.profile.birthYear
+                : undefined,
+              height: userSettings.profile?.height,
+              currentWeight: userSettings.profile?.currentWeight,
+              activityLevel: userSettings.profile?.activityLevel || 'moderate',
+              bodyConstitution: userSettings.bodyConstitution || [],
+              lifestyle: userSettings.lifestyle || [],
+              favoriteFoods: userSettings.favoriteFoods || [],
+              dislikedFoods: userSettings.dislikedFoods || [],
+              mealsPerDay: userSettings.mealsPerDay || 3,
+              additionalNotes: userSettings.additionalNotes || '',
+            },
+            goals: userSettings.profile?.goalType ? {
+              goalType: userSettings.profile.goalType,
+              targetWeight: userSettings.profile.targetWeight,
+            } : undefined,
+            todayCondition: {
+              conditionTags: selectedTags,
+              freeMemo: memo || '',
+            },
+            requestType: 'morning_plan' as const,
+          };
+          
+          // 手持ち食材がある場合のみ追加
+          if (availableIngredients.length > 0) {
+            (requestBody as any).availableIngredients = availableIngredients;
+          }
+          
+          console.log('🚀 AI APIリクエスト送信:', requestBody);
+
+          // AI相談APIを呼び出し
+          const response = await fetch('/api/ai/consultation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✨ AI食事提案を取得しました:', data);
+            
+            // LocalStorageに保存
+            const todayKey = getTodayKey(resetTime);
+            localStorage.setItem(`ai-consultation-${todayKey}`, JSON.stringify(data));
+            localStorage.setItem('ai-consultation-latest', JSON.stringify(data));
+            
+            console.log('💾 LocalStorageに保存完了');
+            
+            // イベントを発行して画面を更新
+            window.dispatchEvent(new CustomEvent('ai-consultation-updated'));
+          } else {
+            const errorText = await response.text();
+            console.error('❌ AI APIエラー:', response.status, errorText);
+          }
+        } else {
+          console.warn('⚠️ ユーザー設定が見つかりません。デフォルト設定でAI提案を実行します。');
+          
+          // デフォルト設定でAI提案を実行
+          const requestBody = {
+            userProfile: {
+              mealsPerDay: 3,
+              bodyConstitution: [],
+              lifestyle: [],
+              favoriteFoods: [],
+              dislikedFoods: [],
+              additionalNotes: '',
+            },
+            todayCondition: {
+              conditionTags: selectedTags,
+              freeMemo: memo || '',
+            },
+            requestType: 'morning_plan' as const,
+          };
+          
+          console.log('🚀 デフォルト設定でAI API リクエスト送信:', requestBody);
+          
+          const response = await fetch('/api/ai/consultation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✨ AI食事提案を取得しました（デフォルト設定）:', data);
+            
+            // LocalStorageに保存
+            const todayKey = getTodayKey(resetTime);
+            localStorage.setItem(`ai-consultation-${todayKey}`, JSON.stringify(data));
+            localStorage.setItem('ai-consultation-latest', JSON.stringify(data));
+            
+            console.log('💾 LocalStorageに保存完了');
+            
+            // イベントを発行して画面を更新
+            window.dispatchEvent(new CustomEvent('ai-consultation-updated'));
+          } else {
+            const errorText = await response.text();
+            console.error('❌ AI APIエラー:', response.status, errorText);
+          }
+        }
+      } catch (aiError) {
+        console.error('❌ AI提案の取得に失敗:', aiError);
+        // AI提案の失敗は無視して続行
+      }
 
       if (onSave) {
         onSave();
@@ -188,7 +325,7 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
               className="flex-1"
               disabled={isSaving}
             >
-              {isSaving ? '保存中...' : '記録する'}
+              {isSaving ? 'AI提案を生成中...' : '記録する'}
             </Button>
           </div>
           

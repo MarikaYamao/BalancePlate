@@ -8,6 +8,7 @@ import { BasicSettings } from '@/components/features/settings/BasicSettings';
 import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
 import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
 import { OnboardingFoodPreferences } from '@/components/features/onboarding/OnboardingFoodPreferences';
+import { GoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/GoalSettings';
 import { useUserSettings } from '@/lib/hooks';
 import { CheckCircle, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import type { UserSettings } from '@/types';
@@ -22,6 +23,12 @@ const ONBOARDING_STEPS = [
   {
     id: 'basic',
     title: '基本設定',
+    description: '必須項目です',
+    required: true,
+  },
+  {
+    id: 'goal',
+    title: '目標設定',
     description: '必須項目です',
     required: true,
   },
@@ -64,6 +71,10 @@ export default function OnboardingPage() {
     dislikedFoods: [],
     onboardingCompleted: false,
   });
+  const [goalType, setGoalType] = useState<GoalType | undefined>();
+  const [currentWeight, setCurrentWeight] = useState<number | undefined>();
+  const [targetWeight, setTargetWeight] = useState<number | undefined>();
+  const [goalPeriod, setGoalPeriod] = useState<GoalPeriod>('no_limit');
   const [pendingFavoriteInput, setPendingFavoriteInput] = useState('');
   const [pendingDislikeInput, setPendingDislikeInput] = useState('');
 
@@ -123,12 +134,39 @@ export default function OnboardingPage() {
     const finalSettings: UserSettings = {
       id: settings?.id || crypto.randomUUID(),
       ...tempSettings,
+      profile: {
+        ...tempSettings.profile,
+        currentWeight,
+        goalType: goalType as any,
+        targetWeight,
+        goalPeriod: goalPeriod as any,
+      },
       onboardingCompleted: true,
       createdAt: settings?.createdAt || new Date(),
       updatedAt: new Date(),
     } as UserSettings;
 
     await updateSettings(finalSettings);
+    
+    // 初期体重を体重記録として保存
+    if (currentWeight) {
+      try {
+        const { weightLogRepository } = await import('@/lib/db/repositories');
+        const { getTodayKey } = await import('@/lib/utils/dateUtils');
+        
+        const todayKey = getTodayKey(tempSettings.dayResetTime || '04:00');
+        await weightLogRepository.save({
+          weight: currentWeight,
+          dateKey: todayKey,
+          measurementTiming: 'morning',
+          note: '初期設定時の体重',
+        });
+      } catch (error) {
+        console.error('Failed to save initial weight:', error);
+        // エラーがあっても続行
+      }
+    }
+    
     router.push('/home');
   };
 
@@ -185,6 +223,33 @@ export default function OnboardingPage() {
               onMealsPerDayChange={(meals) => 
                 setTempSettings({ ...tempSettings, mealsPerDay: meals })
               }
+            />
+          </div>
+        );
+        
+      case 'goal':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                目標設定
+              </h2>
+              <p className="text-gray-600">
+                あなたの目標を教えてください
+              </p>
+              <p className="text-sm text-teal-600 mt-2">
+                AIがあなたの目標に合わせた食事を提案します
+              </p>
+            </div>
+            <GoalSettings
+              goalType={goalType}
+              currentWeight={currentWeight}
+              targetWeight={targetWeight}
+              goalPeriod={goalPeriod}
+              onGoalTypeChange={setGoalType}
+              onCurrentWeightChange={setCurrentWeight}
+              onTargetWeightChange={setTargetWeight}
+              onGoalPeriodChange={setGoalPeriod}
             />
           </div>
         );
@@ -288,6 +353,18 @@ export default function OnboardingPage() {
                   <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
                   <span>1日の食事回数: {tempSettings.mealsPerDay}食</span>
                 </li>
+                {goalType && (
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>目標: 設定済み</span>
+                  </li>
+                )}
+                {currentWeight && (
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>現在の体重: {currentWeight}kg</span>
+                  </li>
+                )}
                 {tempSettings.bodyConstitution && tempSettings.bodyConstitution.length > 0 && (
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />

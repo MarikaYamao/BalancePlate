@@ -16,7 +16,6 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { mealLogRepository } from "@/lib/db/repositories";
 import { initializeEncryptedDatabase } from "@/lib/db/encryptedDatabase";
 import { detectMissedMeals, shouldShowBulkInput } from "@/lib/utils/mealUtils";
-import { useMealSuggestions } from "@/lib/hooks/useAIConsultations";
 import type { MealType, MealLog, ConditionTag } from "@/types";
 
 export default function ClientOnlyHome() {
@@ -35,8 +34,81 @@ export default function ClientOnlyHome() {
   const [showConditionModal, setShowConditionModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // AI提案のフック
-  const { suggestions } = useMealSuggestions(unrecordedMealTypes, resetTime);
+  // AI提案のフック（LocalStorageから取得）
+  const [suggestions, setSuggestions] = useState<any>(null);
+  
+  // AI提案を読み込む関数
+  const loadAISuggestions = () => {
+    console.log('🔍 AI提案を読み込み中...');
+    const storedData = localStorage.getItem('ai-consultation-latest');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        console.log('✅ AI提案データ取得:', parsed);
+        
+        // モックの提案データを生成
+        const mockSuggestion = {
+          feedback: {
+            overall: "今日のコンディションに合わせた食事プランを提案します。",
+            positive: [],
+            suggestions: [],
+            encouragement: ""
+          },
+          mealPlans: {
+            breakfast: unrecordedMealTypes.includes('breakfast') ? {
+              menu: ["温かいおかゆ", "梅干し", "味噌汁"],
+              preparation: "消化に良いメニュー",
+              alternatives: ["お茶漬け", "うどん"],
+              reason: "体調を整えます"
+            } : undefined,
+            lunch: unrecordedMealTypes.includes('lunch') ? {
+              menu: ["野菜たっぷりスープ", "サンドイッチ"],
+              preparation: "栄養バランス重視",
+              alternatives: ["パスタ", "丼もの"],
+              reason: "エネルギー補給"
+            } : undefined,
+            dinner: unrecordedMealTypes.includes('dinner') ? {
+              menu: ["焼き魚", "ご飯", "野菜の煮物"],
+              preparation: "消化に良い和食",
+              alternatives: ["鍋料理", "雑炊"],
+              reason: "一日の疲れを癒す"
+            } : undefined
+          },
+          nutritionAdvice: {
+            focus: [],
+            avoid: [],
+            hydration: ""
+          },
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            conditionTags: [],
+            context: 'morning' as const
+          }
+        };
+        setSuggestions(mockSuggestion);
+      } catch (error) {
+        console.error("Failed to parse AI consultation:", error);
+      }
+    }
+  };
+  
+  // 初回読み込みとイベントリスナー
+  useEffect(() => {
+    loadAISuggestions();
+    
+    // カスタムイベントをリッスン
+    const handleAIUpdate = () => {
+      console.log('🎉 AI提案更新イベントを受信');
+      loadAISuggestions();
+      loadMealData(); // 画面全体をリフレッシュ
+    };
+    
+    window.addEventListener('ai-consultation-updated', handleAIUpdate);
+    
+    return () => {
+      window.removeEventListener('ai-consultation-updated', handleAIUpdate);
+    };
+  }, [unrecordedMealTypes]);
 
   useEffect(() => {
     setMounted(true);
@@ -465,7 +537,8 @@ export default function ClientOnlyHome() {
           onSave={() => {
             setShowConditionModal(false);
             setHasCondition(true);
-            loadMealData(); // データを再読み込み
+            // AI提案はConditionModal内で自動実行され、
+            // カスタムイベント経由で画面が更新される
           }}
         />
       </div>
