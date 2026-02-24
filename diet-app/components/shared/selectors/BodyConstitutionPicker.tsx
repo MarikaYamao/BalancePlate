@@ -1,12 +1,15 @@
 'use client';
 
 import { TagSelector, type TagCategory } from '@/components/ui/TagSelector';
-import { Card } from '@/components/ui/Card';
 import type { BodyConstitutionTag } from '@/types';
 
-interface BodyConstitutionSelectorProps {
-  selected: BodyConstitutionTag[];
-  onChange: (tags: BodyConstitutionTag[]) => void;
+interface BodyConstitutionPickerProps {
+  selectedTags: BodyConstitutionTag[];
+  onTagsChange: (tags: BodyConstitutionTag[]) => void;
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'compact' | 'card';
+  columns?: 1 | 2 | 3 | 4;
 }
 
 const BODY_CONSTITUTION_CATEGORIES: TagCategory<BodyConstitutionTag>[] = [
@@ -86,38 +89,25 @@ const BODY_CONSTITUTION_CATEGORIES: TagCategory<BodyConstitutionTag>[] = [
   }
 ];
 
-export function BodyConstitutionSelector({
-  selected,
-  onChange
-}: BodyConstitutionSelectorProps) {
+export function BodyConstitutionPicker({
+  selectedTags,
+  onTagsChange,
+  title = '体質・身体の傾向',
+  description = '当てはまるものを選択してください（複数選択可）',
+  variant = 'default',
+  columns = 2
+}: BodyConstitutionPickerProps) {
   return (
-    <Card className="mb-6 border-2 border-blue-100 hover:border-blue-200 transition-colors">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-xl">🧘</span>
-        <h2 className="text-lg font-semibold text-gray-800">体質・身体の傾向</h2>
-        {selected.length > 0 && (
-          <span className="ml-auto bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-            {selected.length}件選択中
-          </span>
-        )}
-      </div>
-      <p className="text-sm text-gray-600 mb-4">
-        当てはまるものを選択してください（複数選択可）
-      </p>
-      
-      <TagSelector<BodyConstitutionTag>
-        categories={BODY_CONSTITUTION_CATEGORIES}
-        selectedTags={selected}
-        onTagsChange={onChange}
-        multiSelect={true}
-        columns={2}
-        size="md"
-        variant="default"
-      />
-
-      <div className="mt-4 text-center text-sm text-gray-500">
-        選択した内容は、あなた専用の食事プランや健康アドバイスに活用されます
-      </div>
-    </Card>
+    <TagSelector<BodyConstitutionTag>
+      title={title}
+      description={description}
+      categories={BODY_CONSTITUTION_CATEGORIES}
+      selectedTags={selectedTags}
+      onTagsChange={onTagsChange}
+      multiSelect={true}
+      columns={columns}
+      size="md"
+      variant={variant}
+    />
   );
 }

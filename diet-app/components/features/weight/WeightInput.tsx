@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { TextInput } from '@/components/ui/TextInput';
 
 interface WeightInputProps {
   value: number;
@@ -123,42 +124,19 @@ export function WeightInput({
       </div>
 
       {/* メモ */}
-      <div className="space-y-2">
-        <label htmlFor="weight-note" className="text-sm font-medium text-gray-700">
-          メモ（任意）
-        </label>
-        <div className="relative">
-          <textarea
-            id="weight-note"
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="体調や気になることがあれば記録できます"
-            rows={3}
-            maxLength={200}
-            className="
-              w-full px-4 py-3 
-              border-2 border-gray-200 rounded-lg
-              focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-100
-              resize-none
-              text-gray-700 placeholder-gray-400
-              transition-all duration-200
-            "
-          />
-          
-          {/* 装飾的な要素 */}
-          <div className="absolute top-2 right-2 pointer-events-none">
-            <span className="text-lg opacity-10">📝</span>
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <p className="text-xs text-gray-500">
-            メモも暗号化されて保存されます
-          </p>
-          <span className="text-xs text-gray-400">
-            {note.length}/200
-          </span>
-        </div>
-      </div>
+      <TextInput
+        value={note}
+        onChange={onNoteChange}
+        type="textarea"
+        placeholder="体調や気になることがあれば記録できます"
+        maxLength={200}
+        rows={3}
+        label="メモ（任意）"
+        helpText="メモも暗号化されて保存されます"
+        showCharCount={true}
+        variant="bordered"
+        icon="📝"
+      />
 
       {/* 1日1回測定推奨メッセージ */}
       {hasRecordToday && (

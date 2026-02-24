@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode, memo } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -7,7 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-export function Button({
+export const Button = memo(function Button({
   children,
   variant = 'primary',
   size = 'medium',
@@ -52,4 +52,4 @@ export function Button({
       {children}
     </button>
   );
-}
+});

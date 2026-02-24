@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 
 interface CardProps {
   children: ReactNode;
@@ -7,7 +7,7 @@ interface CardProps {
   shadow?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-export function Card({
+export const Card = memo(function Card({
   children,
   className = '',
   padding = 'medium',
@@ -39,4 +39,4 @@ export function Card({
       {children}
     </div>
   );
-}
+});

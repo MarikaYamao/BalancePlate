@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { SimpleMealInput } from '@/components/shared/inputs';
 import type { MealType } from '@/types';
 
 interface BulkMealInputProps {

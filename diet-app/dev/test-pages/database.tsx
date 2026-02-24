@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { runDatabaseTests } from '@/lib/db/testDatabase';
 import type { TestResult } from '@/lib/db/testDatabase';
 
-export default function TestPage() {
+export default function DatabaseTestPage() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [summary, setSummary] = useState<{ total: number; passed: number; failed: number; passRate: number } | null>(null);
@@ -47,7 +47,7 @@ export default function TestPage() {
               データベーステスト
             </h1>
             <p className="text-gray-600">
-              Phase 2: IndexedDB + Dexie.js の動作確認
+              IndexedDB + Dexie.js の動作確認
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export default function TestPage() {
 
           {/* Development Info */}
           <div className="mt-8 text-center text-sm text-gray-500">
-            <p>このページはPhase 2の開発・テスト用です</p>
+            <p>このページは開発・テスト用です</p>
             <p>本番環境では表示されません</p>
           </div>
         </div>
