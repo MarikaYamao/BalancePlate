@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../database';
 import { BaseRepository } from './baseRepository';
-import type { UserSettings, BodyConstitutionTag, LifestyleTag, UserProfile } from '@/types';
+import type { UserSettings, BodyConstitutionTag, LifestyleTag, UserProfile, GoalMode, ConstraintType } from '@/types';
 
 export interface UserSettingsInput {
   dayResetTime: string;
@@ -11,6 +11,9 @@ export interface UserSettingsInput {
   lifestyle: LifestyleTag[];
   additionalNotes?: string;
   onboardingCompleted: boolean;
+  // Phase21: 新しいゴール設定
+  goalMode?: GoalMode;
+  constraints?: ConstraintType[];
 }
 
 export class UserSettingsRepository extends BaseRepository {
@@ -39,6 +42,8 @@ export class UserSettingsRepository extends BaseRepository {
         lifestyle: input.lifestyle,
         additionalNotes: input.additionalNotes,
         onboardingCompleted: input.onboardingCompleted,
+        goalMode: input.goalMode,
+        constraints: input.constraints,
         createdAt: now,
         updatedAt: now
       };

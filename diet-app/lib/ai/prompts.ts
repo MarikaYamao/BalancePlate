@@ -3,7 +3,9 @@ import type {
   LifestyleTag, 
   ConditionTag,
   GoalType,
-  ActivityLevel 
+  ActivityLevel,
+  GoalMode,
+  ConstraintType 
 } from '@/types';
 
 // システムプロンプト
@@ -39,6 +41,128 @@ export const FRIDGE_AWARE_PROMPT = `
 
 注意：手持ち食材の情報がない場合は通常の提案を行ってください。
 `;
+
+// Phase21: ゴールモード別プロンプト
+export const GOAL_MODE_PROMPTS = {
+  CUT: `
+【CUTモード（減量）の提案優先順位】
+1. 過食抑制: 満足感を保ちながらカロリーをコントロール
+2. 塩分・むくみ対策: 塩分控えめ、水分代謝促進
+3. タンパク質確保: 筋肉量維持のためのタンパク質摂取
+4. 習慣維持: 無理のない継続可能な食事
+
+特別な調整：
+- 夜重い食事 → 翌朝は高タンパク・高繊維、昼で戻す
+- むくみ対策：塩分控えめ、カリウム豊富な食材
+- 過食防止：食物繊維豊富で満足感のある食材
+`,
+
+  MAINTAIN: `
+【MAINTAINモード（維持）の提案優先順位】
+1. 平準化: 乱高下を防ぐバランス重視
+2. 睡眠・ストレス時の暴走防止: 安定した食事リズム
+3. 最低限のタンパク質: 筋肉量維持
+
+特別な調整：
+- 外食続き → "戻す日"テンプレ（薄味＋野菜＋水分＋適量主食）
+- ストレス時 → 安定した定食スタイル
+- 睡眠不足時 → 消化に良く栄養価の高い食事
+`,
+
+  GAIN: `
+【GAINモード（増量）の提案優先順位】
+1. 総摂取量確保: カロリー不足を避ける
+2. タンパク質摂取: 筋肉・組織の材料確保
+3. 消化・食欲サポート: 食べやすさ重視
+4. 分割摂取: 無理なく量を増やす工夫
+
+特別な調整・検知：
+- 食事量少ない → 回数を増やす（4〜5回/日）
+- すぐ満腹 → 液体カロリー（スムージー、プロテイン）活用
+- 固形物が辛い → スープ、ヨーグルト、牛乳、豆乳
+- 運動後 → 必ず1回追加摂取（摂取窓を活用）
+- 脂質を足す: オリーブオイル、ナッツ、チーズ（少量で高カロリー）
+
+GAINモード特別提案テンプレート：
+- 朝: しっかり食べる + 液体カロリー追加
+- 間食1: 10時にナッツ・ヨーグルト
+- 昼: 普通量＋良質な脂質
+- 間食2: 15時にプロテインスムージー
+- 夜: 消化に良いものでしっかり量
+`
+} as const;
+
+// Phase21: 制約レイヤー別プロンプト
+export const CONSTRAINT_PROMPTS = {
+  pregnancy: `
+【妊娠中の安全配慮】
+避ける食品：
+- 生肉、生魚（刺身、ユッケなど）
+- 未殺菌チーズ、生卵
+- 水銀含有量の多い魚（マグロ、金目鯛など）
+- アルコール、カフェイン過多
+
+栄養重点：
+- 葉酸、鉄分、カルシウム、DHA/EPA
+- つわり対応：少量頻回、冷たいもの、匂い控えめ
+- 体重増加管理：適正な増加ペース
+
+危険シグナル検知時は受診案内：
+- 急激な体重変動、脱水、強い浮腫＋頭痛
+`,
+
+  breastfeeding: `
+【授乳中の配慮】
+栄養重点：
+- カルシウム、鉄分、たんぱく質、水分
+- 母乳への影響を考慮した食材選択
+- エネルギー必要量の増加対応
+
+避ける・控える：
+- 過度なカフェイン、アルコール
+- 刺激の強い香辛料（大量摂取時）
+- アレルギー誘発リスクの高い食材（個人差考慮）
+`,
+
+  hormone_ftm: `
+【ホルモン療法中（FTM）の配慮】
+体組成変化対応：
+- 筋肉量変化に対応したタンパク質摂取
+- 代謝変化を考慮したカロリー調整
+- ホルモン変動時は平準化テンプレを優先
+
+メンタル・体調サポート：
+- 安定した血糖値維持
+- ストレス軽減食材の活用
+- 医師の指示がある場合は最優先
+`,
+
+  hormone_mtf: `
+【ホルモン療法中（MTF）の配慮】
+体組成変化対応：
+- 代謝変化を考慮したカロリー調整  
+- ホルモン変動時は平準化テンプレを優先
+- 骨密度維持のカルシウム・ビタミンD
+
+メンタル・体調サポート：
+- 安定した血糖値維持
+- ストレス軽減食材の活用
+- 医師の指示がある場合は最優先
+`,
+
+  medical: `
+【医療的制約がある場合】
+最優先事項：
+- 医師からの食事指導を最優先
+- 処方薬との相互作用を考慮
+- 制限食材の厳格な回避
+
+提案方針：
+- 一般的な健康食材中心
+- 特定の栄養素制限に配慮
+- 疑問がある場合は医療機関への相談案内
+`
+} as const;
 
 // JSON形式でのレスポンス要求プロンプト
 export const JSON_RESPONSE_PROMPT = `
@@ -249,6 +373,18 @@ export const CONDITION_LABELS: Record<ConditionTag, string> = {
   'travel_day': '移動多い日',
   'work_from_home': '在宅日',
   'hangover': '二日酔い',
+  
+  // Phase21: GAINモード専用検知タグ
+  'low_total_intake': '食事量が少ない',
+  'low_meal_frequency': '食事回数が少ない',
+  'early_fullness': 'すぐに満腹になる',
+  'need_liquid_calories': '固形物が辛い',
+  'post_workout': '運動後',
+  
+  // 制約レイヤー用
+  'morning_sickness': 'つわり',
+  'hormone_fluctuation': 'ホルモン変動',
+  'medical_restriction': '医療的制限',
 };
 
 // 目標タイプの日本語ラベル
@@ -258,6 +394,22 @@ export const GOAL_TYPE_LABELS: Record<GoalType, string> = {
   'maintain': '体重維持',
   'body_recomposition': '体質改善',
   'health_improvement': '健康改善',
+};
+
+// Phase21: ゴールモードのラベル
+export const GOAL_MODE_LABELS: Record<GoalMode, string> = {
+  'CUT': '減量モード',
+  'MAINTAIN': '維持モード',
+  'GAIN': '増量モード',
+};
+
+// 制約タイプのラベル
+export const CONSTRAINT_TYPE_LABELS: Record<ConstraintType, string> = {
+  'pregnancy': '妊娠中',
+  'breastfeeding': '授乳中', 
+  'hormone_ftm': 'ホルモン療法中（FTM）',
+  'hormone_mtf': 'ホルモン療法中（MTF）',
+  'medical': '医療的制約',
 };
 
 // 活動レベルの日本語ラベル
@@ -289,6 +441,9 @@ export interface AIPromptContext {
     weeklyWeightChangeTarget?: number;
     dailyCalorieTarget?: number;
   };
+  // Phase21: 新しいゴール設定
+  goalMode?: GoalMode;
+  constraints?: ConstraintType[];
   todayCondition: {
     conditionTags: ConditionTag[];
     freeMemo?: string;
@@ -435,6 +590,49 @@ ${context.previousDayData?.meals && context.previousDayData.meals.length > 0 ? `
 `}`
   };
 
+  // Phase21: ゴールモードと制約の追加
+  let goalModeInfo = '';
+  if (context.goalMode) {
+    goalModeInfo = `
+【ゴールモード】
+${GOAL_MODE_LABELS[context.goalMode]}
+${GOAL_MODE_PROMPTS[context.goalMode]}
+`;
+  }
+
+  let constraintInfo = '';
+  if (context.constraints && context.constraints.length > 0) {
+    const constraintLabels = context.constraints
+      .map(c => CONSTRAINT_TYPE_LABELS[c])
+      .join('、');
+    const constraintPrompts = context.constraints
+      .map(c => CONSTRAINT_PROMPTS[c])
+      .join('\n');
+    
+    constraintInfo = `
+【制約・配慮事項】
+適用中: ${constraintLabels}
+${constraintPrompts}
+`;
+  }
+
+  // GAINモード専用の検知ロジック
+  let gainModeDetection = '';
+  if (context.goalMode === 'GAIN') {
+    const gainTags = context.todayCondition.conditionTags.filter(tag => 
+      ['low_total_intake', 'low_meal_frequency', 'early_fullness', 'need_liquid_calories', 'post_workout'].includes(tag)
+    );
+    
+    if (gainTags.length > 0) {
+      const gainTagsJa = gainTags.map(tag => CONDITION_LABELS[tag]).join('、');
+      gainModeDetection = `
+【GAINモード特別検知】
+検知された状況: ${gainTagsJa}
+→ 対応する特別提案を優先してください
+`;
+    }
+  }
+
   return `
 【ユーザー情報】
 ${basicInfo.join('\n')}
@@ -446,6 +644,9 @@ ${basicInfo.join('\n')}
 ${context.userProfile.additionalNotes ? `その他の情報: ${context.userProfile.additionalNotes}` : ''}
 
 ${goalInfo.length > 0 ? '【目標】\n' + goalInfo.join('\n') + '\n' : ''}
+${goalModeInfo}
+${constraintInfo}
+${gainModeDetection}
 
 【今日の状態】
 コンディション: ${conditionJa || '通常'}

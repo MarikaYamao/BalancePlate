@@ -9,7 +9,8 @@ import { LifestyleSelector } from '@/components/features/settings/LifestyleSelec
 import { FoodPreferences } from '@/components/features/settings/FoodPreferences';
 import { FreeNotes } from '@/components/features/settings/FreeNotes';
 import { BackupManager } from '@/components/features/backup/BackupManager';
-import { GoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/GoalSettings';
+import { EnhancedGoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/EnhancedGoalSettings';
+import type { GoalMode, ConstraintType } from '@/types';
 import { userSettingsRepository } from '@/lib/db/repositories';
 import type { BodyConstitutionTag, LifestyleTag } from '@/types';
 
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [currentWeight, setCurrentWeight] = useState<number | undefined>();
   const [targetWeight, setTargetWeight] = useState<number | undefined>();
   const [goalPeriod, setGoalPeriod] = useState<GoalPeriod>('no_limit');
+  const [goalMode, setGoalMode] = useState<GoalMode | undefined>();
+  const [constraints, setConstraints] = useState<ConstraintType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -54,6 +57,9 @@ export default function SettingsPage() {
           setTargetWeight(settings.profile.targetWeight);
           setGoalPeriod(settings.profile.goalPeriod as GoalPeriod || 'no_limit');
         }
+        // Phase21: 新しいゴール設定を読み込み
+        setGoalMode(settings.goalMode);
+        setConstraints(settings.constraints || []);
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -127,6 +133,8 @@ export default function SettingsPage() {
           // favoriteFoods,
           // dislikedFoods,
           additionalNotes,
+          goalMode,
+          constraints,
           profile: {
             ...existingSettings.profile,
             currentWeight,
@@ -145,6 +153,8 @@ export default function SettingsPage() {
           // favoriteFoods,
           // dislikedFoods,
           additionalNotes,
+          goalMode,
+          constraints,
           onboardingCompleted: true,
         });
       }
@@ -275,14 +285,16 @@ export default function SettingsPage() {
               }}
             />
             
-            {/* 目標設定 */}
+            {/* Phase21: 強化された目標設定 */}
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">🎯 目標設定</h2>
-              <GoalSettings
+              <EnhancedGoalSettings
                 goalType={goalType}
                 currentWeight={currentWeight}
                 targetWeight={targetWeight}
                 goalPeriod={goalPeriod}
+                goalMode={goalMode}
+                constraints={constraints}
                 onGoalTypeChange={(value) => {
                   setGoalType(value);
                   markAsChanged();
@@ -297,6 +309,14 @@ export default function SettingsPage() {
                 }}
                 onGoalPeriodChange={(value) => {
                   setGoalPeriod(value);
+                  markAsChanged();
+                }}
+                onGoalModeChange={(value) => {
+                  setGoalMode(value);
+                  markAsChanged();
+                }}
+                onConstraintsChange={(value) => {
+                  setConstraints(value);
                   markAsChanged();
                 }}
               />

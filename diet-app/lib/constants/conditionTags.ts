@@ -92,6 +92,66 @@ export const conditionTagsInfo: ConditionTagInfo[] = [
     icon: '🤕',
     category: 'lifestyle',
     color: 'green'
+  },
+  
+  // フェーズ21: GAINモード専用検知タグ
+  {
+    id: 'low_total_intake',
+    label: '食事量が少ない',
+    icon: '🍽️',
+    category: 'physical',
+    color: 'orange'
+  },
+  {
+    id: 'low_meal_frequency',
+    label: '食事回数が少ない',
+    icon: '⏰',
+    category: 'physical',
+    color: 'orange'
+  },
+  {
+    id: 'early_fullness',
+    label: 'すぐ満腹になる',
+    icon: '🤰',
+    category: 'physical',
+    color: 'blue'
+  },
+  {
+    id: 'need_liquid_calories',
+    label: '固形物が辛い',
+    icon: '🥤',
+    category: 'physical',
+    color: 'cyan'
+  },
+  {
+    id: 'post_workout',
+    label: '運動後',
+    icon: '💪',
+    category: 'physical',
+    color: 'emerald'
+  },
+  
+  // 制約レイヤー用
+  {
+    id: 'morning_sickness',
+    label: 'つわり',
+    icon: '🤢',
+    category: 'physical',
+    color: 'yellow'
+  },
+  {
+    id: 'hormone_fluctuation',
+    label: 'ホルモン変動',
+    icon: '🌊',
+    category: 'physical',
+    color: 'purple'
+  },
+  {
+    id: 'medical_restriction',
+    label: '医療的制限',
+    icon: '🏥',
+    category: 'physical',
+    color: 'red'
   }
 ];
 

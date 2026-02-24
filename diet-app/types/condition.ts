@@ -31,6 +31,18 @@ export type ConditionTag =
   | 'low_appetite' // 食欲なし
   | 'high_appetite' // 食欲旺盛
   
+  // フェーズ21: GAINモード専用検知タグ
+  | 'low_total_intake' // 総摂取量不足
+  | 'low_meal_frequency' // 食事回数不足
+  | 'early_fullness' // すぐに満腹になる
+  | 'need_liquid_calories' // 液体カロリー必要
+  | 'post_workout' // 運動後
+  
+  // 制約レイヤー用
+  | 'morning_sickness' // つわり
+  | 'hormone_fluctuation' // ホルモン変動
+  | 'medical_restriction' // 医療的制限
+  
   // 今日の予定
   | 'dining_out' // 外食予定
   | 'drinking_planned' // 飲み会予定

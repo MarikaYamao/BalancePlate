@@ -117,6 +117,41 @@ export type GoalType =
   | 'body_recomposition' // 体質改善（筋肉増、脂肪減）
   | 'health_improvement'; // 健康改善（数値目標なし）
 
+// フェーズ21: ゴールモード（3つのシンプルなモード）
+export type GoalMode = 'CUT' | 'MAINTAIN' | 'GAIN';
+
+// 制約タイプ（センシティブな情報）
+export type ConstraintType = 
+  | 'pregnancy'      // 妊娠中
+  | 'breastfeeding' // 授乳中
+  | 'hormone_ftm'   // ホルモン療法（FTM）
+  | 'hormone_mtf'   // ホルモン療法（MTF）
+  | 'medical';      // その他医療的制約
+
+// GAINモード専用の検知タグ
+export type GainDetectionTag = 
+  | 'low_total_intake'      // 総量不足
+  | 'low_meal_frequency'    // 回数不足
+  | 'early_fullness'        // すぐ満腹
+  | 'low_protein'          // タンパク不足
+  | 'low_energy_density';  // 低密度（サラダばかり等）
+
+// ゴールモード設定
+export interface GoalModeConfig {
+  mode: GoalMode;
+  priorities: string[];
+  detectionTags: string[];
+  adjustmentRules?: string[];
+}
+
+// 制約レイヤー設定
+export interface ConstraintLayer {
+  type: ConstraintType;
+  safetyFilters: string[];
+  nutritionFocus: string[];
+  warningSignals: string[];
+}
+
 export interface UserProfile {
   // 性別関連情報（包括的設計）
   assignedSexAtBirth?: 'male' | 'female'; // 出生時に割り当てられた性別（任意）
@@ -135,6 +170,22 @@ export interface UserProfile {
   goalType?: string; // 目標タイプ（health, weight_loss, weight_gain等）
   targetWeight?: number; // 目標体重（kg単位）
   goalPeriod?: string; // 目標期間（1_month, 3_months, 6_months, 1_year, no_limit）
+  
+  // フェーズ21: 拡張目標設定
+  goalMode?: GoalMode; // シンプルな3モード
+  goalDetails?: {
+    targetWeight?: number;
+    targetDate?: Date;
+    weeklyTarget?: number; // kg/週
+  };
+  
+  // 制約条件（センシティブ情報）
+  constraints?: ConstraintType[];
+  constraintDetails?: {
+    pregnancyWeek?: number;
+    hormoneStartDate?: Date;
+    medicalNotes?: string;
+  };
 }
 
 export interface UserSettings {
@@ -156,6 +207,15 @@ export interface UserSettings {
   // 食材の好み（暗号化対象）
   favoriteFoods?: string[]; // 好きな食材・料理
   dislikedFoods?: string[]; // 嫌い・アレルギーのある食材
+  
+  // フェーズ21: ゴール関連設定
+  goalMode?: GoalMode; // CUT/MAINTAIN/GAIN
+  constraints?: ConstraintType[]; // 制約条件
+  constraintDetails?: {
+    pregnancyWeek?: number;
+    hormoneStartDate?: Date;
+    medicalNotes?: string;
+  };
   
   // 自由記載
   additionalNotes?: string; // その他の情報（任意）

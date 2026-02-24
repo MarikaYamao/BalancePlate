@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Target, Heart, Dumbbell, Scale, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { Target, Heart, Dumbbell, Scale, TrendingUp, TrendingDown, Activity, Shield, AlertTriangle } from 'lucide-react';
+import type { GoalMode, ConstraintType } from '@/types';
 
 export type GoalType = 
   | 'health' // 健康維持
@@ -27,11 +28,85 @@ interface GoalSettingsProps {
   currentWeight?: number;
   targetWeight?: number;
   goalPeriod?: GoalPeriod;
+  goalMode?: GoalMode;
+  constraints?: ConstraintType[];
   onGoalTypeChange: (type: GoalType) => void;
   onCurrentWeightChange: (weight: number | undefined) => void;
   onTargetWeightChange: (weight: number | undefined) => void;
   onGoalPeriodChange: (period: GoalPeriod) => void;
+  onGoalModeChange?: (mode: GoalMode) => void;
+  onConstraintsChange?: (constraints: ConstraintType[]) => void;
 }
+
+// Phase21: 3つのシンプルモード
+const goalModeOptions: Array<{
+  id: GoalMode;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  examples: string[];
+}> = [
+  {
+    id: 'CUT',
+    label: '体重を減らしたい（CUT）',
+    description: '脂肪を落とし、むくみや過食を抑える',
+    icon: <TrendingDown className="w-5 h-5" />,
+    examples: ['むくみを改善したい', '食べ過ぎを抑えたい', '体脂肪を落としたい']
+  },
+  {
+    id: 'MAINTAIN',
+    label: '今の状態を維持したい（MAINTAIN）',
+    description: '体重レンジを維持し、体調の波を小さく',
+    icon: <Activity className="w-5 h-5" />,
+    examples: ['体調を安定させたい', 'リバウンドを防ぎたい', '現状維持が目標']
+  },
+  {
+    id: 'GAIN',
+    label: '体重を増やしたい（GAIN）',
+    description: '健康的に体重（筋肉/脂肪）を増やす',
+    icon: <TrendingUp className="w-5 h-5" />,
+    examples: ['筋肉をつけたい', '食事量を増やしたい', 'やせ型から抜け出したい']
+  }
+];
+
+// 制約オプション
+const constraintOptions: Array<{
+  id: ConstraintType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}> = [
+  {
+    id: 'pregnancy',
+    label: '妊娠中',
+    description: '安全な栄養摂取を最優先',
+    icon: <Heart className="w-5 h-5" />
+  },
+  {
+    id: 'breastfeeding',
+    label: '授乳中',
+    description: '母乳に配慮した食事提案',
+    icon: <Heart className="w-5 h-5" />
+  },
+  {
+    id: 'hormone_ftm',
+    label: 'ホルモン療法中（FTM）',
+    description: 'ホルモン変動を考慮した提案',
+    icon: <Shield className="w-5 h-5" />
+  },
+  {
+    id: 'hormone_mtf',
+    label: 'ホルモン療法中（MTF）',
+    description: 'ホルモン変動を考慮した提案',
+    icon: <Shield className="w-5 h-5" />
+  },
+  {
+    id: 'medical',
+    label: '医師から食事指導を受けている',
+    description: '医療的制約を考慮',
+    icon: <AlertTriangle className="w-5 h-5" />
+  }
+];
 
 const goalOptions: Array<{
   id: GoalType;
