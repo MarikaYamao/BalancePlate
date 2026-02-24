@@ -48,6 +48,17 @@ export type {
   FridgeItem
 } from './fridge';
 
+// Shopping related types
+export type {
+  ShoppingSuggestionRequestType,
+  ShoppingSuggestionItem,
+  ShoppingSuggestionCategory,
+  ShoppingSuggestionResponse,
+  ShoppingSuggestionRequest,
+  ShoppingListItem,
+  ShoppingList
+} from './shopping';
+
 // AI related types
 export type {
   AIConsultationResponse,

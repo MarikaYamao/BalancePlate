@@ -22,13 +22,13 @@ const tabs: TabItem[] = [
     id: 'fridge',
     label: '食材',
     href: '/fridge',
-    icon: '🛒'
+    icon: '🥬'
   },
   {
-    id: 'food-plan',
-    label: 'AI提案',
-    href: '/food-plan',
-    icon: '🤖'
+    id: 'shopping',
+    label: '買い出し',
+    href: '/shopping',
+    icon: '🛒'
   },
   {
     id: 'record',

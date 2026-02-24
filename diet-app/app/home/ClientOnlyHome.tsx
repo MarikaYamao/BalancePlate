@@ -7,6 +7,7 @@ import { QuickActions } from "@/components/features/home/QuickActions";
 import { TodaysSummary } from "@/components/features/home/TodaysSummary";
 import { BulkMealInput } from "@/components/features/meal/BulkMealInput";
 import { MealSuggestions } from "@/components/features/home/MealSuggestions";
+import { ShoppingPrompt } from "@/components/features/home/ShoppingPrompt";
 import { PostMealFeedback } from "@/components/features/meal/PostMealFeedback";
 import { ConditionModal } from "@/components/features/condition/ConditionModal";
 import { useUserSettings } from "@/lib/hooks/useUserSettings";
@@ -16,7 +17,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { mealLogRepository } from "@/lib/db/repositories";
 import { initializeEncryptedDatabase } from "@/lib/db/encryptedDatabase";
 import { detectMissedMeals, shouldShowBulkInput } from "@/lib/utils/mealUtils";
-import type { MealType, MealLog, ConditionTag } from "@/types";
+import type { MealType, MealLog, ConditionTag, MealPlanDetail } from "@/types";
 
 export default function ClientOnlyHome() {
   const { settings, isLoading, error } = useUserSettings();
@@ -391,6 +392,11 @@ export default function ClientOnlyHome() {
                     suggestions={suggestions}
                     unrecordedMeals={unrecordedMealTypes as MealType[]}
                     resetTime={resetTime}
+                  />
+                  
+                  {/* Phase20: 買い出し提案 */}
+                  <ShoppingPrompt
+                    mealPlans={Object.values(suggestions.mealPlans).filter(Boolean) as MealPlanDetail[]}
                   />
                 </div>
               </div>
