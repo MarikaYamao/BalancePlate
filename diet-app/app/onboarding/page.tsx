@@ -139,44 +139,54 @@ export default function OnboardingPage() {
   };
 
   const handleComplete = async () => {
-    const finalSettings: UserSettings = {
-      id: settings?.id || crypto.randomUUID(),
-      ...tempSettings,
-      profile: {
-        ...tempSettings.profile,
-        gender,
-        currentWeight,
-        goalType: goalType as any,
-        targetWeight,
-        goalPeriod: goalPeriod as any,
-      },
-      onboardingCompleted: true,
-      createdAt: settings?.createdAt || new Date(),
-      updatedAt: new Date(),
-    } as UserSettings;
-
-    await updateSettings(finalSettings);
-    
-    // 初期体重を体重記録として保存
-    if (currentWeight) {
-      try {
-        const { weightLogRepository } = await import('@/lib/db/repositories');
-        const { getTodayKey } = await import('@/lib/utils/dateUtils');
-        
-        const todayKey = getTodayKey(tempSettings.dayResetTime || '04:00');
-        await weightLogRepository.save({
-          weight: currentWeight,
-          dateKey: todayKey,
-          measurementTiming: 'morning',
-          note: '初期設定時の体重',
-        });
-      } catch (error) {
-        console.error('Failed to save initial weight:', error);
-        // エラーがあっても続行
+    try {
+      // userSettingsRepositoryを直接使用
+      const { userSettingsRepository } = await import('@/lib/db/repositories');
+      
+      // 設定を保存
+      await userSettingsRepository.save({
+        dayResetTime: tempSettings.dayResetTime || '04:00',
+        mealsPerDay: tempSettings.mealsPerDay || 3,
+        bodyConstitution: tempSettings.bodyConstitution || [],
+        lifestyle: tempSettings.lifestyle || [],
+        favoriteFoods: tempSettings.favoriteFoods || [],
+        dislikedFoods: tempSettings.dislikedFoods || [],
+        additionalNotes: tempSettings.additionalNotes,
+        profile: {
+          gender,
+          currentWeight,
+          goalType: goalType as any,
+          targetWeight,
+          goalPeriod: goalPeriod as any,
+        },
+        goalMode: goalType === 'weight_loss' ? 'CUT' : goalType === 'weight_gain' ? 'GAIN' : 'MAINTAIN',
+        onboardingCompleted: true,
+      });
+      
+      // 初期体重を体重記録として保存
+      if (currentWeight) {
+        try {
+          const { weightLogRepository } = await import('@/lib/db/repositories');
+          const { getTodayKey } = await import('@/lib/utils/dateUtils');
+          
+          const todayKey = getTodayKey(tempSettings.dayResetTime || '04:00');
+          await weightLogRepository.save({
+            weight: currentWeight,
+            dateKey: todayKey,
+            measurementTiming: 'morning',
+            note: '初期設定時の体重',
+          });
+        } catch (error) {
+          console.error('Failed to save initial weight:', error);
+          // エラーがあっても続行
+        }
       }
+      
+      router.push('/home');
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+      // エラーメッセージを表示するか、再試行を促す
     }
-    
-    router.push('/home');
   };
 
   const progress = ((currentStep + 1) / ONBOARDING_STEPS.length) * 100;

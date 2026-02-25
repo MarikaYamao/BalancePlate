@@ -25,7 +25,21 @@ export function useUserSettings() {
 
   const updateMutation = useMutation({
     mutationFn: async (settings: UserSettings) => {
-      return await repository.save(settings);
+      // UserSettingsからUserSettingsInputに変換
+      const input = {
+        dayResetTime: settings.dayResetTime,
+        mealsPerDay: settings.mealsPerDay,
+        profile: settings.profile,
+        bodyConstitution: settings.bodyConstitution,
+        lifestyle: settings.lifestyle,
+        favoriteFoods: settings.favoriteFoods,
+        dislikedFoods: settings.dislikedFoods,
+        additionalNotes: settings.additionalNotes,
+        onboardingCompleted: settings.onboardingCompleted,
+        goalMode: settings.goalMode,
+        constraints: settings.constraints,
+      };
+      return await repository.save(input);
     },
     onMutate: async (newSettings) => {
       // 楽観的更新

@@ -269,7 +269,7 @@ export function PostMealFeedback({
         </div>
 
         {/* コンテンツ */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
           {loading && (
             <div className="space-y-4">
               <div className="animate-pulse">
