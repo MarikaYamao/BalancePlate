@@ -10,19 +10,27 @@ import type {
 
 // システムプロンプト
 export const SYSTEM_PROMPT = `
-あなたは食事提案専門AIです。
-ユーザーの体質、生活習慣、今日のコンディションと目標を考慮して、
-無理のない食事プランを提案してください。
+あなたはユーザーの体質と生活習慣に寄り添う食事提案AIです。
+落ち着いた丁寧語で、事務的すぎず淡々とした安心感のあるトーンで応答してください。
 
-重要な指針：
-- 完璧を求めない、できることから始める
-- 今日の状態に合わせた現実的な提案
-- 励まし、肯定的なトーン
-- 「〜しなければならない」という表現は避ける
-- 体調が悪い時は無理をしない提案
+## 重要な指針
+- ユーザーの条件（mealsPerDay、conditionTags、lifestyle、goalType）を必ず1つ以上、todayGuidelineとadjustmentRuleに反映
+- 完璧を求めない、現実的な提案
+- 体調を最優先に考える
+- 無理な制限はしない
 - ユーザーの好きな食材を積極的に取り入れる
 - ユーザーの嫌いな食材・アレルギー食材は絶対に避ける
-- 必ず指定されたJSON形式で回答する
+
+## 禁止表現
+以下の過度な称賛表現は使用禁止：
+- お疲れ様です、素晴らしいです、偉い、最高、完璧、すごい
+- 頑張って、よくできました、立派です
+
+## トーン
+- 状況説明と次のアクション中心
+- 褒め言葉ではなく、継続しやすくする工夫の提案
+
+必ずJSON形式で回答してください。
 `;
 
 // 手持ち食材を考慮したプロンプト（有料機能）
@@ -164,60 +172,50 @@ export const CONSTRAINT_PROMPTS = {
 `
 } as const;
 
-// JSON形式でのレスポンス要求プロンプト
-export const JSON_RESPONSE_PROMPT = `
+// JSON形式でのレスポンス要求プロンプトを生成する関数
+export function getJsonResponsePrompt(mealsPerDay: 2 | 3): string {
+  const mealStructure = mealsPerDay === 2
+    ? '"breakfast": { ... }, "dinner": { ... }'
+    : '"breakfast": { ... }, "lunch": { ... }, "dinner": { ... }';
+
+  return `
 必ず以下のJSON形式で回答してください。
 テキストではなくJSON形式での返答を厳守してください。
+
+【重要】mealsPerDay=${mealsPerDay}なので、${mealsPerDay === 2 ? 'breakfast（朝食/ブランチ）とdinner（夕食）のみ' : 'breakfast、lunch、dinnerの3食'}を提案してください。
+
 JSONの構造は以下の通りです：
 
 {
-  "todayGuideline": "今日の方針（1行）：例「むくみ対策優先で、夜は塩分と炭水化物を軽め」",
+  "todayGuideline": "今日の体調とユーザー条件を反映した過ごし方（1行）",
   "mealSuggestions": {
-    "breakfast": {
-      "convenience": "コンビニメニュー",
-      "simpleCooking": "簡単自炊メニュー",
-      "normalCooking": "普通に自炊メニュー"
-    },
-    "lunch": {
-      "convenience": "コンビニメニュー",
-      "simpleCooking": "簡単自炊メニュー",
-      "normalCooking": "普通に自炊メニュー"
-    },
-    "dinner": {
-      "convenience": "コンビニメニュー",
-      "simpleCooking": "簡単自炊メニュー",
-      "normalCooking": "普通に自炊メニュー"
-    }
+    ${mealStructure}
+    // 各食事の構造：
+    // {
+    //   "convenience": "コンビニメニュー",
+    //   "simpleCooking": "簡単自炊メニュー",
+    //   "normalCooking": "普通に自炊メニュー"
+    // }
   },
-  "avoidToday": [
-    "NG/注意1：例「夜の汁物」",
-    "NG/注意2：例「加工肉は控えめ」"
-  ],
-  "adjustmentRule": "調整ルール（ログ反映の計算結果）：例「朝が重かったので昼は主食を半分＋タンパク質優先」",
+  "avoidToday": [], // 注意事項がない場合は空配列。「特になし」は入れない
+  "adjustmentRule": "当日条件×目標を反映した具体的調整方針",
   "feedback": {
-    "overall": "総合的な評価をここに記載",
-    "positive": ["良かった点1", "良かった点2"],
-    "suggestions": ["改善提案1", "改善提案2"],
-    "encouragement": "励ましのメッセージ"
+    "overall": "現状の説明と次のアクション（1-2行）",
+    "positive": "継続しやすくする工夫の説明（1行）",
+    "suggestions": ["具体的提案1", "具体的提案2"],
+    "encouragement": "次のステップの案内（1行）"
   },
   "mealPlans": {
-    "breakfast": {
-      "menu": ["メニュー項目1", "メニュー項目2"],
-      "preparation": "簡単" | "普通" | "手間",
-      "alternatives": ["代替案1", "代替案2"],
-      "reason": "この提案をする理由",
-      "calories": 推定カロリー数値,
-      "timing": "推奨時間"
-    },
-    "lunch": {
-      同様の構造
-    },
-    "dinner": {
-      同様の構造
-    },
-    "snack": {
-      同様の構造（必要に応じて）
-    }
+    ${mealStructure}
+    // 各食事の構造：
+    // {
+    //   "menu": ["メニュー項目1", "メニュー項目2"],
+    //   "preparation": "簡単" | "普通" | "手間",
+    //   "alternatives": ["代替案1", "代替案2"],
+    //   "reason": "この提案をする理由",
+    //   "calories": 推定カロリー数値,
+    //   "timing": "推奨時間"
+    // }
   },
   "nutritionAdvice": {
     "focus": ["重視すべき栄養素1", "栄養素2"],
@@ -235,9 +233,11 @@ JSONの構造は以下の通りです：
 - 必ずValidなJSONとして出力
 - 文字列内の改行は\\nでエスケープ
 - ダブルクォートは\\"でエスケープ
-- mealPlansは提案が必要な食事のみ含める
+- avoidTodayが空の場合は[]を返す。「特になし」は入れない
+- adjustmentRuleには必ずユーザーの条件を1つ以上反映
 - caloriesは数値型で出力
 `;
+}
 
 // 体質タグの日本語ラベル
 export const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
@@ -690,5 +690,7 @@ ${previousDayInfo}
 
 【リクエスト】
 ${requestPrompts[context.requestType]}
+
+${getJsonResponsePrompt(context.userProfile.mealsPerDay)}
 `;
 }

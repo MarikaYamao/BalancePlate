@@ -34,31 +34,27 @@ export function PostMealFeedback({
       setError(null);
 
       // ユーザー設定とコンディションの取得
-      const { encryptedUserSettingsRepository, encryptedDailyStateRepository } =
+      const { userSettingsRepository, dailyStateRepository } =
         await import("@/lib/db/repositories");
       const { getDateKey } = await import("@/lib/utils/dateUtils");
 
       // 設定とコンディションを取得
-      let settings = await encryptedUserSettingsRepository.get();
+      let settings = await userSettingsRepository.get();
 
       // 設定が存在しない場合はデフォルト値を作成
       if (!settings) {
         const defaultSettings = {
-          id: "default-user",
           dayResetTime: "04:00",
           mealsPerDay: 3 as const,
           bodyConstitution: [],
           lifestyle: [],
           onboardingCompleted: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         };
-        await encryptedUserSettingsRepository.save(defaultSettings);
-        settings = defaultSettings;
+        settings = await userSettingsRepository.save(defaultSettings);
       }
 
       const dateKey = getDateKey(new Date(), settings.dayResetTime);
-      const dailyState = await encryptedDailyStateRepository.get(dateKey);
+      const dailyState = await dailyStateRepository.get(dateKey);
 
       // 今日の食事データ取得
       const { mealLogRepository } = await import("@/lib/db/repositories");

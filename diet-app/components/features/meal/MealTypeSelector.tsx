@@ -2,7 +2,7 @@
 
 import { type MealType } from '@/types';
 import { useEffect, useState } from 'react';
-import { encryptedUserSettingsRepository } from '@/lib/db/repositories';
+import { userSettingsRepository } from '@/lib/db/repositories';
 
 interface MealTypeSelectorProps {
   selectedType: MealType | null;
@@ -46,7 +46,7 @@ export function MealTypeSelector({
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const settings = await encryptedUserSettingsRepository.get();
+        const settings = await userSettingsRepository.get();
         if (settings) {
           setMealsPerDay(settings.mealsPerDay);
         }

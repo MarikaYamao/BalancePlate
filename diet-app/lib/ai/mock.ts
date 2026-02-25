@@ -29,11 +29,11 @@ export function generateMockResponse(context: AIPromptContext): string {
 
 ` : '';
 
-    return `お疲れ様でした！朝食の記録をありがとうございます。
+    return `朝食を記録しました。
 
-### 栄養評価
-- **良い点**: 朝からしっかり食事を摂れていて素晴らしいです
-- **改善提案**: ${hasWeakStomach ? '消化に優しいものを選んでいますが、野菜をもう少し追加できると良いですね' : 'タンパク質（卵、納豆など）を追加するとより満足感が得られます'}
+### 栄養状況
+- **現状**: 朝食でエネルギー補給完了
+- **次の調整**: ${hasWeakStomach ? '消化に優しいものを選択中。野菜をもう少し追加' : 'タンパク質（卵、納豆など）を追加で満足感アップ'}
 
 ${lunchSuggestions}### 夕食の提案（3パターン）
 - **A. バランス重視**: ${isOnPeriod ? '鉄分豊富な赤身肉と緑黄色野菜の炒め物、玄米' : '焼き魚定食と野菜の小鉢2品'}
@@ -46,11 +46,11 @@ ${lunchSuggestions}### 夕食の提案（3パターン）
   }
 
   if (requestType === 'after_lunch') {
-    return `お疲れ様でした！昼食の記録をありがとうございます。
+    return `昼食を記録しました。
 
-### 栄養評価（朝食〜昼食）
-- **良い点**: 2食しっかり記録できていて、継続する姿勢が素晴らしいです
-- **改善提案**: ${isTired ? '疲れが見られるので、ビタミンB群を意識して摂取しましょう' : '午後に向けて野菜不足を補うと良いでしょう'}
+### 栄養状況（朝食〜昼食）
+- **現状**: 2食分のエネルギー摂取完了
+- **次の調整**: ${isTired ? '疲労が見られるため、ビタミンB群を意識' : '午後に向けて野菜不足を補う'}
 
 ### 夕食の提案（3パターン）
 - **A. 栄養重視**: ${hasWeakStomach ? '白身魚と野菜の蒸し物、お粥、豆腐' : '鮭のムニエル、ひじきの煮物、野菜サラダ、玄米'}
@@ -58,24 +58,24 @@ ${lunchSuggestions}### 夕食の提案（3パターン）
 - **C. 簡単**: ${isTired ? 'レトルトカレー、袋サラダ、ヨーグルト' : '冷凍パスタ、カット野菜、缶スープ'}
 
 ### 午後のポイント
-- ${isStressed ? '5分間の深呼吸タイムを作りましょう' : '適度な水分補給（午後だけで500ml目安）'}
+- ${isStressed ? '5分間の深呼吸タイムを作る' : '適度な水分補給（午後だけで500ml目安）'}
 - ${hasEdema ? 'むくみ解消のため、軽く足を動かす' : '可能なら15-20分程度の軽い散歩を'}`;
   }
   
   // consultation（夕食・間食・その他）の場合
   if (requestType === 'consultation') {
-    return `お疲れ様でした！食事の記録をありがとうございます。
+    return `食事を記録しました。
 
-### 栄養評価
-- **良い点**: ${hasWeakStomach ? '消化に配慮した食事選びができていて良いですね' : '今日もしっかりと食事記録を続けられていて素晴らしいです'}
-- **改善提案**: ${isOnPeriod ? '生理中は鉄分を多めに摂りましょう。ほうれん草やレバーがおすすめです' : '野菜の種類をもう少し増やすと、さらにバランスが良くなります'}
+### 栄養状況
+- **現状**: ${hasWeakStomach ? '消化に配慮した食事選択中' : '今日の食事記録完了'}
+- **次の調整**: ${isOnPeriod ? '生理中のため鉄分を多めに。ほうれん草やレバーを追加' : '野菜の種類を増やしてバランス改善'}
 
 ### 明日に向けたアドバイス
-- ${isStressed ? 'ストレス解消のために、好きな音楽を聴きながら食事をしてみてください' : '規則正しい食事時間を心がけると、体のリズムが整います'}
-- ${hasEdema ? 'むくみ予防に、カリウムの多い食材（バナナ、アボカド）を取り入れてみて' : '水分補給も忘れずに、1日1.5〜2Lを目安にしましょう'}
+- ${isStressed ? 'ストレス緩和のため、食事時間をゆったり確保' : '規則正しい食事時間で体のリズムを整える'}
+- ${hasEdema ? 'むくみ予防にカリウムの多い食材（バナナ、アボカド）を追加' : '水分補給は1日1.5〜2Lを目安に'}
 
-### 励ましメッセージ
-今日もお疲れ様でした！${isTired ? '疲れている中でも食事記録を続けているあなたは本当に素晴らしいです。' : '継続は力なり、あなたの努力がきっと良い結果に繋がります。'}明日も無理をせず、自分のペースで続けていきましょう🌟`;
+### 次のステップ
+${isTired ? '疲労時は消化の良いものを選択。' : '明日も継続して記録。'}無理せず自分のペースで続けましょう。`;
   }
   
   // morning_planの場合（新フォーマット）
@@ -90,11 +90,19 @@ ${lunchSuggestions}### 夕食の提案（3パターン）
   const avoidToday = [];
   if (hasEdemaToday || hasEdema) avoidToday.push("夜の汁物・加工肉は控えめ");
   if (hasWeakStomach) avoidToday.push("揚げ物・香辛料の強いものは避ける");
-  if (avoidToday.length === 0) avoidToday.push("特になし");
+  // avoidTodayは空配列のままでOK（「特になし」は入れない）
 
-  const adjustmentRule = context.previousDayData?.meals && context.previousDayData.meals.length > 0
-    ? "昨日の食事を踏まえて野菜を増やし、塩分を控えめに調整"
-    : "初日なのでバランス重視で基本的な栄養配分";
+  // adjustmentRuleにユーザーの条件を必ず反映
+  const conditionPart = isOnPeriod ? "生理中のため鉄分強化" :
+                        hasEdemaToday ? "むくみ対策で塩分控えめ" :
+                        isTired ? "疲労回復のためビタミンB群重視" :
+                        "体調安定のためバランス重視";
+  
+  const goalPart = context.goals?.goalType === 'weight_loss' ? "カロリー控えめ" :
+                   context.goals?.goalType === 'weight_gain' ? "カロリーしっかり" :
+                   "適正カロリー維持";
+  
+  const adjustmentRule = `${conditionPart}、${goalPart}で調整`;
 
   const mealSuggestions = is2Meals ? {
     "breakfast": {
@@ -131,10 +139,10 @@ ${lunchSuggestions}### 夕食の提案（3パターン）
     "avoidToday": avoidToday.slice(0, 2),
     "adjustmentRule": adjustmentRule,
     "feedback": {
-      "overall": "今日も食事管理お疲れ様です！",
-      "positive": ["継続できていることが素晴らしいです"],
-      "suggestions": ["水分をこまめに摂りましょう"],
-      "encouragement": "無理せず自分のペースで続けていきましょう"
+      "overall": "現在の食事状況を分析しました。次の食事で調整しましょう。",
+      "positive": "継続記録ができているため、パターン把握が進んでいます",
+      "suggestions": ["水分をこまめに摂る", "野菜の種類を増やす"],
+      "encouragement": "無理せず自分のペースで続けましょう"
     },
     "nutritionAdvice": {
       "focus": [hasEdemaToday ? "カリウム" : "ビタミン", "タンパク質"],

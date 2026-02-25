@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { conditionTagsInfo } from '@/lib/constants/conditionTags';
-import { EncryptedDailyStateRepository } from '@/lib/db/repositories/encryptedDailyStateRepository';
-import { EncryptedUserSettingsRepository } from '@/lib/db/repositories/encryptedUserSettingsRepository';
+import { DailyStateRepository } from '@/lib/db/repositories/dailyStateRepository';
+import { UserSettingsRepository } from '@/lib/db/repositories/userSettingsRepository';
 import { fridgeItemRepository } from '@/lib/db/repositories/fridgeItemRepository';
 import { getTodayKey } from '@/lib/utils/dateUtils';
 import type { ConditionTag } from '@/types';
@@ -49,7 +49,7 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const repository = new EncryptedDailyStateRepository();
+      const repository = new DailyStateRepository();
       const todayState = await repository.getToday(resetTime);
       
       // 何も選択されていない場合は空配列で記録
@@ -65,7 +65,7 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
         const { initializeEncryptedDatabase } = await import('@/lib/db/encryptedDatabase');
         await initializeEncryptedDatabase();
         
-        const userSettingsRepo = new EncryptedUserSettingsRepository();
+        const userSettingsRepo = new UserSettingsRepository();
         const userSettings = await userSettingsRepo.get();
         console.log('👤 ユーザー設定取得:', userSettings ? 'あり' : 'なし');
         
