@@ -107,7 +107,7 @@ export const OnboardingFoodPreferences = forwardRef<
           <button
             type="button"
             onClick={() => favoriteInput.trim() && addFavorite(favoriteInput)}
-            className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+            className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 font-medium transition-colors shadow-sm"
           >
             追加
           </button>
@@ -138,7 +138,7 @@ export const OnboardingFoodPreferences = forwardRef<
 
       {/* 嫌い・アレルギーのある食材 */}
       <div className="space-y-3">
-        <label className="block text-sm font-semibold text-coral-600">
+        <label className="block text-sm font-semibold text-red-600">
           嫌い・アレルギーのある食材
         </label>
         <div className="flex gap-2">
@@ -148,17 +148,17 @@ export const OnboardingFoodPreferences = forwardRef<
             onChange={(e) => setDislikeInput(e.target.value)}
             onKeyPress={handleDislikeKeyPress}
             placeholder="例: 牛乳、海老、ナス"
-            className="flex-1 px-3 py-2 bg-white border border-coral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-400 focus:border-transparent"
+            className="flex-1 px-3 py-2 bg-white border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
           />
           <button
             type="button"
             onClick={() => dislikeInput.trim() && addDislike(dislikeInput)}
-            className="px-4 py-2 bg-coral-500 text-white rounded-lg hover:bg-coral-600 transition-colors"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium transition-colors shadow-sm"
           >
             追加
           </button>
         </div>
-        <p className="text-xs text-coral-600">
+        <p className="text-xs text-red-600">
           ⚠️ アレルギーがある場合は必ず登録してください
         </p>
         {dislikedFoods.length > 0 && (
@@ -166,13 +166,13 @@ export const OnboardingFoodPreferences = forwardRef<
             {dislikedFoods.map((food) => (
               <span
                 key={food}
-                className="inline-flex items-center px-3 py-1 bg-coral-100 text-coral-700 rounded-full text-sm"
+                className="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
               >
                 {food}
                 <button
                   type="button"
                   onClick={() => removeDislike(food)}
-                  className="ml-2 text-coral-600 hover:text-coral-800"
+                  className="ml-2 text-red-600 hover:text-red-800"
                 >
                   <X className="w-3 h-3" />
                 </button>

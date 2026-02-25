@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { BasicSettings } from '@/components/features/settings/BasicSettings';
-import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
-import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
+import { GenderAwareBodyConstitutionSelector } from '@/components/features/settings/GenderAwareBodyConstitutionSelector';
+import { GenderAwareLifestyleSelector } from '@/components/features/settings/GenderAwareLifestyleSelector';
 import { OnboardingFoodPreferences } from '@/components/features/onboarding/OnboardingFoodPreferences';
 import { GoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/GoalSettings';
+import { GenderSettings } from '@/components/features/settings/GenderSettings';
 import { useUserSettings } from '@/lib/hooks';
 import { CheckCircle, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import type { UserSettings } from '@/types';
@@ -25,6 +26,12 @@ const ONBOARDING_STEPS = [
     title: '基本設定',
     description: '必須項目です',
     required: true,
+  },
+  {
+    id: 'gender',
+    title: '性別',
+    description: 'スキップ可能',
+    required: false,
   },
   {
     id: 'goal',
@@ -75,6 +82,7 @@ export default function OnboardingPage() {
   const [currentWeight, setCurrentWeight] = useState<number | undefined>();
   const [targetWeight, setTargetWeight] = useState<number | undefined>();
   const [goalPeriod, setGoalPeriod] = useState<GoalPeriod>('no_limit');
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | 'prefer_not_to_say' | undefined>();
   const [pendingFavoriteInput, setPendingFavoriteInput] = useState('');
   const [pendingDislikeInput, setPendingDislikeInput] = useState('');
 
@@ -136,6 +144,7 @@ export default function OnboardingPage() {
       ...tempSettings,
       profile: {
         ...tempSettings.profile,
+        gender,
         currentWeight,
         goalType: goalType as any,
         targetWeight,
@@ -227,6 +236,27 @@ export default function OnboardingPage() {
           </div>
         );
         
+      case 'gender':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                性別を教えてください
+              </h2>
+              <p className="text-gray-600">
+                より適切な健康アドバイスを提供するために使用されます
+              </p>
+              <p className="text-sm text-teal-600 mt-2">
+                ※後から変更できます
+              </p>
+            </div>
+            <GenderSettings
+              gender={gender}
+              onChange={setGender}
+            />
+          </div>
+        );
+        
       case 'goal':
         return (
           <div className="space-y-6">
@@ -268,11 +298,12 @@ export default function OnboardingPage() {
                 ※後から変更できます
               </p>
             </div>
-            <BodyConstitutionSelector
+            <GenderAwareBodyConstitutionSelector
               selected={tempSettings.bodyConstitution || []}
               onChange={(tags) => 
                 setTempSettings({ ...tempSettings, bodyConstitution: tags })
               }
+              gender={gender}
             />
           </div>
         );
@@ -291,11 +322,12 @@ export default function OnboardingPage() {
                 ※後から変更できます
               </p>
             </div>
-            <LifestyleSelector
+            <GenderAwareLifestyleSelector
               selected={tempSettings.lifestyle || []}
               onChange={(tags) => 
                 setTempSettings({ ...tempSettings, lifestyle: tags })
               }
+              gender={gender}
             />
           </div>
         );
@@ -353,6 +385,12 @@ export default function OnboardingPage() {
                   <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
                   <span>1日の食事回数: {tempSettings.mealsPerDay}食</span>
                 </li>
+                {gender && (
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>性別: 設定済み</span>
+                  </li>
+                )}
                 {goalType && (
                   <li className="flex items-start">
                     <CheckCircle className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0 mt-0.5" />

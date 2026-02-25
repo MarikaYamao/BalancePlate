@@ -9,6 +9,8 @@ export interface UserSettingsInput {
   profile?: UserProfile;
   bodyConstitution: BodyConstitutionTag[];
   lifestyle: LifestyleTag[];
+  favoriteFoods?: string[];
+  dislikedFoods?: string[];
   additionalNotes?: string;
   onboardingCompleted: boolean;
   // Phase21: 新しいゴール設定
@@ -40,6 +42,8 @@ export class UserSettingsRepository extends BaseRepository {
         profile: input.profile,
         bodyConstitution: input.bodyConstitution,
         lifestyle: input.lifestyle,
+        favoriteFoods: input.favoriteFoods,
+        dislikedFoods: input.dislikedFoods,
         additionalNotes: input.additionalNotes,
         onboardingCompleted: input.onboardingCompleted,
         goalMode: input.goalMode,

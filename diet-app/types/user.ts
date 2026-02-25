@@ -46,6 +46,13 @@ export type BodyConstitutionTag =
   | 'heavy_periods' // 生理が重い
   | 'menopause' // 更年期
   
+  // 特別な配慮が必要な状況
+  | 'pregnancy' // 妊娠中
+  | 'breastfeeding' // 授乳中
+  | 'hormone_ftm' // ホルモン療法中（FTM）
+  | 'hormone_mtf' // ホルモン療法中（MTF）
+  | 'medical_diet' // 医師から食事指導を受けている
+  
   // その他
   | 'prone_to_headaches' // 頭痛持ち
   | 'skin_problems' // 肌荒れしやすい
@@ -154,6 +161,7 @@ export interface ConstraintLayer {
 
 export interface UserProfile {
   // 性別関連情報（包括的設計）
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say'; // 性別
   assignedSexAtBirth?: 'male' | 'female'; // 出生時に割り当てられた性別（任意）
   currentHormoneStatus?: HormoneStatus; // 現在のホルモン状態（任意）
   hormoneTherapyDuration?: HormoneTherapyDuration; // ホルモン治療期間

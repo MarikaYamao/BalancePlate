@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { Button } from '@/components/ui/Button';
 import { BasicSettings } from '@/components/features/settings/BasicSettings';
-import { BodyConstitutionSelector } from '@/components/features/settings/BodyConstitutionSelector';
-import { LifestyleSelector } from '@/components/features/settings/LifestyleSelector';
+import { GenderAwareBodyConstitutionSelector } from '@/components/features/settings/GenderAwareBodyConstitutionSelector';
+import { GenderAwareLifestyleSelector } from '@/components/features/settings/GenderAwareLifestyleSelector';
 import { FoodPreferences } from '@/components/features/settings/FoodPreferences';
 import { FreeNotes } from '@/components/features/settings/FreeNotes';
 import { BackupManager } from '@/components/features/backup/BackupManager';
-import { EnhancedGoalSettings, type GoalType, type GoalPeriod } from '@/components/features/settings/EnhancedGoalSettings';
-import type { GoalMode, ConstraintType } from '@/types';
+import { GoalSettingsDisplay } from '@/components/features/settings/GoalSettingsDisplay';
+import { GoalSettingsModal, type GoalType, type GoalPeriod } from '@/components/features/settings/GoalSettingsModal';
+import type { GoalMode } from '@/types';
 import { userSettingsRepository } from '@/lib/db/repositories';
 import type { BodyConstitutionTag, LifestyleTag } from '@/types';
 
@@ -22,17 +23,18 @@ export default function SettingsPage() {
   const [favoriteFoods, setFavoriteFoods] = useState<string[]>([]);
   const [dislikedFoods, setDislikedFoods] = useState<string[]>([]);
   const [additionalNotes, setAdditionalNotes] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | 'prefer_not_to_say' | undefined>();
   const [goalType, setGoalType] = useState<GoalType | undefined>();
   const [currentWeight, setCurrentWeight] = useState<number | undefined>();
   const [targetWeight, setTargetWeight] = useState<number | undefined>();
   const [goalPeriod, setGoalPeriod] = useState<GoalPeriod>('no_limit');
   const [goalMode, setGoalMode] = useState<GoalMode | undefined>();
-  const [constraints, setConstraints] = useState<ConstraintType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState<'profile' | 'backup'>('profile');
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -52,6 +54,7 @@ export default function SettingsPage() {
         setAdditionalNotes(settings.additionalNotes || '');
         // 目標設定を読み込み
         if (settings.profile) {
+          setGender(settings.profile.gender);
           setCurrentWeight(settings.profile.currentWeight);
           setGoalType(settings.profile.goalType as GoalType);
           setTargetWeight(settings.profile.targetWeight);
@@ -59,7 +62,6 @@ export default function SettingsPage() {
         }
         // Phase21: 新しいゴール設定を読み込み
         setGoalMode(settings.goalMode);
-        setConstraints(settings.constraints || []);
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -130,13 +132,13 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
-          // favoriteFoods,
-          // dislikedFoods,
+          favoriteFoods,
+          dislikedFoods,
           additionalNotes,
           goalMode,
-          constraints,
           profile: {
             ...existingSettings.profile,
+            // gender は初期設定時のまま変更不可
             currentWeight,
             goalType: goalType as any,
             targetWeight,
@@ -150,12 +152,18 @@ export default function SettingsPage() {
           mealsPerDay,
           bodyConstitution,
           lifestyle,
-          // favoriteFoods,
-          // dislikedFoods,
+          favoriteFoods,
+          dislikedFoods,
           additionalNotes,
           goalMode,
-          constraints,
           onboardingCompleted: true,
+          profile: {
+            // gender は初期設定時のみ設定可能
+            currentWeight,
+            goalType: goalType as any,
+            targetWeight,
+            goalPeriod: goalPeriod as any,
+          },
         });
       }
       
@@ -285,59 +293,37 @@ export default function SettingsPage() {
               }}
             />
             
-            {/* Phase21: 強化された目標設定 */}
+            {/* 目標設定表示 */}
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">🎯 目標設定</h2>
-              <EnhancedGoalSettings
+              <GoalSettingsDisplay
                 goalType={goalType}
                 currentWeight={currentWeight}
                 targetWeight={targetWeight}
                 goalPeriod={goalPeriod}
                 goalMode={goalMode}
-                constraints={constraints}
-                onGoalTypeChange={(value) => {
-                  setGoalType(value);
-                  markAsChanged();
-                }}
-                onCurrentWeightChange={(value) => {
-                  setCurrentWeight(value);
-                  markAsChanged();
-                }}
-                onTargetWeightChange={(value) => {
-                  setTargetWeight(value);
-                  markAsChanged();
-                }}
-                onGoalPeriodChange={(value) => {
-                  setGoalPeriod(value);
-                  markAsChanged();
-                }}
-                onGoalModeChange={(value) => {
-                  setGoalMode(value);
-                  markAsChanged();
-                }}
-                onConstraintsChange={(value) => {
-                  setConstraints(value);
-                  markAsChanged();
-                }}
+                onEditClick={() => setIsGoalModalOpen(true)}
               />
             </div>
             
             {/* 体質選択 */}
-            <BodyConstitutionSelector
+            <GenderAwareBodyConstitutionSelector
               selected={bodyConstitution}
               onChange={(value) => {
                 setBodyConstitution(value);
                 markAsChanged();
               }}
+              gender={gender}
             />
             
             {/* 生活習慣選択 */}
-            <LifestyleSelector
+            <GenderAwareLifestyleSelector
               selected={lifestyle}
               onChange={(value) => {
                 setLifestyle(value);
                 markAsChanged();
               }}
+              gender={gender}
             />
             
             {/* 食材の好み */}
@@ -381,6 +367,28 @@ export default function SettingsPage() {
           </>
         )}
         </div>
+        
+        {/* 目標設定モーダル */}
+        <GoalSettingsModal
+          isOpen={isGoalModalOpen}
+          onClose={() => setIsGoalModalOpen(false)}
+          onSave={(data) => {
+            setGoalType(data.goalType);
+            setCurrentWeight(data.currentWeight);
+            setTargetWeight(data.targetWeight);
+            setGoalPeriod(data.goalPeriod);
+            setGoalMode(data.goalMode);
+            markAsChanged();
+            setIsGoalModalOpen(false);
+          }}
+          initialData={{
+            goalType,
+            currentWeight,
+            targetWeight,
+            goalPeriod,
+            goalMode
+          }}
+        />
         
         {/* 固定保存ボタン（プロファイルタブのみ） */}
         {activeSection === 'profile' && (

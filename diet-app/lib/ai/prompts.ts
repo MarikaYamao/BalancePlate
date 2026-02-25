@@ -286,6 +286,13 @@ export const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
   'heavy_periods': '生理が重い',
   'menopause': '更年期',
   
+  // 特別な配慮が必要な状況
+  'pregnancy': '妊娠中',
+  'breastfeeding': '授乳中',
+  'hormone_ftm': 'ホルモン療法中（FTM）',
+  'hormone_mtf': 'ホルモン療法中（MTF）',
+  'medical_diet': '医師から食事指導を受けている',
+  
   // その他
   'prone_to_headaches': '頭痛持ち',
   'skin_problems': '肌荒れしやすい',

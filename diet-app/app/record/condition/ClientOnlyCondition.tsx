@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layouts/MainLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ConditionTagSelector } from '@/components/features/condition/ConditionTagSelector';
+import { GenderAwareConditionTagSelector } from '@/components/features/condition/GenderAwareConditionTagSelector';
 import { FreeMemoInput } from '@/components/features/condition/FreeMemoInput';
 import { getDateKey, formatDateFromKey } from '@/lib/utils/dateUtils';
 import { useDailyState } from '@/lib/hooks/useDailyState';
@@ -23,6 +23,7 @@ export default function ClientOnlyConditionRecord() {
   // TanStack Query hooks
   const { settings, isLoading: settingsLoading } = useUserSettings();
   const resetTime = settings?.dayResetTime || '04:00';
+  const userGender = settings?.profile?.gender;
   const todayKey = getDateKey(new Date(), resetTime);
   const displayDate = formatDateFromKey(todayKey);
   
@@ -170,10 +171,11 @@ export default function ClientOnlyConditionRecord() {
 
           {/* コンディション選択 */}
           <Card>
-            <ConditionTagSelector
+            <GenderAwareConditionTagSelector
               selectedTags={selectedTags}
               onTagsChange={setSelectedTags}
               maxSelection={5}
+              gender={userGender}
             />
           </Card>
 

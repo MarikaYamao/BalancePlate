@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Target, Heart, Dumbbell, Scale, TrendingUp, TrendingDown, Activity, Shield, AlertTriangle } from 'lucide-react';
-import type { GoalMode, ConstraintType } from '@/types';
+import { Target, Heart, Dumbbell, Scale, TrendingUp, TrendingDown, Activity, Shield } from 'lucide-react';
+import type { GoalMode } from '@/types';
 
 export type GoalType = 
   | 'health' // 健康維持
@@ -15,6 +15,72 @@ export type GoalType =
   | 'energy_boost' // 活力向上
   | 'better_sleep' // 睡眠改善
   | 'stress_management'; // ストレス管理
+
+// 従来の詳細な目標タイプオプション
+const detailedGoalOptions: Array<{
+  id: GoalType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  relatedMode: GoalMode;
+}> = [
+  {
+    id: 'weight_loss',
+    label: '減量',
+    description: '体重・体脂肪を減らす',
+    icon: <TrendingDown className="w-4 h-4" />,
+    relatedMode: 'CUT'
+  },
+  {
+    id: 'weight_gain',
+    label: '増量',
+    description: '健康的に体重を増やす',
+    icon: <TrendingUp className="w-4 h-4" />,
+    relatedMode: 'GAIN'
+  },
+  {
+    id: 'muscle_gain',
+    label: '筋肉増強',
+    description: '筋肉量を増やす',
+    icon: <Dumbbell className="w-4 h-4" />,
+    relatedMode: 'GAIN'
+  },
+  {
+    id: 'body_recomposition',
+    label: '体型改善',
+    description: '筋肉増・脂肪減を同時に',
+    icon: <Scale className="w-4 h-4" />,
+    relatedMode: 'MAINTAIN'
+  },
+  {
+    id: 'health',
+    label: '健康維持',
+    description: '健康的な生活を継続',
+    icon: <Heart className="w-4 h-4" />,
+    relatedMode: 'MAINTAIN'
+  },
+  {
+    id: 'energy_boost',
+    label: '活力向上',
+    description: 'エネルギーレベルを上げる',
+    icon: <Activity className="w-4 h-4" />,
+    relatedMode: 'MAINTAIN'
+  },
+  {
+    id: 'better_sleep',
+    label: '睡眠改善',
+    description: '睡眠の質を向上させる',
+    icon: <Target className="w-4 h-4" />,
+    relatedMode: 'MAINTAIN'
+  },
+  {
+    id: 'stress_management',
+    label: 'ストレス管理',
+    description: 'ストレス対処を改善',
+    icon: <Shield className="w-4 h-4" />,
+    relatedMode: 'MAINTAIN'
+  }
+];
 
 export type GoalPeriod = 
   | '1_month'
@@ -29,13 +95,11 @@ interface EnhancedGoalSettingsProps {
   targetWeight?: number;
   goalPeriod?: GoalPeriod;
   goalMode?: GoalMode;
-  constraints?: ConstraintType[];
   onGoalTypeChange: (type: GoalType) => void;
   onCurrentWeightChange: (weight: number | undefined) => void;
   onTargetWeightChange: (weight: number | undefined) => void;
   onGoalPeriodChange: (period: GoalPeriod) => void;
   onGoalModeChange?: (mode: GoalMode) => void;
-  onConstraintsChange?: (constraints: ConstraintType[]) => void;
 }
 
 // Phase21: 3つのシンプルモード
@@ -73,50 +137,6 @@ const goalModeOptions: Array<{
   }
 ];
 
-// 制約オプション
-const constraintOptions: Array<{
-  id: ConstraintType;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  warningLevel: 'info' | 'warning' | 'critical';
-}> = [
-  {
-    id: 'pregnancy',
-    label: '妊娠中',
-    description: '安全な栄養摂取を最優先します',
-    icon: <Heart className="w-5 h-5" />,
-    warningLevel: 'critical'
-  },
-  {
-    id: 'breastfeeding',
-    label: '授乳中',
-    description: '母乳に配慮した食事提案を行います',
-    icon: <Heart className="w-5 h-5" />,
-    warningLevel: 'warning'
-  },
-  {
-    id: 'hormone_ftm',
-    label: 'ホルモン療法中（FTM）',
-    description: 'ホルモン変動を考慮した提案を行います',
-    icon: <Shield className="w-5 h-5" />,
-    warningLevel: 'info'
-  },
-  {
-    id: 'hormone_mtf',
-    label: 'ホルモン療法中（MTF）',
-    description: 'ホルモン変動を考慮した提案を行います',
-    icon: <Shield className="w-5 h-5" />,
-    warningLevel: 'info'
-  },
-  {
-    id: 'medical',
-    label: '医師から食事指導を受けている',
-    description: '医療的制約を考慮します',
-    icon: <AlertTriangle className="w-5 h-5" />,
-    warningLevel: 'critical'
-  }
-];
 
 const periodOptions: Array<{ id: GoalPeriod; label: string }> = [
   { id: '1_month', label: '1ヶ月' },
@@ -132,48 +152,48 @@ export function EnhancedGoalSettings({
   targetWeight,
   goalPeriod = 'no_limit',
   goalMode,
-  constraints = [],
   onGoalTypeChange,
   onCurrentWeightChange,
   onTargetWeightChange,
   onGoalPeriodChange,
   onGoalModeChange,
-  onConstraintsChange,
 }: EnhancedGoalSettingsProps) {
-  const [showWeightInput, setShowWeightInput] = useState(false);
-  const [showConstraints, setShowConstraints] = useState(false);
+  // 初期値として、既にgoalModeがCUTまたはGAINの場合は体重入力を表示
+  const [showWeightInput, setShowWeightInput] = useState(
+    goalMode === 'CUT' || goalMode === 'GAIN' || !!currentWeight || !!targetWeight
+  );
   
   const selectedMode = goalModeOptions.find(m => m.id === goalMode);
-  
-  const handleConstraintToggle = (constraintType: ConstraintType) => {
-    if (!onConstraintsChange) return;
-    
-    const newConstraints = constraints.includes(constraintType)
-      ? constraints.filter(c => c !== constraintType)
-      : [...constraints, constraintType];
-    
-    onConstraintsChange(newConstraints);
-  };
 
   const handleGoalModeSelect = (mode: GoalMode) => {
     if (onGoalModeChange) {
       onGoalModeChange(mode);
     }
     
-    // モードに基づいて従来のGoalTypeも設定
+    // モードに基づいてデフォルトのGoalTypeを設定
     switch (mode) {
       case 'CUT':
-        onGoalTypeChange('weight_loss');
+        // 既存の目標タイプがCUTモードに関連しない場合のみ変更
+        const currentGoalForCut = detailedGoalOptions.find(opt => opt.id === goalType && opt.relatedMode === 'CUT');
+        if (!currentGoalForCut) {
+          onGoalTypeChange('weight_loss');
+        }
         setShowWeightInput(true);
         break;
       case 'MAINTAIN':
-        onGoalTypeChange('health');
+        const currentGoalForMaintain = detailedGoalOptions.find(opt => opt.id === goalType && opt.relatedMode === 'MAINTAIN');
+        if (!currentGoalForMaintain) {
+          onGoalTypeChange('health');
+        }
         setShowWeightInput(false);
         onCurrentWeightChange(undefined);
         onTargetWeightChange(undefined);
         break;
       case 'GAIN':
-        onGoalTypeChange('weight_gain');
+        const currentGoalForGain = detailedGoalOptions.find(opt => opt.id === goalType && opt.relatedMode === 'GAIN');
+        if (!currentGoalForGain) {
+          onGoalTypeChange('weight_gain');
+        }
         setShowWeightInput(true);
         break;
     }
@@ -196,74 +216,231 @@ export function EnhancedGoalSettings({
 
   return (
     <div className="space-y-6">
-      {/* Phase21: シンプルモード選択 */}
+      {/* 統合された目標選択 */}
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          あなたの目標を教えてください
+          あなたの目標を選択してください
         </h3>
-        <div className="grid gap-3">
-          {goalModeOptions.map((option) => (
+        
+        {/* 減量関連の目標 */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+            減量・引き締め
+          </h4>
+          <div className="grid gap-2">
             <button
-              key={option.id}
-              onClick={() => handleGoalModeSelect(option.id)}
+              onClick={() => {
+                onGoalTypeChange('weight_loss');
+                if (onGoalModeChange) onGoalModeChange('CUT');
+                setShowWeightInput(true);
+              }}
               className={`
-                w-full p-4 rounded-xl border-2 transition-all text-left
-                ${goalMode === option.id
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'weight_loss'
                   ? 'border-teal-500 bg-teal-50'
                   : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
                 }
               `}
             >
               <div className="flex items-start gap-3">
-                <div className={`
-                  w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0
-                  ${goalMode === option.id ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600'}
-                `}>
-                  {option.icon}
-                </div>
+                <TrendingDown className={`w-5 h-5 mt-0.5 ${goalType === 'weight_loss' ? 'text-teal-600' : 'text-gray-500'}`} />
                 <div className="flex-1">
-                  <h4 className="font-medium text-gray-800">
-                    {option.label}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {option.description}
-                  </p>
-                  {goalMode === option.id && (
-                    <div className="mt-2">
-                      <p className="text-xs text-teal-700 font-medium mb-1">優先順位:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {option.priority.map((priority, index) => (
-                          <span 
-                            key={index}
-                            className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded"
-                          >
-                            {index + 1}. {priority}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {goalMode !== option.id && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {option.examples.map((example, index) => (
-                        <span 
-                          key={index}
-                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"
-                        >
-                          {example}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <h5 className="font-medium text-gray-800">減量・ダイエット</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">体重・体脂肪を健康的に減らす</p>
                 </div>
               </div>
             </button>
-          ))}
+          </div>
+        </div>
+
+        {/* 増量関連の目標 */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+            増量・筋力アップ
+          </h4>
+          <div className="grid gap-2">
+            <button
+              onClick={() => {
+                onGoalTypeChange('weight_gain');
+                if (onGoalModeChange) onGoalModeChange('GAIN');
+                setShowWeightInput(true);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'weight_gain'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <TrendingUp className={`w-5 h-5 mt-0.5 ${goalType === 'weight_gain' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">増量</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">健康的に体重を増やす</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => {
+                onGoalTypeChange('muscle_gain');
+                if (onGoalModeChange) onGoalModeChange('GAIN');
+                setShowWeightInput(true);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'muscle_gain'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Dumbbell className={`w-5 h-5 mt-0.5 ${goalType === 'muscle_gain' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">筋肉増強</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">筋肉量を増やして強くなる</p>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* 維持・改善関連の目標 */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
+            維持・体質改善
+          </h4>
+          <div className="grid gap-2">
+            <button
+              onClick={() => {
+                onGoalTypeChange('health');
+                if (onGoalModeChange) onGoalModeChange('MAINTAIN');
+                setShowWeightInput(false);
+                onCurrentWeightChange(undefined);
+                onTargetWeightChange(undefined);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'health'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Heart className={`w-5 h-5 mt-0.5 ${goalType === 'health' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">健康維持</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">健康的な生活を継続する</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => {
+                onGoalTypeChange('body_recomposition');
+                if (onGoalModeChange) onGoalModeChange('MAINTAIN');
+                setShowWeightInput(true);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'body_recomposition'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Scale className={`w-5 h-5 mt-0.5 ${goalType === 'body_recomposition' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">体型改善</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">筋肉を増やし脂肪を減らす</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => {
+                onGoalTypeChange('energy_boost');
+                if (onGoalModeChange) onGoalModeChange('MAINTAIN');
+                setShowWeightInput(false);
+                onCurrentWeightChange(undefined);
+                onTargetWeightChange(undefined);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'energy_boost'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Activity className={`w-5 h-5 mt-0.5 ${goalType === 'energy_boost' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">活力向上</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">日々のエネルギーレベルを上げる</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => {
+                onGoalTypeChange('better_sleep');
+                if (onGoalModeChange) onGoalModeChange('MAINTAIN');
+                setShowWeightInput(false);
+                onCurrentWeightChange(undefined);
+                onTargetWeightChange(undefined);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'better_sleep'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Target className={`w-5 h-5 mt-0.5 ${goalType === 'better_sleep' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">睡眠改善</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">睡眠の質を向上させる</p>
+                </div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => {
+                onGoalTypeChange('stress_management');
+                if (onGoalModeChange) onGoalModeChange('MAINTAIN');
+                setShowWeightInput(false);
+                onCurrentWeightChange(undefined);
+                onTargetWeightChange(undefined);
+              }}
+              className={`
+                w-full p-3 rounded-lg border transition-all text-left
+                ${goalType === 'stress_management'
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 hover:border-teal-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                <Shield className={`w-5 h-5 mt-0.5 ${goalType === 'stress_management' ? 'text-teal-600' : 'text-gray-500'}`} />
+                <div className="flex-1">
+                  <h5 className="font-medium text-gray-800">ストレス管理</h5>
+                  <p className="text-xs text-gray-600 mt-0.5">ストレスに対処して心身を整える</p>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 体重入力（CUT/GAINモードの場合） */}
-      {showWeightInput && (goalMode === 'CUT' || goalMode === 'GAIN') && (
+      {/* 体重入力 */}
+      {showWeightInput && (
         <Card className="p-4 bg-blue-50 border-blue-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-4">
             体重情報を入力してください
@@ -359,96 +536,6 @@ export function EnhancedGoalSettings({
             </button>
           ))}
         </div>
-      </div>
-      
-      {/* Phase21: 制約条件の設定 */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-700">
-            特別な配慮が必要な状況（任意）
-          </h3>
-          <button
-            onClick={() => setShowConstraints(!showConstraints)}
-            className="text-sm text-blue-600 hover:text-blue-800"
-          >
-            {showConstraints ? '隠す' : '設定'}
-          </button>
-        </div>
-        
-        {showConstraints && (
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <div className="mb-3">
-              <div className="flex items-start gap-2 text-sm text-blue-800">
-                <Shield className="w-4 h-4 mt-0.5" />
-                <div>
-                  <p className="font-medium">プライバシー保護</p>
-                  <p className="text-blue-600 mt-1">
-                    この情報は提案の精度向上のためのみに使用します。医師の指示がある場合は、それを最優先してください。
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              {constraintOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => handleConstraintToggle(option.id)}
-                  className={`
-                    w-full p-3 rounded-lg border transition-all text-left
-                    ${constraints.includes(option.id)
-                      ? 'border-blue-500 bg-blue-100'
-                      : 'border-gray-200 hover:border-blue-300 bg-white'
-                    }
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`
-                      w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                      ${constraints.includes(option.id) 
-                        ? 'bg-blue-500 text-white' 
-                        : option.warningLevel === 'critical' 
-                          ? 'bg-red-100 text-red-600'
-                          : option.warningLevel === 'warning'
-                            ? 'bg-yellow-100 text-yellow-600'
-                            : 'bg-gray-100 text-gray-600'
-                      }
-                    `}>
-                      {option.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">
-                        {option.label}
-                      </h4>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {option.description}
-                      </p>
-                    </div>
-                    {constraints.includes(option.id) && (
-                      <div className="text-blue-500">
-                        ✓
-                      </div>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-            
-            {constraints.length > 0 && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-yellow-800">注意事項</p>
-                    <p className="text-yellow-700 mt-1">
-                      体調に異変を感じた場合は、アプリの提案に関係なく医療機関を受診してください。
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
-        )}
       </div>
     </div>
   );
