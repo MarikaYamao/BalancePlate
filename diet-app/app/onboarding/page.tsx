@@ -69,6 +69,8 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { settings, updateSettings, isLoading } = useUserSettings();
   const [currentStep, setCurrentStep] = useState(0);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [tempSettings, setTempSettings] = useState<Partial<UserSettings>>({
     dayResetTime: '04:00',
     mealsPerDay: 3,
@@ -87,7 +89,9 @@ export default function OnboardingPage() {
   const [pendingDislikeInput, setPendingDislikeInput] = useState('');
 
   useEffect(() => {
+    // 設定読み込み完了後、既にオンボーディング完了済みの場合のみリダイレクト
     if (!isLoading && settings?.onboardingCompleted) {
+      console.log('User already completed onboarding, redirecting to home');
       router.replace('/home');
     }
   }, [settings, isLoading, router]);
@@ -140,11 +144,31 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     try {
+      setIsSaving(true);
+      setSaveError(null);
+      
+      console.log('Starting onboarding completion...');
+      console.log('Settings to save:', {
+        dayResetTime: tempSettings.dayResetTime,
+        mealsPerDay: tempSettings.mealsPerDay,
+        bodyConstitution: tempSettings.bodyConstitution,
+        lifestyle: tempSettings.lifestyle,
+        favoriteFoods: tempSettings.favoriteFoods,
+        dislikedFoods: tempSettings.dislikedFoods,
+        profile: {
+          gender,
+          currentWeight,
+          goalType,
+          targetWeight,
+          goalPeriod
+        }
+      });
+      
       // userSettingsRepositoryを直接使用
       const { userSettingsRepository } = await import('@/lib/db/repositories');
       
       // 設定を保存
-      await userSettingsRepository.save({
+      const savedSettings = await userSettingsRepository.save({
         dayResetTime: tempSettings.dayResetTime || '04:00',
         mealsPerDay: tempSettings.mealsPerDay || 3,
         bodyConstitution: tempSettings.bodyConstitution || [],
@@ -163,6 +187,8 @@ export default function OnboardingPage() {
         onboardingCompleted: true,
       });
       
+      console.log('Settings saved successfully:', savedSettings);
+      
       // 初期体重を体重記録として保存
       if (currentWeight) {
         try {
@@ -176,16 +202,31 @@ export default function OnboardingPage() {
             measurementTiming: 'morning',
             note: '初期設定時の体重',
           });
+          console.log('Initial weight saved successfully');
         } catch (error) {
           console.error('Failed to save initial weight:', error);
           // エラーがあっても続行
         }
       }
       
-      router.push('/home');
+      // 保存確認のため、設定を再度読み込み
+      const verifySettings = await userSettingsRepository.get();
+      console.log('Verification - Settings after save:', verifySettings);
+      
+      if (verifySettings?.onboardingCompleted) {
+        console.log('Onboarding completed successfully, navigating to home');
+        // 少し待ってからナビゲート（データベースの書き込みを確実にするため）
+        setTimeout(() => {
+          router.push('/home');
+        }, 100);
+      } else {
+        throw new Error('設定の保存に失敗しました。もう一度お試しください。');
+      }
+      
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
-      // エラーメッセージを表示するか、再試行を促す
+      setSaveError(error instanceof Error ? error.message : '設定の保存に失敗しました');
+      setIsSaving(false);
     }
   };
 
@@ -538,10 +579,11 @@ export default function OnboardingPage() {
               {currentStep === ONBOARDING_STEPS.length - 1 ? (
                 <Button
                   onClick={handleComplete}
+                  disabled={isSaving}
                   className="flex items-center bg-gradient-to-r from-teal-500 to-silver-400 hover:from-teal-600 hover:to-silver-500"
                 >
-                  始める
-                  <Sparkles className="w-4 h-4 ml-1" />
+                  {isSaving ? '保存中...' : '始める'}
+                  {!isSaving && <Sparkles className="w-4 h-4 ml-1" />}
                 </Button>
               ) : (
                 <Button
@@ -556,6 +598,13 @@ export default function OnboardingPage() {
           </div>
         </Card>
 
+        {/* Error Message */}
+        {saveError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{saveError}</p>
+          </div>
+        )}
+        
         {/* Skip Info */}
         {!ONBOARDING_STEPS[currentStep].required && 
          currentStep !== 0 && 
