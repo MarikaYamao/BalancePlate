@@ -44,7 +44,6 @@ const pwaConfig = withPWA({
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   
   // パフォーマンス最適化
   compiler: {
