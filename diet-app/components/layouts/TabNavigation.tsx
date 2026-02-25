@@ -31,16 +31,10 @@ const tabs: TabItem[] = [
     icon: '🛒'
   },
   {
-    id: 'record',
-    label: '記録',
-    href: '/record',
-    icon: '📝'
-  },
-  {
-    id: 'history',
-    label: '履歴',
-    href: '/history',
-    icon: '📊'
+    id: 'diary',
+    label: 'ダイアリー',
+    href: '/diary',
+    icon: '📖'
   },
   {
     id: 'settings',
@@ -61,7 +55,8 @@ export function TabNavigation() {
   const isActiveTab = (href: string) => {
     if (!mounted) return false;
     if (href === '/home' && (pathname === '/home' || pathname === '/')) return true;
-    if (href !== '/home' && pathname.startsWith(href)) return true;
+    if (href === '/diary' && (pathname.startsWith('/diary') || pathname.startsWith('/record') || pathname.startsWith('/history'))) return true;
+    if (href !== '/home' && href !== '/diary' && pathname.startsWith(href)) return true;
     return false;
   };
 

@@ -488,7 +488,6 @@ function MealRecordPageContent() {
         <MealDetailModal
           isOpen={true}
           mealLog={showMealDetail.meal}
-          aiResponse={showMealDetail.aiResponse}
           onClose={() => setShowMealDetail(null)}
         />
       )}

@@ -4,10 +4,7 @@ import React from "react";
 import type { FridgeItem, FridgeItemCategory } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import {
-  useFridgeItems,
-  useDeleteFridgeItem,
-} from "@/lib/hooks";
+import { useFridgeItems, useDeleteFridgeItem } from "@/lib/hooks";
 
 interface SimpleFridgeListProps {
   onAddItem: () => void;
@@ -41,9 +38,7 @@ function FridgeItemCard({
         <div className="flex items-center gap-3">
           <span className="text-lg">{categoryIcons[item.category]}</span>
           <div>
-            <h3 className="font-medium text-gray-900">
-              {item.name}
-            </h3>
+            <h3 className="font-medium text-gray-900">{item.name}</h3>
           </div>
         </div>
 
@@ -51,10 +46,13 @@ function FridgeItemCard({
           {/* 削除ボタン */}
           <button
             onClick={() => onRemove(item.id)}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"
             title="削除"
+            aria-label={`${item.name}を削除`}
           >
-            🗑️
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
@@ -112,16 +110,6 @@ export function SimpleFridgeList({ onAddItem }: SimpleFridgeListProps) {
 
   return (
     <div className="space-y-4">
-      {/* サマリー */}
-      <div className="flex items-center justify-between">
-        <div className="text-center">
-          <p className="text-lg font-bold text-teal-600">
-            {allItems.length}
-          </p>
-          <p className="text-xs text-gray-600">手持ち食材</p>
-        </div>
-      </div>
-
       {/* 食材リスト */}
       {allItems.length > 0 && (
         <div>

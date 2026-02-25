@@ -30,6 +30,9 @@ export interface MealLog {
     analyzedAt: Date;
   };
   
+  // AIフィードバック（ダイナミックに追加）
+  aiResponse?: string;
+  
   // メタデータ
   createdAt: Date;
   updatedAt: Date;
