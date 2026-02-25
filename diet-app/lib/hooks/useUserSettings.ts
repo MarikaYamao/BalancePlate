@@ -55,8 +55,10 @@ export function useUserSettings() {
       }
       setLastError('設定の保存に失敗しました');
     },
-    onSuccess: () => {
-      // 成功時は関連するクエリを無効化
+    onSuccess: (data) => {
+      // 成功時はユーザー設定のキャッシュを更新
+      queryClient.setQueryData(['userSettings'], data);
+      // 関連するクエリを無効化
       queryClient.invalidateQueries({ queryKey: ['dailyState'] });
       queryClient.invalidateQueries({ queryKey: ['mealLogs'] });
     },

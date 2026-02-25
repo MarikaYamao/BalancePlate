@@ -89,12 +89,15 @@ export default function OnboardingPage() {
   const [pendingDislikeInput, setPendingDislikeInput] = useState('');
 
   useEffect(() => {
+    // 保存処理中は何もしない
+    if (isSaving) return;
+    
     // 設定読み込み完了後、既にオンボーディング完了済みの場合のみリダイレクト
     if (!isLoading && settings?.onboardingCompleted) {
       console.log('User already completed onboarding, redirecting to home');
-      router.replace('/home');
+      window.location.href = '/home';
     }
-  }, [settings, isLoading, router]);
+  }, [settings, isLoading, isSaving]);
 
   const handleNext = () => {
     // 食材の好みステップから次へ進む場合、入力中の内容を保存
@@ -215,10 +218,8 @@ export default function OnboardingPage() {
       
       if (verifySettings?.onboardingCompleted) {
         console.log('Onboarding completed successfully, navigating to home');
-        // 少し待ってからナビゲート（データベースの書き込みを確実にするため）
-        setTimeout(() => {
-          router.push('/home');
-        }, 100);
+        // window.locationを使用して確実に遷移、フラグを付与
+        window.location.href = '/home?onboarding_completed=true';
       } else {
         throw new Error('設定の保存に失敗しました。もう一度お試しください。');
       }
