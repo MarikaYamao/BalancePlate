@@ -62,7 +62,7 @@ export default function ClientOnlyHome() {
               alternatives: ["お茶漬け", "うどん"],
               reason: "体調を整えます"
             } : undefined,
-            lunch: unrecordedMealTypes.includes('lunch') ? {
+            lunch: (settings?.mealsPerDay === 3 && unrecordedMealTypes.includes('lunch')) ? {
               menu: ["野菜たっぷりスープ", "サンドイッチ"],
               preparation: "栄養バランス重視",
               alternatives: ["パスタ", "丼もの"],
@@ -146,19 +146,22 @@ export default function ClientOnlyHome() {
 
       const currentTime = new Date();
       const recordedTypes = todayMeals.map((meal) => meal.mealType);
-      const missed = detectMissedMeals(currentTime, resetTime, recordedTypes);
+      const missed = detectMissedMeals(currentTime, resetTime, recordedTypes, settings?.mealsPerDay || 3);
       setMissedMeals(missed);
 
-      // すべてのメインの食事タイプから未記録のものを取得
-      const allMealTypes: MealType[] = ["breakfast", "lunch", "dinner"];
+      // ユーザーのmealsPerDay設定に応じた食事タイプから未記録のものを取得
+      const allMealTypes: MealType[] = settings?.mealsPerDay === 2 
+        ? ["breakfast", "dinner"]  // 2食の場合は朝食と夕食のみ
+        : ["breakfast", "lunch", "dinner"];  // 3食の場合は朝昼晩
       const unrecorded = allMealTypes.filter(
         (type) => !recordedTypes.includes(type),
       );
       setUnrecordedMealTypes(unrecorded);
 
-      // 2つ以上の食事が未記録の場合にバルク入力を表示
+      // 食事設定に応じてバルク入力のしきい値を調整
+      const bulkInputThreshold = settings?.mealsPerDay === 2 ? 2 : 2; // 2食でも3食でも2つ以上未記録で表示
       setShowBulkInput(
-        shouldShowBulkInput(currentTime, resetTime, recordedTypes, 2),
+        shouldShowBulkInput(currentTime, resetTime, recordedTypes, bulkInputThreshold, settings?.mealsPerDay || 3),
       );
     } catch (error) {
       console.error("Failed to load meal data:", error);

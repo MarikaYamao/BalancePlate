@@ -3,7 +3,8 @@ import type { MealType } from '@/types';
 export function detectMissedMeals(
   currentTime: Date, 
   resetTime: string, 
-  recordedMealTypes: MealType[]
+  recordedMealTypes: MealType[],
+  mealsPerDay: 2 | 3 = 3
 ): MealType[] {
   const missedMeals: MealType[] = [];
   const currentHour = currentTime.getHours();
@@ -22,8 +23,8 @@ export function detectMissedMeals(
     missedMeals.push('breakfast');
   }
   
-  // 昼食時間帯を過ぎていて未入力 (12-16時)  
-  if (adjustedHour >= 16 && !recordedMealTypes.includes('lunch')) {
+  // 昼食時間帯を過ぎていて未入力 (12-16時) - 3食設定の場合のみ
+  if (mealsPerDay === 3 && adjustedHour >= 16 && !recordedMealTypes.includes('lunch')) {
     missedMeals.push('lunch');
   }
   
@@ -60,8 +61,9 @@ export function shouldShowBulkInput(
   currentTime: Date,
   resetTime: string,
   recordedMealTypes: MealType[],
-  minMissedMeals: number = 2
+  minMissedMeals: number = 2,
+  mealsPerDay: 2 | 3 = 3
 ): boolean {
-  const missedMeals = detectMissedMeals(currentTime, resetTime, recordedMealTypes);
+  const missedMeals = detectMissedMeals(currentTime, resetTime, recordedMealTypes, mealsPerDay);
   return missedMeals.length >= minMissedMeals;
 }
