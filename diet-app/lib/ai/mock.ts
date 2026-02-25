@@ -6,12 +6,15 @@ export function generateMockResponse(context: AIPromptContext): string {
   
   // コンディションに基づく提案の調整
   const isOnPeriod = todayCondition.conditionTags.includes('period_during');
+  const isPeriodBefore = todayCondition.conditionTags.includes('period_before');
+  const isPeriodRelated = isOnPeriod || isPeriodBefore;
   const isStressed = todayCondition.conditionTags.includes('stressed');
   const isTired = todayCondition.conditionTags.includes('tired_high') || 
                    todayCondition.conditionTags.includes('tired_medium') ||
                    todayCondition.conditionTags.includes('sleep_bad');
   const hasEdemaToday = todayCondition.conditionTags.includes('edema_high') || 
-                        todayCondition.conditionTags.includes('edema_medium');
+                        todayCondition.conditionTags.includes('edema_medium') ||
+                        isPeriodBefore; // 生理前はむくみやすい
   
   // 体質に基づく配慮
   const hasWeakStomach = userProfile.bodyConstitution.includes('weak_stomach');
@@ -79,7 +82,9 @@ ${isTired ? '疲労時は消化の良いものを選択。' : '明日も継続�
   }
   
   // morning_planの場合（新フォーマット）
-  const todayGuideline = hasEdemaToday 
+  const todayGuideline = isPeriodBefore
+    ? "生理前のため鉄分・マグネシウム強化、むくみ・イライラ対策重視"
+    : hasEdemaToday 
     ? "むくみ対策優先で、夜は塩分と炭水化物を軽め"
     : isOnPeriod 
     ? "生理中のため鉄分とタンパク質を意識、温かい食事中心"
@@ -88,12 +93,14 @@ ${isTired ? '疲労時は消化の良いものを選択。' : '明日も継続�
     : "バランス良く、野菜多めで胃腸に優しいメニュー";
 
   const avoidToday = [];
+  if (isPeriodBefore) avoidToday.push("塩分過多・甘い物の摂りすぎに注意");
   if (hasEdemaToday || hasEdema) avoidToday.push("夜の汁物・加工肉は控えめ");
   if (hasWeakStomach) avoidToday.push("揚げ物・香辛料の強いものは避ける");
   // avoidTodayは空配列のままでOK（「特になし」は入れない）
 
   // adjustmentRuleにユーザーの条件を必ず反映
-  const conditionPart = isOnPeriod ? "生理中のため鉄分強化" :
+  const conditionPart = isPeriodBefore ? "生理前のため鉄分・マグネシウム強化" :
+                        isOnPeriod ? "生理中のため鉄分強化" :
                         hasEdemaToday ? "むくみ対策で塩分控えめ" :
                         isTired ? "疲労回復のためビタミンB群重視" :
                         "体調安定のためバランス重視";
@@ -104,18 +111,31 @@ ${isTired ? '疲労時は消化の良いものを選択。' : '明日も継続�
   
   const adjustmentRule = `${conditionPart}、${goalPart}で調整`;
 
-  const mealSuggestions = is2Meals ? {
-    "breakfast": {
-      "convenience": "サンドイッチ、ヨーグルト、野菜ジュース",
-      "simpleCooking": "卵かけご飯、インスタント味噌汁、冷凍ほうれん草",
-      "normalCooking": "焼き鮭定食、ひじきの煮物、味噌汁"
-    },
-    "dinner": {
-      "convenience": "コンビニ弁当（野菜多め）、サラダ、ヨーグルト",
-      "simpleCooking": "豚肉と野菜の炒め物、ご飯、インスタントスープ",
-      "normalCooking": "鶏肉の照り焼き、野菜の煮物、玄米、味噌汁"
+  const mealSuggestions = is2Meals ? (
+    isPeriodBefore ? {
+      "breakfast": {
+        "convenience": "納豆巻き、豆乳、アーモンド小袋",
+        "simpleCooking": "納豆ご飯、ほうれん草の胡麻和え、味噌汁",
+        "normalCooking": "鮭の塩焼き、ひじきの煮物、玄米、豆腐の味噌汁"
+      },
+      "dinner": {
+        "convenience": "レバニラ弁当、ほうれん草サラダ、ヨーグルト",
+        "simpleCooking": "豚レバーと野菜炒め、玄米、わかめスープ",
+        "normalCooking": "牛肉とほうれん草の炒め物、アサリの味噌汁、玄米"
+      }
+    } : {
+      "breakfast": {
+        "convenience": "サンドイッチ、ヨーグルト、野菜ジュース",
+        "simpleCooking": "卵かけご飯、インスタント味噌汁、冷凍ほうれん草",
+        "normalCooking": "焼き鮭定食、ひじきの煮物、味噌汁"
+      },
+      "dinner": {
+        "convenience": "コンビニ弁当（野菜多め）、サラダ、ヨーグルト",
+        "simpleCooking": "豚肉と野菜の炒め物、ご飯、インスタントスープ",
+        "normalCooking": "鶏肉の照り焼き、野菜の煮物、玄米、味噌汁"
+      }
     }
-  } : {
+  ) : {
     "breakfast": {
       "convenience": "おにぎり2個、ゆで卵、野菜ジュース",
       "simpleCooking": "トースト、目玉焼き、インスタントスープ",
@@ -145,8 +165,12 @@ ${isTired ? '疲労時は消化の良いものを選択。' : '明日も継続�
       "encouragement": "無理せず自分のペースで続けましょう"
     },
     "nutritionAdvice": {
-      "focus": [hasEdemaToday ? "カリウム" : "ビタミン", "タンパク質"],
-      "avoid": hasEdemaToday ? ["塩分", "加工食品"] : ["揚げ物"],
+      "focus": isPeriodBefore ? ["鉄分", "マグネシウム"] : 
+               hasEdemaToday ? ["カリウム", "タンパク質"] : 
+               ["ビタミン", "タンパク質"],
+      "avoid": isPeriodBefore ? ["塩分", "精製糖"] :
+               hasEdemaToday ? ["塩分", "加工食品"] : 
+               ["揚げ物"],
       "hydration": "1日1.5〜2Lを目安に水分補給"
     },
     "metadata": {
