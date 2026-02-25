@@ -87,7 +87,6 @@ async function generateShoppingSuggestions(data: z.infer<typeof ShoppingSuggesti
 
   return {
     targetDays,
-    totalEstimatedCost: calculateEstimatedCost(suggestions),
     suggestions,
     nutritionalBalance: analyzeNutritionalBalance(suggestions),
     priorities: calculatePriorities(suggestions, userProfile.goalMode),
@@ -173,19 +172,21 @@ function generateSuggestionsByCategory(params: {
         name: item,
         category,
         priority: calculateItemPriority(item, favoriteItems, missingCategories, category, goalMode),
-        estimatedPrice: getEstimatedPrice(item),
         nutritionalValue: getNutritionalValue(item),
         versatility: getVersatilityScore(item), // 汎用性スコア
-        shelfLife: getShelfLife(item), // 保存期間
         reason: getRecommendationReason(item, goalMode, category)
       }));
 
     if (categoryItems.length > 0) {
+      const urgency = missingCategories.includes(category) ? 'high' : 'medium';
+      const urgencyLevel = calculateUrgencyLevel(category, missingCategories, goalMode);
+      
       suggestions.push({
         category: category,
         displayName: getCategoryDisplayName(category),
         items: categoryItems.sort((a, b) => b.priority - a.priority).slice(0, 5), // 上位5件
-        urgency: missingCategories.includes(category) ? 'high' : 'medium'
+        urgency: urgency,
+        urgencyLevel: urgencyLevel // 1-3の数値
       });
     }
   });
@@ -223,14 +224,6 @@ function calculateItemPriority(
   return Math.min(100, Math.max(0, priority));
 }
 
-function getEstimatedPrice(item: string): number {
-  const priceMap: { [key: string]: number } = {
-    '卵': 250, '鶏胸肉': 300, '豆腐': 150, '納豆': 200,
-    'ほうれん草': 200, 'ブロッコリー': 250, '玉ねぎ': 150,
-    '牛乳': 200, 'ヨーグルト': 300, 'オリーブオイル': 500
-  };
-  return priceMap[item] || 200; // デフォルト価格
-}
 
 function getNutritionalValue(item: string): number {
   const nutritionMap: { [key: string]: number } = {
@@ -249,14 +242,6 @@ function getVersatilityScore(item: string): number {
   return versatilityMap[item] || 5; // 1-10スケール
 }
 
-function getShelfLife(item: string): string {
-  const shelfLifeMap: { [key: string]: string } = {
-    '卵': '3週間', '鶏胸肉': '3日', '豆腐': '1週間', '納豆': '1週間',
-    'ほうれん草': '3日', 'ブロッコリー': '1週間', '玉ねぎ': '1ヶ月',
-    '牛乳': '1週間', 'ヨーグルト': '2週間', 'オリーブオイル': '1年'
-  };
-  return shelfLifeMap[item] || '1週間';
-}
 
 function getRecommendationReason(item: string, goalMode?: string, category?: string): string {
   if (goalMode === 'CUT' && category === 'protein') {
@@ -284,13 +269,6 @@ function getCategoryDisplayName(category: string): string {
   return displayNames[category] || category;
 }
 
-function calculateEstimatedCost(suggestions: any[]): number {
-  return suggestions.reduce((total, category) => {
-    return total + category.items.reduce((catTotal: number, item: any) => {
-      return catTotal + item.estimatedPrice;
-    }, 0);
-  }, 0);
-}
 
 function analyzeNutritionalBalance(suggestions: any[]) {
   const balance = {
@@ -325,6 +303,29 @@ function analyzeNutritionalBalance(suggestions: any[]) {
   return balance;
 }
 
+function calculateUrgencyLevel(category: string, missingCategories: string[], goalMode?: string): 1 | 2 | 3 {
+  // タンパク質と野菜は最優先
+  if (['protein', 'vegetables'].includes(category) && missingCategories.includes(category)) {
+    return 3; // 🚨🚨🚨
+  }
+  
+  // 不足カテゴリは高優先度
+  if (missingCategories.includes(category)) {
+    return 2; // 🚨🚨
+  }
+  
+  // ゴールモードに応じた重要カテゴリ
+  if (goalMode === 'CUT' && category === 'protein') {
+    return 2; // 🚨🚨
+  }
+  if (goalMode === 'GAIN' && ['protein', 'fats', 'grains'].includes(category)) {
+    return 2; // 🚨🚨
+  }
+  
+  // その他は低優先度
+  return 1; // 🚨
+}
+
 function calculatePriorities(suggestions: any[], goalMode?: string) {
   const priorities = {
     immediate: [] as string[], // すぐ買うべき
@@ -333,7 +334,7 @@ function calculatePriorities(suggestions: any[], goalMode?: string) {
   };
 
   suggestions.forEach(category => {
-    if (category.urgency === 'high') {
+    if (category.urgency === 'high' || category.urgencyLevel === 3) {
       priorities.immediate.push(category.displayName);
     } else {
       category.items.forEach((item: any) => {

@@ -217,10 +217,10 @@ function ShoppingListPreview({ suggestions, generationType }: ShoppingListPrevie
     setSelectedItems(newSelected);
   };
 
-  const totalSelectedCost = suggestions.suggestions
+  const totalSelectedItems = suggestions.suggestions
     .flatMap(cat => cat.items)
     .filter(item => selectedItems.has(item.name))
-    .reduce((total, item) => total + item.estimatedPrice, 0);
+    .length;
 
   return (
     <Card className="overflow-hidden">
@@ -232,7 +232,7 @@ function ShoppingListPreview({ suggestions, generationType }: ShoppingListPrevie
           <div className="text-sm">
             <span className="text-[var(--color-text-secondary)]">選択中: </span>
             <span className="font-semibold text-[var(--color-brand-primary)]">
-              ¥{totalSelectedCost.toLocaleString()}
+              {totalSelectedItems}アイテム
             </span>
           </div>
         </div>
@@ -306,9 +306,6 @@ function ShoppingListPreview({ suggestions, generationType }: ShoppingListPrevie
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-[var(--color-text-primary)]">
-                          ¥{item.estimatedPrice}
-                        </div>
                         <div className="text-xs text-[var(--color-text-secondary)]">
                           優先度: {item.priority}%
                         </div>
@@ -325,11 +322,8 @@ function ShoppingListPreview({ suggestions, generationType }: ShoppingListPrevie
       {selectedItems.size > 0 && (
         <div className="p-4 bg-[var(--color-bg-surface)] border-t border-[var(--color-border-light)]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <span className="text-lg font-bold text-[var(--color-text-primary)]">
               選択したアイテム: {selectedItems.size}件
-            </span>
-            <span className="text-lg font-bold text-[var(--color-brand-primary)]">
-              ¥{totalSelectedCost.toLocaleString()}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2">

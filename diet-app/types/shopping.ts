@@ -6,10 +6,8 @@ export interface ShoppingSuggestionItem {
   name: string;
   category: string;
   priority: number; // 0-100
-  estimatedPrice: number;
   nutritionalValue: number; // 1-10
   versatility: number; // 1-10, 汎用性スコア
-  shelfLife: string;
   reason: string; // 推奨理由
 }
 
@@ -18,11 +16,11 @@ export interface ShoppingSuggestionCategory {
   displayName: string;
   items: ShoppingSuggestionItem[];
   urgency: 'high' | 'medium' | 'low';
+  urgencyLevel?: 1 | 2 | 3; // 1=低, 2=中, 3=高（🚨の個数）
 }
 
 export interface ShoppingSuggestionResponse {
   targetDays: number;
-  totalEstimatedCost: number;
   suggestions: ShoppingSuggestionCategory[];
   nutritionalBalance: {
     protein: number;
@@ -69,7 +67,6 @@ export interface ShoppingListItem {
   name: string;
   category: string;
   priority: number;
-  estimatedPrice: number;
   purchased: boolean;
   purchasedAt?: Date;
   notes?: string;
@@ -80,7 +77,6 @@ export interface ShoppingList {
   title: string;
   createdAt: Date;
   targetDate?: Date;
-  totalEstimatedCost: number;
   items: ShoppingListItem[];
   completed: boolean;
   completedAt?: Date;

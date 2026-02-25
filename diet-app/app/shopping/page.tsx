@@ -122,20 +122,6 @@ function ShoppingSuggestionResults({ suggestions }: ShoppingSuggestionResultsPro
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-light)]">
-            <div className="text-lg font-bold text-[var(--color-text-primary)]">
-              ¥{suggestions.totalEstimatedCost.toLocaleString()}
-            </div>
-            <div className="text-xs text-[var(--color-text-secondary)]">予算目安</div>
-          </div>
-          <div className="text-center p-3 bg-[var(--color-bg-elevated)] rounded-lg border border-[var(--color-border-light)]">
-            <div className="text-lg font-bold text-[var(--color-text-primary)]">
-              {suggestions.suggestions.reduce((total, cat) => total + cat.items.length, 0)}
-            </div>
-            <div className="text-xs text-[var(--color-text-secondary)]">アイテム数</div>
-          </div>
-        </div>
 
         {/* 優先度表示 */}
         {suggestions.priorities.immediate.length > 0 && (
@@ -166,19 +152,14 @@ function ShoppingSuggestionResults({ suggestions }: ShoppingSuggestionResultsPro
                 <div className="text-lg">
                   {getCategoryIcon(category.category)}
                 </div>
-                <div>
-                  <div className="font-semibold text-[var(--color-text-primary)]">
-                    {category.displayName}
-                  </div>
-                  <div className="text-xs text-[var(--color-text-secondary)]">
-                    {category.items.length}アイテム
-                  </div>
+                <div className="font-semibold text-[var(--color-text-primary)]">
+                  {category.displayName}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {category.urgency === 'high' && (
-                  <span className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded border border-red-200">
-                    急ぎ
+                {(category.urgencyLevel || (category.urgency === 'high' ? 3 : category.urgency === 'medium' ? 2 : 1)) > 0 && (
+                  <span className="text-sm">
+                    {'🚨'.repeat(category.urgencyLevel || (category.urgency === 'high' ? 3 : category.urgency === 'medium' ? 2 : 1))}
                   </span>
                 )}
                 <div className={`
@@ -205,14 +186,6 @@ function ShoppingSuggestionResults({ suggestions }: ShoppingSuggestionResultsPro
                         </div>
                         <div className="text-xs text-[var(--color-text-secondary)] mt-1">
                           {item.reason}
-                        </div>
-                      </div>
-                      <div className="text-right ml-2">
-                        <div className="text-sm font-semibold text-[var(--color-text-primary)]">
-                          ¥{item.estimatedPrice}
-                        </div>
-                        <div className="text-xs text-[var(--color-text-secondary)]">
-                          {item.shelfLife}
                         </div>
                       </div>
                     </div>
