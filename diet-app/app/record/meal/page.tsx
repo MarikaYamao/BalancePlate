@@ -57,6 +57,7 @@ function MealRecordPageContent() {
     const typeParam = searchParams.get('type') as MealType | null;
     const suggestionParam = searchParams.get('suggestion');
     const editParam = searchParams.get('edit');
+    const tabParam = searchParams.get('tab');
     
     if (typeParam && ['breakfast', 'lunch', 'dinner', 'snack'].includes(typeParam)) {
       setSelectedType(typeParam);
@@ -71,6 +72,10 @@ function MealRecordPageContent() {
       if (mealToEdit) {
         handleEdit(mealToEdit);
       }
+    }
+
+    if (tabParam === 'history') {
+      setActiveTab('history');
     }
   }, [searchParams, mealLogs, setMealText]);
 
@@ -479,7 +484,25 @@ function MealRecordPageContent() {
         <PostMealFeedback
           mealType={showFeedback.mealType}
           mealText={showFeedback.mealText}
-          onClose={() => setShowFeedback(null)}
+          onClose={() => {
+            setShowFeedback(null);
+            // 朝食・昼食の場合は次の食事記録へ遷移、夕食・間食の場合は履歴タブへ
+            if (showFeedback.mealType === 'breakfast' || showFeedback.mealType === 'lunch') {
+              // 次の食事タイプを決定
+              const nextMealType = showFeedback.mealType === 'breakfast' ? 'lunch' : 'dinner';
+              // 次の食事が記録されていない場合のみ遷移
+              if (!recordedTypes.includes(nextMealType as MealType)) {
+                setSelectedType(nextMealType as MealType);
+                setActiveTab('record');
+              } else {
+                // すでに記録されている場合は履歴タブへ
+                setActiveTab('history');
+              }
+            } else {
+              // 夕食・間食の場合は履歴タブへ
+              setActiveTab('history');
+            }
+          }}
         />
       )}
 

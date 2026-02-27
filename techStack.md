@@ -3,11 +3,11 @@
 ## 1. 技術スタック概要
 
 ### フロントエンド
-- **フレームワーク**: Next.js 14 (App Router)
+- **フレームワーク**: Next.js 15 (App Router)
 - **言語**: TypeScript 5.x
 - **状態管理**: TanStack Query v5 + Zustand
 - **スタイリング**: Tailwind CSS v3
-- **UI コンポーネント**: Radix UI / shadcn/ui（軽量コンポーネント）
+- **UI コンポーネント**: カスタムコンポーネント
 - **フォーム**: React Hook Form + Zod
 - **PWA**: next-pwa
 
@@ -234,11 +234,19 @@ const SYSTEM_PROMPT = `
 
 // タグを日本語に変換
 const BODY_CONSTITUTION_LABELS: Record<BodyConstitutionTag, string> = {
+  // 健康状態
+  'healthy': '特に問題なし',
+  'good_digestion': '消化が良い',
+  'high_metabolism': '代謝が良い',
+  'good_stamina': '体力がある',
+  'good_sleep': '睡眠の質が良い',
+  
   // 循環・代謝
   'edema_prone': 'むくみやすい',
   'cold_sensitivity': '冷えやすい',
   'low_blood_pressure': '低血圧',
   'anemic': '貧血気味',
+  'poor_circulation': '血行不良',
   
   // 消化器系
   'weak_stomach': '胃腸が弱い',
@@ -309,15 +317,42 @@ const LIFESTYLE_LABELS: Record<LifestyleTag, string> = {
 };
 
 const CONDITION_LABELS: Record<ConditionTag, string> = {
+  // 生理関連
   'period_before': '生理前',
   'period_during': '生理中',
   'period_after': '生理後',
-  'tired': '疲れている',
-  'stressed': 'ストレスあり',
-  'sleepy': '眠い',
-  'craving_sweet': '甘いものが欲しい',
+  'ovulation': '排卵期っぽい',
+  
+  // 睡眠・疲労
+  'sleep_good': 'よく寝た',
+  'sleep_normal': '睡眠普通',
+  'sleep_bad': '寝不足',
+  'tired_low': '疲労感低い',
+  'tired_medium': '疲労感中程度',
+  'tired_high': '疲労感高い',
+  
+  // 体調
+  'edema_low': 'むくみ低い',
+  'edema_medium': 'むくみ中程度',
+  'edema_high': 'むくみ高い',
+  'stomach_good': '胃腸快調',
+  'constipated': '便秘気味',
+  'diarrhea': '下し気味',
   'stomach_weak': '胃腸が弱っている',
-  'drinking_planned': '飲酒予定',
+  
+  // その他
+  'normal': '普通・特になし',
+  'stressed': 'ストレスあり',
+  'craving_sweet': '甘いものが欲しい',
+  'low_appetite': '食欲なし',
+  'high_appetite': '食欲旺盛',
+  
+  // 今日の予定
+  'dining_out': '外食予定',
+  'drinking_planned': '飲み会予定',
+  'exercise_planned': '運動予定',
+  'travel_day': '移動多い日',
+  'work_from_home': '在宅日',
   'hangover': '二日酔い',
 };
 

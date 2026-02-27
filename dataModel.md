@@ -28,7 +28,7 @@ interface UserSettings {
   mealsPerDay: 2 | 3 // 食事回数
   
   // 基本情報（暗号化対象）
-  profile: UserProfile
+  profile?: UserProfile
   
   // 体質・身体傾向（暗号化対象）
   bodyConstitution: BodyConstitutionTag[]
@@ -36,22 +36,42 @@ interface UserSettings {
   // 生活習慣（暗号化対象）
   lifestyle: LifestyleTag[]
   
+  // 食材の好み（暗号化対象）
+  favoriteFoods?: string[] // 好きな食材・料理
+  dislikedFoods?: string[] // 嫌い・アレルギーのある食材
+  
+  // フェーズ21: ゴール関連設定
+  goalMode?: GoalMode // CUT/MAINTAIN/GAIN
+  constraints?: ConstraintType[] // 制約条件
+  constraintDetails?: {
+    pregnancyWeek?: number
+    hormoneStartDate?: Date
+    medicalNotes?: string
+  }
+  
+  // 自由記載
+  additionalNotes?: string // その他の情報（任意）
+  
   // システム管理
   onboardingCompleted: boolean
   createdAt: Date
   updatedAt: Date
-  
-  // 将来の拡張用
-  syncStatus?: 'local' | 'synced' | 'pending'
-  lastSyncAt?: Date
 }
 
 type BodyConstitutionTag = 
+  // 健康状態
+  | 'healthy' // 特に問題なし
+  | 'good_digestion' // 消化が良い
+  | 'high_metabolism' // 代謝が良い
+  | 'good_stamina' // 体力がある
+  | 'good_sleep' // 睡眠の質が良い
+  
   // 循環・代謝
   | 'edema_prone' // むくみやすい
   | 'cold_sensitivity' // 冷えやすい
   | 'low_blood_pressure' // 低血圧
   | 'anemic' // 貧血気味
+  | 'poor_circulation' // 血行不良
   
   // 消化器系
   | 'weak_stomach' // 胃腸が弱い
@@ -78,10 +98,25 @@ type BodyConstitutionTag =
   | 'gluten_sensitive' // グルテン過敏症
   | 'food_allergies' // 食物アレルギーあり
   
+  // 女性特有
+  | 'pms_severe' // PMS強め
+  | 'irregular_periods' // 生理不順
+  | 'heavy_periods' // 生理が重い
+  | 'menopause' // 更年期
+  
+  // 特別な配慮が必要な状況
+  | 'pregnancy' // 妊娠中
+  | 'breastfeeding' // 授乳中
+  | 'hormone_ftm' // ホルモン療法中（FTM）
+  | 'hormone_mtf' // ホルモン療法中（MTF）
+  | 'medical_diet' // 医師から食事指導を受けている
+  
   // その他
   | 'prone_to_headaches' // 頭痛持ち
   | 'skin_problems' // 肌荒れしやすい
   | 'sleep_issues' // 睡眠障害
+  | 'sensitive_to_caffeine' // カフェインに敏感
+  | 'water_retention' // 水分を溜めやすい
 
 type LifestyleTag =
   // 仕事・活動
@@ -106,6 +141,8 @@ type LifestyleTag =
   | 'high_stress' // 高ストレス
   | 'frequent_travel' // 出張・旅行が多い
   | 'frequent_dining_out' // 外食が多い
+  | 'prefer_cooking' // 自炊派
+  | 'budget_conscious' // 節約志向
   
   // 医療・健康
   | 'taking_oral_contraceptives' // ピル服用中
@@ -122,7 +159,8 @@ type LifestyleTag =
 // ユーザー基本情報（暗号化対象）
 interface UserProfile {
   // 性別関連情報（包括的設計）
-  assignedSexAtBirth: 'male' | 'female' // 出生時に割り当てられた性別（必須）
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' // 性別
+  assignedSexAtBirth?: 'male' | 'female' // 出生時に割り当てられた性別（任意）
   currentHormoneStatus?: HormoneStatus // 現在のホルモン状態（任意）
   hormoneTherapyDuration?: HormoneTherapyDuration // ホルモン治療期間
   
@@ -133,6 +171,27 @@ interface UserProfile {
   // 現在の状態
   currentWeight?: number // kg単位（最新の体重とは別管理）
   activityLevel?: ActivityLevel // 活動レベル
+  
+  // 目標設定
+  goalType?: string // 目標タイプ
+  targetWeight?: number // 目標体重（kg単位）
+  goalPeriod?: string // 目標期間
+  
+  // フェーズ21: 拡張目標設定
+  goalMode?: GoalMode // シンプルな3モード
+  goalDetails?: {
+    targetWeight?: number
+    targetDate?: Date
+    weeklyTarget?: number // kg/週
+  }
+  
+  // 制約条件（センシティブ情報）
+  constraints?: ConstraintType[]
+  constraintDetails?: {
+    pregnancyWeek?: number
+    hormoneStartDate?: Date
+    medicalNotes?: string
+  }
 }
 
 type HormoneStatus = 
@@ -192,6 +251,25 @@ type GoalType =
   | 'body_recomposition' // 体質改善（筋肉増、脂肪減）
   | 'health_improvement' // 健康改善（数値目標なし）
 
+// フェーズ21: ゴールモード（シンプルな3モード）
+type GoalMode = 'CUT' | 'MAINTAIN' | 'GAIN'
+
+// 制約タイプ（センシティブ情報）
+type ConstraintType = 
+  | 'pregnancy'      // 妊娠中
+  | 'breastfeeding' // 授乳中
+  | 'hormone_ftm'   // ホルモン療法（FTM）
+  | 'hormone_mtf'   // ホルモン療法（MTF）
+  | 'medical'       // その他医療的制約
+
+// GAINモード専用の検知タグ
+type GainDetectionTag = 
+  | 'low_total_intake'      // 総量不足
+  | 'low_meal_frequency'    // 回数不足
+  | 'early_fullness'        // すぐ満腹
+  | 'low_protein'          // タンパク不足
+  | 'low_energy_density'   // 低密度（サラダばかり等）
+
 interface Milestone {
   targetDate: Date
   targetWeight?: number
@@ -222,15 +300,54 @@ interface DailyState {
 }
 
 type ConditionTag = 
+  // 生理関連
   | 'period_before' // 生理前
   | 'period_during' // 生理中
   | 'period_after' // 生理後
-  | 'tired' // 疲れている
-  | 'stressed' // ストレスあり
-  | 'sleepy' // 眠い
-  | 'craving_sweet' // 甘いものが欲しい
+  | 'ovulation' // 排卵期っぽい
+  
+  // 睡眠・疲労
+  | 'sleep_good' // よく寝た
+  | 'sleep_normal' // 普通
+  | 'sleep_bad' // 寝不足
+  | 'tired_low' // 疲労感低い
+  | 'tired_medium' // 疲労感中程度
+  | 'tired_high' // 疲労感高い
+  
+  // 体調
+  | 'edema_low' // むくみ低い
+  | 'edema_medium' // むくみ中程度
+  | 'edema_high' // むくみ高い
+  | 'stomach_good' // 胃腸快調
+  | 'constipated' // 便秘気味
+  | 'diarrhea' // 下し気味
   | 'stomach_weak' // 胃腸が弱っている
-  | 'drinking_planned' // 飲酒予定
+  
+  // その他
+  | 'normal' // 普通・特になし
+  | 'stressed' // ストレスあり
+  | 'craving_sweet' // 甘いものが欲しい
+  | 'low_appetite' // 食欲なし
+  | 'high_appetite' // 食欲旺盛
+  
+  // GAINモード専用検知タグ
+  | 'low_total_intake' // 総摂取量不足
+  | 'low_meal_frequency' // 食事回数不足
+  | 'early_fullness' // すぐに満腹になる
+  | 'need_liquid_calories' // 液体カロリー必要
+  | 'post_workout' // 運動後
+  
+  // 制約レイヤー用
+  | 'morning_sickness' // つわり
+  | 'hormone_fluctuation' // ホルモン変動
+  | 'medical_restriction' // 医療的制限
+  
+  // 今日の予定
+  | 'dining_out' // 外食予定
+  | 'drinking_planned' // 飲み会予定
+  | 'exercise_planned' // 運動予定
+  | 'travel_day' // 移動多い日
+  | 'work_from_home' // 在宅日
   | 'hangover' // 二日酔い
 ```
 
@@ -279,7 +396,6 @@ interface NutrientEstimate {
 
 ```typescript
 interface FoodPlan {
-  // dateKey + planType を複合主キーとして使用
   dateKey: string // 日付（PRIMARY KEYの一部）
   planType: 'A' | 'B' | 'C' // プランタイプ（PRIMARY KEYの一部）
   planName: string // "しっかり整えるプラン" など
@@ -290,25 +406,14 @@ interface FoodPlan {
   selectedAt?: Date
   
   // 食事提案内容
-  meals: MealSuggestion[]
-  
-  // AI生成情報
-  generatedContext: {
-    conditionTags: ConditionTag[]
-    previousDayData?: {
-      meals: string[]
-      weight?: number
-    }
-    bodyConstitution: BodyConstitutionTag[]
-    lifestyle: LifestyleTag[]
-  }
+  meals: FoodPlanMealSuggestion[]
   
   // メタデータ
   createdAt: Date
   expiresAt: Date // プランの有効期限
 }
 
-interface MealSuggestion {
+interface FoodPlanMealSuggestion {
   mealType: MealType
   mainItems: string[] // メイン料理
   sideItems: string[] // 副菜
@@ -339,6 +444,88 @@ interface WeightLog {
 }
 ```
 
+### FridgeItem（冷蔵庫食材管理）
+
+```typescript
+// フェーズ19で追加
+type FridgeItemCategory = 
+  | 'vegetable' // 野菜
+  | 'meat' // 肉類
+  | 'fish' // 魚介類
+  | 'dairy' // 乳製品
+  | 'egg' // 卵
+  | 'grain' // 穀物・パン
+  | 'seasoning' // 調味料
+  | 'frozen' // 冷凍食品
+  | 'leftover' // 残り物
+  | 'prepared' // 下ごしらえ済み
+  | 'other' // その他
+
+interface FridgeItem {
+  id: string // UUID
+  name: string // 食材名
+  category: FridgeItemCategory // カテゴリ
+  
+  // 数量・状態
+  quantity?: string // 数量（自由記述: "2本", "300g" など）
+  unit?: string // 単位
+  isAvailable: boolean // 現在利用可能か
+  
+  // 期限情報
+  expirationDate?: Date // 消費期限
+  addedDate: Date // 追加日
+  
+  // 優先度
+  priority?: 'high' | 'medium' | 'low' // 使い切り優先度
+  
+  // メタデータ
+  notes?: string // メモ（"今日使いたい" など）
+  createdAt: Date
+  updatedAt: Date
+  deletedAt?: Date
+}
+```
+
+### ShoppingList（買い物リスト）
+
+```typescript
+// フェーズ19で追加
+interface ShoppingListItem {
+  id: string
+  name: string // 商品名
+  category: FridgeItemCategory // カテゴリ
+  quantity?: string // 数量
+  unit?: string // 単位
+  
+  // 状態
+  isPurchased: boolean // 購入済み
+  isUrgent: boolean // 緊急
+  
+  // AI提案情報
+  suggestedBy?: 'ai' | 'manual' // 提案元
+  suggestedReason?: string // 提案理由
+  relatedMealPlan?: string // 関連する食事プランID
+  
+  // メタデータ
+  createdAt: Date
+  purchasedAt?: Date
+}
+
+interface ShoppingList {
+  id: string
+  dateKey: string // 日付
+  items: ShoppingListItem[]
+  
+  // 状態
+  isCompleted: boolean
+  completedAt?: Date
+  
+  // メタデータ
+  createdAt: Date
+  updatedAt: Date
+}
+```
+
 ---
 
 ## 3. AI連携用データ構造
@@ -349,10 +536,6 @@ interface WeightLog {
 interface AIPromptContext {
   // ユーザー基本情報
   userProfile: {
-    // 性別関連（栄養計算用）
-    effectiveSex: 'male' | 'female' // 栄養計算に使用する性別
-    hormonalConsiderations?: string // ホルモン関連の考慮事項
-    
     // 身体情報
     age?: number // birthYearから計算
     height?: number
@@ -362,7 +545,10 @@ interface AIPromptContext {
     // 体質・習慣
     bodyConstitution: BodyConstitutionTag[]
     lifestyle: LifestyleTag[]
+    favoriteFoods?: string[] // 好きな食材
+    dislikedFoods?: string[] // 嫌い・アレルギー食材
     mealsPerDay: 2 | 3
+    additionalNotes?: string // その他の情報
   }
   
   // 目標情報
@@ -373,6 +559,10 @@ interface AIPromptContext {
     dailyCalorieTarget?: number
   }
   
+  // フェーズ21: ゴールモードと制約
+  goalMode?: GoalMode // CUT/MAINTAIN/GAIN
+  constraints?: ConstraintType[] // 制約条件
+  
   // 今日の状態
   todayCondition: {
     conditionTags: ConditionTag[]
@@ -382,22 +572,26 @@ interface AIPromptContext {
   // 前日の記録
   previousDayData?: {
     meals: {
-      type: MealType
+      type: string
       content: string
     }[]
     weight?: number
     activityMemo?: string
   }
   
+  // フェーズ19: 冷蔵庫食材情報
+  fridgeItems?: {
+    name: string
+    category: string
+    available: boolean
+  }[]
+  
   // リクエストタイプ
   requestType: 
     | 'morning_plan' // 朝のプラン提案
     | 'after_breakfast' // 朝食後の提案
     | 'after_lunch' // 昼食後の提案
-    | 'consultation' // 相談（将来実装）
-    
-  // 追加コンテキスト（相談用）
-  consultationText?: string
+    | 'consultation' // 相談
 }
 ```
 

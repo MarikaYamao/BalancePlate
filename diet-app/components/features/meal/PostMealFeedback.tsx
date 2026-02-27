@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { type MealType } from "@/types";
+import { useUserSettings } from "@/lib/hooks/useUserSettings";
 
 interface PostMealFeedbackProps {
   mealType: MealType;
@@ -20,6 +22,8 @@ export function PostMealFeedback({
   mealText,
   onClose,
 }: PostMealFeedbackProps) {
+  const router = useRouter();
+  const { settings } = useUserSettings();
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -240,24 +244,23 @@ export function PostMealFeedback({
     <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* ヘッダー */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6">
+        <div className={`${mealType === 'dinner' ? 'bg-gradient-to-r from-indigo-500 to-purple-600' : 'bg-gradient-to-r from-green-500 to-green-600'} text-white p-6`}>
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-xl font-bold mb-2">
-                🍽️{" "}
-                {mealText.includes("【")
-                  ? "今日の食事フィードバック"
-                  : `${getMealTypeLabel(mealType)}のフィードバック`}
+                {mealType === 'dinner' ? '🌙 今日も1日お疲れ様でした' :
+                 mealText.includes("【") ? '🍽️ 今日の食事フィードバック' :
+                 `🍽️ ${getMealTypeLabel(mealType)}のフィードバック`}
               </h2>
-              <p className="text-green-100 text-sm">
-                {mealText.includes("【")
-                  ? "複数食事の統合分析"
-                  : `記録内容: ${mealText.length > 50 ? `${mealText.substring(0, 50)}...` : mealText}`}
+              <p className="text-white/90 text-sm">
+                {mealType === 'dinner' ? '夕食の記録と今日の振り返り' :
+                 mealText.includes("【") ? '複数食事の統合分析' :
+                 `記録内容: ${mealText.length > 50 ? `${mealText.substring(0, 50)}...` : mealText}`}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-green-100 text-2xl leading-none"
+              className="text-white hover:text-white/70 text-2xl leading-none"
             >
               ×
             </button>
@@ -303,13 +306,17 @@ export function PostMealFeedback({
             <div className="space-y-6">
               {/* AIアシスタントアイコンとヘッダー */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-lg">🤖</span>
+                <div className={`w-10 h-10 ${mealType === 'dinner' ? 'bg-gradient-to-r from-indigo-400 to-purple-500' : 'bg-gradient-to-r from-green-400 to-green-500'} rounded-full flex items-center justify-center`}>
+                  <span className="text-white text-lg">{mealType === 'dinner' ? '🌙' : '🤖'}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-800">AIアシスタント</h3>
+                  <h3 className="font-bold text-gray-800">
+                    {mealType === 'dinner' ? '今日の振り返り' : 'AIアシスタント'}
+                  </h3>
                   <p className="text-xs text-gray-500">
-                    あなたの体質と今日のコンディションを考慮したアドバイス
+                    {mealType === 'dinner' 
+                      ? '1日の食事を振り返って、明日に向けたアドバイス'
+                      : 'あなたの体質と今日のコンディションを考慮したアドバイス'}
                   </p>
                 </div>
               </div>
@@ -410,10 +417,37 @@ export function PostMealFeedback({
               {/* アクションボタン */}
               <div className="flex gap-3">
                 <button
-                  onClick={onClose}
-                  className="flex-1 py-3 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  onClick={() => {
+                    // 2食設定の場合の処理
+                    const mealsPerDay = settings?.mealsPerDay || 3;
+                    
+                    if (mealType === 'breakfast') {
+                      // 朝食後：2食なら夕食へ、3食なら昼食へ
+                      const nextMeal = mealsPerDay === 2 ? 'dinner' : 'lunch';
+                      router.push(`/record/meal?type=${nextMeal}`);
+                    } else if (mealType === 'lunch') {
+                      // 昼食後：夕食へ
+                      router.push('/record/meal?type=dinner');
+                    } else if (mealType === 'dinner') {
+                      // 夕食後：ホーム画面へ
+                      router.push('/home');
+                    } else {
+                      // 間食後：今日の記録へ
+                      router.push('/record/meal?tab=history');
+                    }
+                    onClose();
+                  }}
+                  className={`flex-1 py-3 px-6 ${
+                    mealType === 'dinner' 
+                      ? 'bg-indigo-600 hover:bg-indigo-700' 
+                      : 'bg-green-600 hover:bg-green-700'
+                  } text-white rounded-lg transition-colors font-medium`}
                 >
-                  フィードバックを確認しました
+                  {mealType === 'breakfast' ? 
+                    (settings?.mealsPerDay === 2 ? '夕食を記録する' : '昼食を記録する') : 
+                   mealType === 'lunch' ? '夕食を記録する' : 
+                   mealType === 'dinner' ? '今日はゆっくり休みましょう' :
+                   '今日の記録を見る'}
                 </button>
                 <button
                   onClick={generateFeedback}
