@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { MealLog, AIConsultationResponse } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,7 +19,7 @@ export function MealDetailModal({
   onClose,
 }: MealDetailModalProps) {
   const router = useRouter();
-  const [loadedAIResponse, setLoadedAIResponse] = useState<string | null>(null);
+  const [loadedAIResponse, setLoadedAIResponse] = useState<any>(null);
   const [loadingAI, setLoadingAI] = useState(false);
 
   // AI相談データを読み込む
@@ -28,29 +29,37 @@ export function MealDetailModal({
       if ((mealLog as any).aiResponse) {
         const response = (mealLog as any).aiResponse;
         let processedResponse: string | null = null;
-        
+
         // 文字列の場合
         if (typeof response === "string") {
           // JSON文字列かどうかを判定
-          const isJsonString = response.trim().startsWith('{') && response.trim().endsWith('}');
-          
+          const isJsonString =
+            response.trim().startsWith("{") && response.trim().endsWith("}");
+
           if (isJsonString) {
             // JSONをパースして構造化されたフィードバックに変換
             try {
               let parsed = JSON.parse(response);
-              
+
               // 二重エンコードのチェック
-              if (typeof parsed === "string" && parsed.trim().startsWith('{')) {
+              if (typeof parsed === "string" && parsed.trim().startsWith("{")) {
                 try {
                   parsed = JSON.parse(parsed);
                 } catch {
                   // 二度目のパース失敗
                 }
               }
-              
+
               // 構造化データの場合
-              if (typeof parsed === "object" && (parsed.feedback || parsed.nutritionAdvice || parsed.mealSuggestions || parsed.todayGuideline)) {
-                processedResponse = formatStructuredFeedback(parsed);
+              if (
+                typeof parsed === "object" &&
+                (parsed.feedback ||
+                  parsed.nutritionAdvice ||
+                  parsed.mealSuggestions ||
+                  parsed.todayGuideline)
+              ) {
+                setLoadedAIResponse(parsed);
+                return;
               } else {
                 // 構造化されていないJSON
                 processedResponse = response;
@@ -63,20 +72,26 @@ export function MealDetailModal({
             // JSONでない通常のテキスト
             processedResponse = response;
           }
-        } 
+        }
         // オブジェクトの場合
         else if (typeof response === "object" && response !== null) {
-          if (response.feedback || response.nutritionAdvice || response.mealSuggestions || response.todayGuideline) {
-            processedResponse = formatStructuredFeedback(response);
+          if (
+            response.feedback ||
+            response.nutritionAdvice ||
+            response.mealSuggestions ||
+            response.todayGuideline
+          ) {
+            setLoadedAIResponse(response);
+            return;
           } else {
             processedResponse = JSON.stringify(response, null, 2);
           }
-        } 
+        }
         // その他
         else {
           processedResponse = String(response);
         }
-        
+
         setLoadedAIResponse(processedResponse);
       } else {
         // aiResponseがない場合のみローカルストレージから読み込み
@@ -130,7 +145,8 @@ export function MealDetailModal({
               parsed.mealSuggestions ||
               parsed.todayGuideline
             ) {
-              responseText = formatStructuredFeedback(parsed);
+              setLoadedAIResponse(parsed);
+              return;
             } else {
               // 構造化されていない場合は文字列として扱う
               responseText =
@@ -175,98 +191,197 @@ export function MealDetailModal({
     };
   }, [isOpen, onClose]);
 
-  const formatStructuredFeedback = (data: any): string => {
-    let result = "";
+  const formatStructuredFeedback = (data: any): React.ReactNode => {
+    return (
+      <div className="space-y-6">
+        {/* 今日のガイドライン（主役） */}
+        {data.todayGuideline && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-green-600">🎯</span>
+              <h4 className="text-base font-semibold text-gray-900">
+                今日のガイドライン
+              </h4>
+            </div>
+            <p className="text-gray-900 font-medium text-base leading-relaxed">
+              {data.todayGuideline}
+            </p>
+          </div>
+        )}
 
-    // 総合フィードバック
-    if (data.feedback?.overall) {
-      result += `### 総合フィードバック\n${data.feedback.overall}\n\n`;
-    }
+        {/* 総合フィードバック（最大2行） */}
+        {data.feedback?.overall && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-blue-600">🤖</span>
+              <h4 className="text-base font-semibold text-gray-900">
+                総合フィードバック
+              </h4>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+              {data.feedback.overall}
+            </p>
+            <div className="mt-3 border-t border-gray-100"></div>
+          </div>
+        )}
 
-    // 今日のガイドライン
-    if (data.todayGuideline) {
-      result += `### 🎯 今日のガイドライン\n${data.todayGuideline}\n\n`;
-    }
+        {/* 改善提案（最大2つ） */}
+        {data.feedback?.suggestions && data.feedback.suggestions.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-yellow-600">💡</span>
+              <h4 className="text-base font-semibold text-gray-900">
+                改善提案
+              </h4>
+            </div>
+            <ul className="space-y-1">
+              {data.feedback.suggestions
+                .slice(0, 2)
+                .map((item: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-gray-400 mt-0.5">•</span>
+                    <span className="text-sm text-gray-600">{item}</span>
+                  </li>
+                ))}
+            </ul>
+            <div className="mt-3 border-t border-gray-100"></div>
+          </div>
+        )}
 
-    // 良いポイント
-    if (data.feedback?.positive) {
-      result += `#### ✨ 良いポイント\n`;
-      if (Array.isArray(data.feedback.positive)) {
-        data.feedback.positive.forEach((item: string) => {
-          result += `- ${item}\n`;
-        });
-      } else if (typeof data.feedback.positive === "string") {
-        result += `- ${data.feedback.positive}\n`;
-      }
-      result += "\n";
-    }
+        {/* 意識したい栄養素（チップ形式） */}
+        {data.nutritionAdvice?.focus &&
+          data.nutritionAdvice.focus.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-green-600">🍽</span>
+                <h4 className="text-base font-semibold text-gray-900">
+                  意識したい栄養素
+                </h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {data.nutritionAdvice.focus.map(
+                  (nutrient: string, index: number) => {
+                    // 栄養素名を抽出（「鉄分」「タンパク質」など）
+                    const cleanNutrient = nutrient
+                      .replace(/[：:].*/g, "")
+                      .trim();
+                    return (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full"
+                      >
+                        {cleanNutrient}
+                      </span>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
 
-    // 改善提案
-    if (data.feedback?.suggestions && data.feedback.suggestions.length > 0) {
-      result += `#### 💡 改善提案\n`;
-      data.feedback.suggestions.forEach((item: string) => {
-        result += `- ${item}\n`;
-      });
-      result += "\n";
-    }
+        {/* 控えめにしたいもの */}
+        {data.nutritionAdvice?.avoid &&
+          data.nutritionAdvice.avoid.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-orange-600">⚠️</span>
+                <h4 className="text-base font-semibold text-gray-900">
+                  控えめに
+                </h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {data.nutritionAdvice.avoid.map(
+                  (item: string, index: number) => {
+                    const cleanItem = item.replace(/[：:].*/g, "").trim();
+                    return (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-orange-700 bg-orange-50 rounded-full"
+                      >
+                        {cleanItem}
+                      </span>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
 
-    // 栄養アドバイス
-    if (data.nutritionAdvice?.focus && data.nutritionAdvice.focus.length > 0) {
-      result += `#### 🥗 意識したい栄養素\n`;
-      data.nutritionAdvice.focus.forEach((item: string) => {
-        result += `- ${item}\n`;
-      });
-      result += "\n";
-    }
+        {/* 水分補給 */}
+        {data.nutritionAdvice?.hydration && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-blue-600">💧</span>
+              <h4 className="text-base font-semibold text-gray-900">
+                水分補給
+              </h4>
+            </div>
+            <p className="text-sm text-gray-600">
+              {data.nutritionAdvice.hydration}
+            </p>
+          </div>
+        )}
 
-    if (data.nutritionAdvice?.avoid && data.nutritionAdvice.avoid.length > 0) {
-      result += `#### ⚠️ 控えめにしたいもの\n`;
-      data.nutritionAdvice.avoid.forEach((item: string) => {
-        result += `- ${item}\n`;
-      });
-      result += "\n";
-    }
-
-    if (data.nutritionAdvice?.hydration) {
-      result += `#### 💧 水分補給\n${data.nutritionAdvice.hydration}\n\n`;
-    }
-
-    // 食事提案
-    if (data.mealSuggestions) {
-      result += `### 🍽️ おすすめメニュー\n`;
-
-      const mealTypeNames: Record<string, string> = {
-        breakfast: "朝食",
-        lunch: "昼食",
-        dinner: "夕食",
-        snack: "間食",
-      };
-
-      Object.entries(data.mealSuggestions).forEach(
-        ([mealType, suggestions]: [string, any]) => {
-          const mealName = mealTypeNames[mealType] || mealType;
-          result += `\n#### ${mealName}\n`;
-
-          if (suggestions.convenience) {
-            result += `**簡単:** ${suggestions.convenience}\n`;
-          }
-          if (suggestions.simpleCooking) {
-            result += `**軽い調理:** ${suggestions.simpleCooking}\n`;
-          }
-          if (suggestions.normalCooking) {
-            result += `**しっかり調理:** ${suggestions.normalCooking}\n`;
-          }
-        },
-      );
-      result += "\n";
-    }
-
-    // 励ましメッセージ
-    if (data.feedback?.encouragement) {
-      result += `💪 ${data.feedback.encouragement}\n`;
-    }
-
-    return result;
+        {/* 食事提案 */}
+        {data.mealSuggestions && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-purple-600">🍽️</span>
+              <h4 className="text-base font-semibold text-gray-900">
+                おすすめメニュー
+              </h4>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(data.mealSuggestions).map(
+                ([mealType, suggestions]: [string, any]) => {
+                  const mealTypeLabels: Record<string, string> = {
+                    breakfast: "朝食",
+                    lunch: "昼食",
+                    dinner: "夕食",
+                    snack: "間食",
+                  };
+                  const mealLabel = mealTypeLabels[mealType] || mealType;
+                  
+                  return (
+                    <div key={mealType} className="bg-gray-50 rounded-lg p-3">
+                      <h5 className="text-sm font-semibold text-gray-800 mb-2">
+                        {mealLabel}
+                      </h5>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        {suggestions.convenience && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-400">•</span>
+                            <span>
+                              <span className="font-medium">簡単:</span> {suggestions.convenience}
+                            </span>
+                          </div>
+                        )}
+                        {suggestions.simpleCooking && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-400">•</span>
+                            <span>
+                              <span className="font-medium">軽い調理:</span> {suggestions.simpleCooking}
+                            </span>
+                          </div>
+                        )}
+                        {suggestions.normalCooking && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-400">•</span>
+                            <span>
+                              <span className="font-medium">しっかり調理:</span> {suggestions.normalCooking}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!isOpen || !mealLog) return null;
@@ -289,31 +404,54 @@ export function MealDetailModal({
     snack: "間食",
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 bg-gray-900/30 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-gray-900/30 flex items-start justify-center p-4 z-[9999]"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="meal-modal-title"
     >
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <div className="p-6">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
+        <div className="p-6 pt-8">
           {/* ヘッダー */}
-          <div className="flex items-center justify-between mb-4">
-            <h2
-              id="meal-modal-title"
-              className="text-xl font-semibold text-gray-800"
-            >
-              {mealTypeLabels[mealLog.mealType]}の詳細
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
+                <span className="text-lg">
+                  {mealTypeLabels[mealLog.mealType] === "朝食"
+                    ? "🌅"
+                    : mealTypeLabels[mealLog.mealType] === "昼食"
+                      ? "☀️"
+                      : mealTypeLabels[mealLog.mealType] === "夕食"
+                        ? "🌙"
+                        : "🍪"}
+                </span>
+              </div>
+              <div>
+                <h2
+                  id="meal-modal-title"
+                  className="text-lg font-semibold text-gray-900"
+                >
+                  {mealTypeLabels[mealLog.mealType]}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {new Date(mealLog.actualTime).toLocaleString("ja-JP", {
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-1"
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-50 rounded-lg transition-colors"
               aria-label="モーダルを閉じる"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -329,31 +467,31 @@ export function MealDetailModal({
           </div>
 
           {/* 食事内容 */}
-          <Card className="p-4 mb-4">
+          <div className="mb-6">
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-pink-400 rounded-full mt-2 flex-shrink-0"></div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-gray-500">
-                    {new Date(mealLog.actualTime).toLocaleString("ja-JP", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                {mealLog.followedPlan && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-lg font-medium mb-3">
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    プラン準拠
                   </span>
-                  {mealLog.followedPlan && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      プラン準拠
-                    </span>
-                  )}
-                </div>
-                <p className="text-gray-900 whitespace-pre-wrap leading-relaxed">
+                )}
+                <p className="text-gray-800 text-base leading-relaxed whitespace-pre-wrap">
                   {mealLog.text}
                 </p>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* AI分析結果 */}
           {mealLog.aiAnalysis && (
@@ -419,105 +557,31 @@ export function MealDetailModal({
           )}
           {loadedAIResponse && (
             <div className="mb-6">
-              {/* AIフィードバック */}
-              <Card className="p-4 bg-green-50 border-green-200">
-                <h3 className="font-medium text-green-900 mb-2">
-                  🤖 AIフィードバック
+              {/* AIフィードバック - 再設計版 */}
+              <div className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">
+                  AIフィードバック
                 </h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="prose prose-sm max-w-none">
-                    {loadedAIResponse.split("\n").map((line, index) => {
-                      // ### で始まる行（h3見出し）
-                      if (line.startsWith("### ")) {
-                        return (
-                          <h3
-                            key={index}
-                            className="font-bold text-gray-800 mt-4 mb-2 text-lg"
-                          >
-                            {line.substring(4)}
-                          </h3>
-                        );
-                      }
-                      // #### で始まる行（h4見出し）
-                      else if (line.startsWith("#### ")) {
-                        return (
-                          <h4
-                            key={index}
-                            className="font-semibold text-gray-700 mt-3 mb-1 text-base"
-                          >
-                            {line.substring(5)}
-                          </h4>
-                        );
-                      }
-                      // **太字**の処理
-                      else if (line.startsWith("**") && line.endsWith("**")) {
-                        return (
-                          <h4
-                            key={index}
-                            className="font-bold text-gray-800 mt-4 mb-2 text-base"
-                          >
-                            {line.replace(/\*\*/g, "")}
-                          </h4>
-                        );
-                      }
-                      // - で始まるリストアイテム
-                      else if (line.startsWith("- ")) {
-                        // リスト内の**太字**も処理
-                        const content = line.substring(2);
-                        const processedContent = content.replace(
-                          /\*\*([^*]+)\*\*/g,
-                          "<strong>$1</strong>",
-                        );
-                        return (
-                          <li
-                            key={index}
-                            className="text-gray-700 mb-1 ml-4 list-none"
-                            dangerouslySetInnerHTML={{
-                              __html: processedContent,
-                            }}
-                          />
-                        );
-                      }
-                      // 絵文字付きポイント
-                      else if (
-                        line.startsWith("✨") ||
-                        line.startsWith("🌱") ||
-                        line.startsWith("💪") ||
-                        line.startsWith("🌙") ||
-                        line.startsWith("💡")
-                      ) {
-                        return (
-                          <p
-                            key={index}
-                            className="text-gray-700 mb-2 font-medium"
-                          >
-                            {line}
-                          </p>
-                        );
-                      }
-                      // 空行は無視
-                      else if (line.trim() === "") {
-                        return null;
-                      }
-                      // 通常の文（太字のインライン処理）
-                      else {
-                        // **text** を <strong>text</strong> に変換
-                        const processedLine = line.replace(
-                          /\*\*([^*]+)\*\*/g,
-                          "<strong>$1</strong>",
-                        );
-                        return (
-                          <p
-                            key={index}
-                            className="text-gray-700 mb-2"
-                            dangerouslySetInnerHTML={{ __html: processedLine }}
-                          />
-                        );
-                      }
-                    })}
+                {typeof loadedAIResponse === "object" ? (
+                  formatStructuredFeedback(loadedAIResponse)
+                ) : (
+                  // 文字列の場合は簡潔に表示
+                  <div className="text-sm text-gray-600 leading-relaxed">
+                    {typeof loadedAIResponse === "string" &&
+                      loadedAIResponse
+                        .split("\n")
+                        .slice(0, 5)
+                        .map((line, index) => {
+                          if (line.trim() === "") return null;
+                          return (
+                            <p key={index} className="mb-2">
+                              {line}
+                            </p>
+                          );
+                        })}
                   </div>
-                </div>
-              </Card>
+                )}
+              </div>
             </div>
           )}
 
@@ -534,4 +598,11 @@ export function MealDetailModal({
       </div>
     </div>
   );
+
+  // Portalを使ってbody直下にレンダリング
+  if (typeof window !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+
+  return null;
 }
