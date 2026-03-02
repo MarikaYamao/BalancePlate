@@ -17,6 +17,7 @@
     ]
   },
   "dependencies": {
+    "@notionhq/client": "^5.11.0",
     "@tanstack/react-query": "^5.90.20",
     "ai": "^6.0.68",
     "dexie": "^4.2.1",

@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { TabNavigation } from './TabNavigation';
 import { SkipLink } from '@/components/ui/SkipLink';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { FeedbackButton } from '@/components/features/feedback/FeedbackButton';
 import Image from 'next/image';
 
 interface MainLayoutProps {
@@ -53,6 +54,7 @@ export function MainLayout({ children, showTabBar = true, showHeader = true }: M
             <TabNavigation />
           </nav>
         )}
+        <FeedbackButton />
       </div>
     </>
   );
