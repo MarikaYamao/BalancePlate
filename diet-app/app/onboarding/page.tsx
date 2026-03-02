@@ -99,6 +99,13 @@ export default function OnboardingPage() {
     }
   }, [settings, isLoading, isSaving]);
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   const handleNext = () => {
     // 食材の好みステップから次へ進む場合、入力中の内容を保存
     if (ONBOARDING_STEPS[currentStep].id === 'food') {
@@ -130,12 +137,14 @@ export default function OnboardingPage() {
     
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
+      scrollToTop();
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      scrollToTop();
     }
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Target, Heart, Dumbbell, Scale, TrendingUp, TrendingDown, Activity, Shield, AlertTriangle } from 'lucide-react';
@@ -196,9 +196,18 @@ export function GoalSettings({
   onTargetWeightChange,
   onGoalPeriodChange,
 }: GoalSettingsProps) {
-  const [showWeightInput, setShowWeightInput] = useState(false);
-  
   const selectedGoal = goalOptions.find(g => g.id === goalType);
+  const [showWeightInput, setShowWeightInput] = useState(
+    selectedGoal?.requiresWeight || false
+  );
+  
+  // goalTypeが変更された時にshowWeightInputを更新
+  useEffect(() => {
+    if (goalType) {
+      const goal = goalOptions.find(g => g.id === goalType);
+      setShowWeightInput(goal?.requiresWeight || false);
+    }
+  }, [goalType]);
   
   const handleGoalSelect = (type: GoalType) => {
     onGoalTypeChange(type);

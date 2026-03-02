@@ -24,7 +24,64 @@ export function MealDetailModal({
   // AI相談データを読み込む
   useEffect(() => {
     if (isOpen && mealLog) {
-      loadAIConsultation();
+      // mealLog.aiResponseがある場合はそれを優先的に使用
+      if ((mealLog as any).aiResponse) {
+        const response = (mealLog as any).aiResponse;
+        let processedResponse: string | null = null;
+        
+        // 文字列の場合
+        if (typeof response === "string") {
+          // JSON文字列かどうかを判定
+          const isJsonString = response.trim().startsWith('{') && response.trim().endsWith('}');
+          
+          if (isJsonString) {
+            // JSONをパースして構造化されたフィードバックに変換
+            try {
+              let parsed = JSON.parse(response);
+              
+              // 二重エンコードのチェック
+              if (typeof parsed === "string" && parsed.trim().startsWith('{')) {
+                try {
+                  parsed = JSON.parse(parsed);
+                } catch {
+                  // 二度目のパース失敗
+                }
+              }
+              
+              // 構造化データの場合
+              if (typeof parsed === "object" && (parsed.feedback || parsed.nutritionAdvice || parsed.mealSuggestions || parsed.todayGuideline)) {
+                processedResponse = formatStructuredFeedback(parsed);
+              } else {
+                // 構造化されていないJSON
+                processedResponse = response;
+              }
+            } catch {
+              // パースエラーの場合はそのまま使用
+              processedResponse = response;
+            }
+          } else {
+            // JSONでない通常のテキスト
+            processedResponse = response;
+          }
+        } 
+        // オブジェクトの場合
+        else if (typeof response === "object" && response !== null) {
+          if (response.feedback || response.nutritionAdvice || response.mealSuggestions || response.todayGuideline) {
+            processedResponse = formatStructuredFeedback(response);
+          } else {
+            processedResponse = JSON.stringify(response, null, 2);
+          }
+        } 
+        // その他
+        else {
+          processedResponse = String(response);
+        }
+        
+        setLoadedAIResponse(processedResponse);
+      } else {
+        // aiResponseがない場合のみローカルストレージから読み込み
+        loadAIConsultation();
+      }
     }
   }, [isOpen, mealLog]);
 
@@ -132,11 +189,15 @@ export function MealDetailModal({
     }
 
     // 良いポイント
-    if (data.feedback?.positive && data.feedback.positive.length > 0) {
+    if (data.feedback?.positive) {
       result += `#### ✨ 良いポイント\n`;
-      data.feedback.positive.forEach((item: string) => {
-        result += `- ${item}\n`;
-      });
+      if (Array.isArray(data.feedback.positive)) {
+        data.feedback.positive.forEach((item: string) => {
+          result += `- ${item}\n`;
+        });
+      } else if (typeof data.feedback.positive === "string") {
+        result += `- ${data.feedback.positive}\n`;
+      }
       result += "\n";
     }
 
@@ -230,7 +291,7 @@ export function MealDetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-gray-900/30 flex items-center justify-center p-4 pb-24 z-50"
+      className="fixed inset-0 bg-gray-900/30 flex items-center justify-center p-4 z-50"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"

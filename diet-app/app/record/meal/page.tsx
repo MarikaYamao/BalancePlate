@@ -19,7 +19,7 @@ function MealRecordPageContent() {
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'record' | 'history'>('record');
+  const [showHistory, setShowHistory] = useState<boolean>(false);
   const [editingMeal, setEditingMeal] = useState<{ id: string; type: MealType; text: string } | null>(null);
   const [showFeedback, setShowFeedback] = useState<{ mealType: MealType; mealText: string } | null>(null);
   const [showMealDetail, setShowMealDetail] = useState<{ meal: any; aiResponse?: any } | null>(null);
@@ -31,6 +31,7 @@ function MealRecordPageContent() {
   // TanStack Query hooks
   const { settings, isLoading: settingsLoading } = useUserSettings();
   const resetTime = settings?.dayResetTime || '04:00';
+  const mealsPerDay = settings?.mealsPerDay || 3;
   const [todayKey, setTodayKey] = useState('');
   
   const { 
@@ -52,6 +53,26 @@ function MealRecordPageContent() {
     setTodayKey(getDateKey(new Date(), resetTime));
   }, [resetTime]);
 
+  // 未入力の食事タイプを自動選択
+  useEffect(() => {
+    if (!mounted || mealsLoading || editingMeal || selectedType) return;
+
+    // URLパラメータでタイプが指定されている場合はスキップ
+    const typeParam = searchParams.get('type');
+    if (typeParam) return;
+
+    // 2食設定の場合の食事タイプリスト
+    const availableMealTypes = mealsPerDay === 2 
+      ? ['breakfast', 'dinner', 'snack'] as MealType[]
+      : ['breakfast', 'lunch', 'dinner', 'snack'] as MealType[];
+
+    // 未記録の最初の食事タイプを選択
+    const nextMealType = availableMealTypes.find(type => !recordedTypes.includes(type));
+    if (nextMealType) {
+      setSelectedType(nextMealType);
+    }
+  }, [mounted, mealsLoading, recordedTypes, mealsPerDay, editingMeal, searchParams]);
+
   // URLパラメータからの初期化
   useEffect(() => {
     const typeParam = searchParams.get('type') as MealType | null;
@@ -61,6 +82,9 @@ function MealRecordPageContent() {
     
     if (typeParam && ['breakfast', 'lunch', 'dinner', 'snack'].includes(typeParam)) {
       setSelectedType(typeParam);
+    } else if (!typeParam && !editParam) {
+      // URLパラメータがない場合は自動選択を有効化
+      setSelectedType(null);
     }
     
     if (suggestionParam) {
@@ -75,7 +99,7 @@ function MealRecordPageContent() {
     }
 
     if (tabParam === 'history') {
-      setActiveTab('history');
+      setShowHistory(true);
     }
   }, [searchParams, mealLogs, setMealText]);
 
@@ -161,7 +185,7 @@ function MealRecordPageContent() {
     setEditingMeal({ id: meal.id, type: meal.mealType, text: meal.text });
     setSelectedType(meal.mealType);
     setMealText(meal.text);
-    setActiveTab('record');
+    setShowHistory(false);
     setSuccessMessage(null);
     setError(null);
   };
@@ -205,277 +229,172 @@ function MealRecordPageContent() {
   const todayMealCount = mealLogs.length;
 
   return (
-    <div className={`min-h-screen ${currentMealInfo ? `bg-gradient-to-b ${currentMealInfo.color}` : 'bg-gradient-to-b from-green-50 to-white'}`}>
-      <div className="max-w-2xl mx-auto p-4">
-        {/* ヘッダー - より魅力的に */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.push('/home')}
-            className="text-gray-600 hover:text-gray-800 mb-4 inline-flex items-center gap-1"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            ホームに戻る
-          </button>
-          
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                {currentMealInfo && (
-                  <span className="text-3xl">{currentMealInfo.icon}</span>
-                )}
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">
-                    {editingMeal ? `${editingMeal.type === 'breakfast' ? '朝食' : 
-                                   editingMeal.type === 'lunch' ? '昼食' : 
-                                   editingMeal.type === 'dinner' ? '夕食' : '間食'}を編集中` :
-                     currentMealInfo ? `${currentMealInfo.label}を記録` : 
-                     '食事を記録'}
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    何を食べましたか？
-                  </p>
-                </div>
-              </div>
-              
-              {/* 今日の記録状況 */}
-              <div className="text-right">
-                <div className="text-xs text-gray-500 mb-1">今日の記録</div>
-                <div className="flex items-center gap-1">
-                  <span className="text-2xl font-bold text-green-600">{todayMealCount}</span>
-                  <span className="text-sm text-gray-600">食</span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-xl mx-auto px-4">
+        {/* シンプルなヘッダー */}
+        <div className="py-6">
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => router.push('/home')}
+              className="text-gray-500 hover:text-gray-700 inline-flex items-center gap-1.5 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              戻る
+            </button>
             
-            {/* AI機能の価値訴求 */}
-            <div className="mt-3 p-2 bg-blue-50 rounded-lg flex items-center gap-2">
-              <span className="text-sm">🤖</span>
-              <p className="text-xs text-blue-700">
-                記録するとAIがあなたの食事バランスを分析してフィードバックします
-              </p>
-            </div>
+            <span className="text-xs text-gray-500">今日 {todayMealCount}食</span>
           </div>
+          
+          <h1 className="text-2xl font-bold text-gray-900">
+            {editingMeal ? '食事を編集' : '食事を記録'}
+          </h1>
         </div>
 
-        {/* タブ切り替えをより控えめに */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setActiveTab('record')}
-            className={`
-              flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-              ${activeTab === 'record' 
-                ? 'bg-white shadow-sm border-2 border-green-500 text-green-700' 
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-2 border-transparent'
-              }
-            `}
-          >
-            ✏️ 新規記録
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`
-              flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-              ${activeTab === 'history' 
-                ? 'bg-white shadow-sm border-2 border-green-500 text-green-700' 
-                : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border-2 border-transparent'
-              }
-            `}
-          >
-            📋 今日の一覧
-          </button>
-        </div>
 
-        {/* エラーメッセージ */}
+        {/* エラー・成功メッセージ */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">
             {error}
           </div>
         )}
-
-        {/* 成功メッセージ */}
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 text-green-600 rounded-lg animate-fadeIn">
+          <div className="mb-4 p-3 bg-teal-50 text-teal-700 text-sm rounded-lg">
             {successMessage}
           </div>
         )}
 
-        {/* コンテンツ */}
-        {activeTab === 'record' ? (
-          <div className="space-y-4">
-            {/* URLパラメータで食事タイプが指定されている場合、即座に入力フォームを表示 */}
-            {!selectedType && !editingMeal ? (
-              /* ステップ1: 食事タイプ選択 - より視覚的に */
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-bold text-gray-800 mb-1">
-                    どの食事を記録しますか？
-                  </h2>
-                  <p className="text-sm text-gray-600">記録したい食事のタイミングを選んでください</p>
-                </div>
-                
-                {/* 視覚的な食事タイプセレクター */}
-                <div className="grid grid-cols-2 gap-3">
-                  {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => {
-                    const info = mealTypeInfo[type as keyof typeof mealTypeInfo];
-                    const isRecorded = recordedTypes.includes(type as any);
-                    
-                    return (
-                      <button
-                        key={type}
-                        onClick={() => setSelectedType(type as any)}
-                        disabled={isRecorded}
-                        className={`
-                          p-4 rounded-xl border-2 transition-all text-left
-                          ${isRecorded 
-                            ? 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed' 
-                            : 'bg-white border-gray-200 hover:border-green-400 hover:shadow-md cursor-pointer'
-                          }
-                        `}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{info.icon}</span>
-                          <div>
-                            <div className="font-medium text-gray-800">
-                              {info.label}
-                            </div>
-                          </div>
-                        </div>
-                        {isRecorded && (
-                          <div className="mt-2 text-xs text-green-600 font-medium">
-                            ✓ 記録済み
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* ステップ2: 食事内容入力 - 一つの画面に統合 */
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                {editingMeal && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="text-sm font-medium text-yellow-800">
-                      ✏️ 編集モード
-                    </div>
-                  </div>
-                )}
-                
-                {/* 選択した食事タイプの表示 */}
-                {currentMealInfo && !editingMeal && (
-                  <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{currentMealInfo.icon}</span>
-                        <div>
-                          <span className="font-medium text-green-800">{currentMealInfo.label}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedType(null)}
-                        className="text-sm text-gray-500 hover:text-gray-700"
-                      >
-                        変更
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-800 mb-1">
-                      何を食べましたか？
-                    </h2>
-                    <p className="text-sm text-gray-600 mb-4">
-                      できるだけ詳しく記録すると、より精度の高いAI分析が受けられます
-                    </p>
-                    
-                    <MealTextInput
-                      value={mealText}
-                      onChange={setMealText}
-                      disabled={saving}
-                    />
-                    
-                    {/* 入力のヒント */}
-                    {!mealText && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs text-blue-700">
-                          💡 記録例：玄米100g、鮭の塩焼き、味噌汁、ほうれん草のお浸し
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* アクションボタン - より明確に */}
-            {(selectedType || editingMeal) && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="space-y-3">
-                  {/* メインアクション */}
-                  <button
-                    onClick={handleSave}
-                    disabled={saving || !mealText.trim()}
-                    className={`
-                      w-full py-3 px-6 rounded-lg font-medium transition-all
-                      ${!mealText.trim()
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : saving
-                        ? 'bg-gray-300 text-gray-500 cursor-wait'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl'
-                      }
-                    `}
-                  >
-                    {saving ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                        </svg>
-                        保存中...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        {editingMeal ? '📝 更新してAI分析を受ける' : '🤖 保存してAI分析を受ける'}
-                      </span>
-                    )}
-                  </button>
+        {/* メインコンテンツ */}
+        <div className="space-y-6">
+          {/* 食事タイプ選択 - セグメントコントロール */}
+          {!editingMeal && (
+            <div className="flex gap-1 p-1 bg-gray-50 rounded-xl">
+              {['breakfast', 'lunch', 'dinner', 'snack']
+                .filter((type) => !(mealsPerDay === 2 && type === 'lunch'))
+                .map((type) => {
+                  const info = mealTypeInfo[type as keyof typeof mealTypeInfo];
+                  const isRecorded = recordedTypes.includes(type as any);
+                  const isSelected = selectedType === type;
                   
-                  {/* サブアクション */}
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedType(isSelected ? null : type as any)}
+                      disabled={isRecorded}
+                      className={`
+                        flex-1 py-2.5 px-3 rounded-lg font-medium text-sm transition-all
+                        ${isSelected
+                          ? 'bg-teal-600 text-white'
+                          : isRecorded
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-gray-700 hover:bg-white'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-base">{info.icon}</span>
+                        <span>{info.label}</span>
+                        {isRecorded && <span className="text-xs">✓</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+          )}
+          
+          {/* 入力フィールド - 主役 */}
+          {(selectedType || editingMeal) && (
+            <div className="space-y-4">
+              {editingMeal && (
+                <div className="inline-flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg">
+                  <span>✏️</span>
+                  <span>編集中</span>
+                </div>
+              )}
+              
+              <MealTextInput
+                value={mealText}
+                onChange={setMealText}
+                disabled={saving}
+                placeholder="例: 玄米ご飯、鮭の塩焼き、味噌汁"
+              />
+            </div>
+          )}
+
+          
+          {/* CTAボタン - 下部固定 */}
+          {(selectedType || editingMeal) && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4">
+              <div className="max-w-xl mx-auto space-y-3">
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !mealText.trim() || !selectedType && !editingMeal}
+                  className={`
+                    w-full py-4 px-6 rounded-2xl font-medium transition-all
+                    ${!mealText.trim() || (!selectedType && !editingMeal)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : saving
+                      ? 'bg-gray-300 text-gray-500 cursor-wait'
+                      : 'bg-teal-600 text-white hover:bg-teal-700 shadow-sm'
+                    }
+                  `}
+                >
+                  {saving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      保存中...
+                    </span>
+                  ) : (
+                    editingMeal ? '更新する' : 'この内容で記録する'
+                  )}
+                </button>
+                
+                <div className="flex items-center justify-center gap-6">
+                  {editingMeal && (
+                    <button
+                      onClick={handleReset}
+                      disabled={saving}
+                      className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      キャンセル
+                    </button>
+                  )}
                   <button
-                    onClick={handleReset}
-                    disabled={saving}
-                    className="w-full py-2 text-gray-500 hover:text-gray-700 text-sm transition-colors"
+                    onClick={() => setShowHistory(true)}
+                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                   >
-                    {editingMeal ? 'キャンセル' : '入力をクリア'}
+                    今日の一覧を見る
                   </button>
                 </div>
-                
-                {/* モチベーションメッセージ */}
-                {mealText.trim() && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-xs text-center text-gray-500">
-                      ✨ 記録するとAIがあなたの食事を分析します
-                    </p>
-                  </div>
-                )}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-medium mb-4">今日の食事記録</h2>
-            <MealHistory 
-              dateKey={todayKey}
-              onEdit={handleEdit}
-              onDelete={() => {/* データは自動更新される */}}
-              onShowDetail={handleShowMealDetail}
-            />
-          </div>
-        )}
+            </div>
+          )}
+          
+          {/* 今日の一覧表示 */}
+          {showHistory && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">今日の食事</h2>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-sm text-teal-600 hover:text-teal-700"
+                >
+                  新規記録
+                </button>
+              </div>
+              <MealHistory 
+                dateKey={todayKey}
+                onEdit={handleEdit}
+                onDelete={() => {}}
+                onShowDetail={handleShowMealDetail}
+              />
+            </div>
+          )}
+        </div>
 
       </div>
 
@@ -486,21 +405,23 @@ function MealRecordPageContent() {
           mealText={showFeedback.mealText}
           onClose={() => {
             setShowFeedback(null);
-            // 朝食・昼食の場合は次の食事記録へ遷移、夕食・間食の場合は履歴タブへ
-            if (showFeedback.mealType === 'breakfast' || showFeedback.mealType === 'lunch') {
-              // 次の食事タイプを決定
-              const nextMealType = showFeedback.mealType === 'breakfast' ? 'lunch' : 'dinner';
+            // 朝食・昼食の場合は次の食事記録へ遷移、夕食・間食の場合は履歴を表示
+            if (showFeedback.mealType === 'breakfast' || (showFeedback.mealType === 'lunch' && mealsPerDay === 3)) {
+              // 次の食事タイプを決定（2食設定の場合は朝食→夕食）
+              const nextMealType = showFeedback.mealType === 'breakfast' 
+                ? (mealsPerDay === 2 ? 'dinner' : 'lunch')
+                : 'dinner';
               // 次の食事が記録されていない場合のみ遷移
               if (!recordedTypes.includes(nextMealType as MealType)) {
                 setSelectedType(nextMealType as MealType);
-                setActiveTab('record');
+                setShowHistory(false);
               } else {
-                // すでに記録されている場合は履歴タブへ
-                setActiveTab('history');
+                // すでに記録されている場合は履歴を表示
+                setShowHistory(true);
               }
             } else {
-              // 夕食・間食の場合は履歴タブへ
-              setActiveTab('history');
+              // 夕食・間食の場合は履歴を表示
+              setShowHistory(true);
             }
           }}
         />
