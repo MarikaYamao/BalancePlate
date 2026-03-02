@@ -6,6 +6,7 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { MealDetailModal } from "@/components/features/meal/MealDetailModal";
+import { ConditionFeedbackModal } from "@/components/features/condition/ConditionFeedbackModal";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { mealLogRepository, weightLogRepository } from "@/lib/db/repositories";
@@ -41,6 +42,11 @@ export default function DiaryPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealLog | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCondition, setSelectedCondition] = useState<{
+    dailyState: DailyState;
+    dateKey: string;
+  } | null>(null);
+  const [isConditionModalOpen, setIsConditionModalOpen] = useState(false);
   const [daysToShow, setDaysToShow] = useState(7);
   const [historyTab, setHistoryTab] = useState<"meals" | "weight">("meals");
 
@@ -137,9 +143,11 @@ export default function DiaryPage() {
       );
       if (storedConsultations) {
         const parsedData = JSON.parse(storedConsultations);
-        
+
         // データが配列かどうかを確認し、配列でなければ配列にラップ
-        const consultations = Array.isArray(parsedData) ? parsedData : [parsedData];
+        const consultations = Array.isArray(parsedData)
+          ? parsedData
+          : [parsedData];
 
         // 統合フィードバックがある場合はそれを優先
         const integratedFeedback = consultations.find(
@@ -491,10 +499,20 @@ export default function DiaryPage() {
                           <div className="text-sm text-gray-600 mb-2">
                             コンディション
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {dayData.dailyState.conditionTags.map((tagId) => {
-                              const tagInfo = conditionTagsInfo.find(
-                                (t) => t.id === tagId,
+                          <button
+                            onClick={() => {
+                              setSelectedCondition({
+                                dailyState: dayData.dailyState!,
+                                dateKey: dayData.dateKey,
+                              });
+                              setIsConditionModalOpen(true);
+                            }}
+                            className="w-full text-left group"
+                          >
+                            <div className="flex flex-wrap gap-2 p-2 -m-2 rounded-lg transition-colors hover:bg-gray-50">
+                              {dayData.dailyState.conditionTags.map((tagId) => {
+                                const tagInfo = conditionTagsInfo.find(
+                                  (t) => t.id === tagId,
                               );
                               if (!tagInfo) return null;
 
@@ -506,9 +524,10 @@ export default function DiaryPage() {
                                   <span>{tagInfo.icon}</span>
                                   <span>{tagInfo.label}</span>
                                 </span>
-                              );
-                            })}
-                          </div>
+                                );
+                              })}
+                            </div>
+                          </button>
                         </div>
                       )}
 
@@ -642,6 +661,19 @@ export default function DiaryPage() {
           mealLog={selectedMeal}
           onClose={handleModalClose}
         />
+        
+        {/* コンディションフィードバックモーダル */}
+        {selectedCondition && (
+          <ConditionFeedbackModal
+            isOpen={isConditionModalOpen}
+            onClose={() => {
+              setIsConditionModalOpen(false);
+              setSelectedCondition(null);
+            }}
+            dailyState={selectedCondition.dailyState}
+            dateKey={selectedCondition.dateKey}
+          />
+        )}
       </div>
     </MainLayout>
   );
