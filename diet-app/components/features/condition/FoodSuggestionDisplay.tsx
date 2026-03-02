@@ -13,16 +13,16 @@ interface FoodSuggestionDisplayProps {
   foodSuggestions: FoodSuggestion | null;
 }
 
-export function FoodSuggestionDisplay({ foodSuggestions }: FoodSuggestionDisplayProps) {
+export function FoodSuggestionDisplay({
+  foodSuggestions,
+}: FoodSuggestionDisplayProps) {
   if (!foodSuggestions) return null;
 
   return (
-    <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+    <div className="p-4 rounded-lg border border-emerald-200">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">🍽️</span>
-        <h3 className="font-medium text-emerald-800">
-          今日おすすめの食事
-        </h3>
+        <h3 className="font-medium text-emerald-800">今日おすすめの食事</h3>
       </div>
 
       {/* 食事の特徴 */}
