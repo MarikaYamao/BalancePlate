@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { GenderAwareConditionTagSelector } from '@/components/features/condition/GenderAwareConditionTagSelector';
 import { FreeMemoInput } from '@/components/features/condition/FreeMemoInput';
+import { PostConditionFeedback } from '@/components/features/condition/PostConditionFeedback';
 import { getDateKey, formatDateFromKey } from '@/lib/utils/dateUtils';
 import { useDailyState } from '@/lib/hooks/useDailyState';
 import { useUserSettings } from '@/lib/hooks/useUserSettings';
@@ -18,6 +19,8 @@ export default function ClientOnlyConditionRecord() {
   const [freeMemo, setFreeMemo] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [savedData, setSavedData] = useState<{tags: ConditionTag[], memo: string} | null>(null);
   const [mounted, setMounted] = useState(false);
   
   // TanStack Query hooks
@@ -66,10 +69,8 @@ export default function ClientOnlyConditionRecord() {
       {
         onSuccess: () => {
           setSuccessMessage('保存しました！');
-          // 2秒後にホーム画面に戻る
-          setTimeout(() => {
-            router.push('/home');
-          }, 2000);
+          setSavedData({ tags: selectedTags, memo: freeMemo });
+          setShowFeedback(true);
         },
         onError: (err) => {
           setError('保存に失敗しました。もう一度お試しください。');
@@ -106,9 +107,10 @@ export default function ClientOnlyConditionRecord() {
   }
 
   return (
-    <MainLayout>
-      <div className="min-h-screen pb-safe">
-        {/* ヘッダー */}
+    <>
+      <MainLayout>
+        <div className="min-h-screen pb-safe">
+          {/* ヘッダー */}
         <header className="bg-gradient-to-b from-pink-100 to-pink-50 pb-4">
           <div className="pt-safe-area-top px-4 pt-4">
             <div className="flex items-center justify-between mb-2">
@@ -240,5 +242,19 @@ export default function ClientOnlyConditionRecord() {
         </main>
       </div>
     </MainLayout>
+      
+    {/* コンディション記録後のフィードバック */}
+    {showFeedback && savedData && (
+      <PostConditionFeedback
+        conditionTags={savedData.tags}
+        freeMemo={savedData.memo}
+        dateKey={todayKey}
+        onClose={() => {
+          setShowFeedback(false);
+          router.push('/home');
+        }}
+      />
+    )}
+  </>
   );
 }

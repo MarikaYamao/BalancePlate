@@ -12,13 +12,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const feedback = await generateConditionFeedback({
+    const result = await generateConditionFeedback({
       conditionTags,
       note,
       dateKey,
     });
 
-    return NextResponse.json({ feedback });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Condition feedback error:", error);
     return NextResponse.json(

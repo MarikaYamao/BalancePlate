@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { PostConditionFeedback } from '@/components/features/condition/PostConditionFeedback';
 import { conditionTagsInfo } from '@/lib/constants/conditionTags';
 import { DailyStateRepository } from '@/lib/db/repositories/dailyStateRepository';
 import { UserSettingsRepository } from '@/lib/db/repositories/userSettingsRepository';
@@ -21,6 +22,8 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
   const [selectedTags, setSelectedTags] = useState<ConditionTag[]>([]);
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [savedData, setSavedData] = useState<{tags: ConditionTag[], memo: string} | null>(null);
 
   // モーダルが開いた時にボディのスクロールを無効化
   useEffect(() => {
@@ -35,7 +38,7 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !showFeedback) return null;
 
   const handleTagToggle = (tagId: ConditionTag) => {
     setSelectedTags(prev => {
@@ -192,12 +195,12 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
         // AI提案の失敗は無視して続行
       }
 
+      // フィードバック表示用のデータを保存
+      setSavedData({ tags: selectedTags, memo: memo });
+      setShowFeedback(true);
+      
       if (onSave) {
         onSave();
-      }
-      
-      if (onClose) {
-        onClose();
       }
     } catch (error) {
       console.error('Failed to save condition:', error);
@@ -215,6 +218,27 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
       onClose();
     }
   };
+
+  // フィードバック表示中はConditionModalを非表示
+  if (showFeedback && savedData) {
+    const todayKey = getTodayKey(resetTime);
+    return (
+      <PostConditionFeedback
+        conditionTags={savedData.tags}
+        freeMemo={savedData.memo}
+        dateKey={todayKey}
+        onClose={() => {
+          setShowFeedback(false);
+          setSavedData(null);
+          setSelectedTags([]);
+          setMemo('');
+          if (onClose) {
+            onClose();
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div 
