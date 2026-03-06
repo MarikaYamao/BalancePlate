@@ -45,35 +45,20 @@ export default function ClientOnlyHome() {
     try {
       // 今日の日付キーを取得
       const { getDateKey } = await import("@/lib/utils/dateUtils");
+      const { consultationStorage } = await import("@/lib/ai/consultationStorage");
       const dateKey = getDateKey(new Date(), resetTime);
       console.log('🔍 探しているdateKey:', dateKey);
       console.log('🔍 探しているキー:', `ai-consultation-${dateKey}`);
       
       // LocalStorageにあるai-consultation関連のキーを全て表示
-      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('ai-consultation'));
+      const allKeys = consultationStorage.debugKeys();
       console.log('🔍 LocalStorageにあるai-consultation関連キー:', allKeys);
       
       // LocalStorageから今日のAI相談データを取得
-      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
-      console.log('🔍 取得したデータ:', storedConsultations);
+      const consultations = consultationStorage.getByDateKey(dateKey);
+      console.log('🔍 取得したデータ:', consultations);
       
-      if (storedConsultations) {
-        const data = JSON.parse(storedConsultations);
-        console.log('🔍 パースしたデータ:', data);
-        
-        // データ形式を正規化（旧形式の単一オブジェクトと新形式の配列の両方に対応）
-        let consultations;
-        if (Array.isArray(data)) {
-          // 新形式（配列）
-          consultations = data;
-        } else if (data.response && data.requestType) {
-          // 旧形式（単一オブジェクト）- 配列でラップ
-          consultations = [data];
-        } else {
-          console.warn('🚨 不明なデータ形式:', data);
-          return;
-        }
-        
+      if (consultations.length > 0) {
         console.log('🔍 正規化したデータ:', consultations);
         
         // 最新のフィードバックを探す（配列の最後が最新）
@@ -342,22 +327,9 @@ export default function ClientOnlyHome() {
   const hasAIAnalysis = () => {
     const today = new Date().toISOString().split("T")[0];
     try {
-      const storedData = localStorage.getItem(`ai-consultation-${today}`);
-      if (!storedData) return false;
-      
-      const data = JSON.parse(storedData);
-      
-      // 配列形式の場合
-      if (Array.isArray(data)) {
-        return data.length > 0;
-      }
-      
-      // 旧形式の単一オブジェクトの場合
-      if (data.response && data.requestType) {
-        return true;
-      }
-      
-      return false;
+      const { consultationStorage } = require("@/lib/ai/consultationStorage");
+      const consultations = consultationStorage.getByDateKey(today);
+      return consultations.length > 0;
     } catch {
       return false;
     }

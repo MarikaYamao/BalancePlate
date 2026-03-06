@@ -133,24 +133,20 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             
             // LocalStorageに保存（配列形式で一貫性を保つ）
             const todayKey = getTodayKey(resetTime);
-            const storageKey = `ai-consultation-${todayKey}`;
-            
-            // 既存のデータがあるかチェック
-            const existing = localStorage.getItem(storageKey);
-            const consultations = existing ? JSON.parse(existing) : [];
+            const dateKey = todayKey;
             
             // 新しい相談データを追加
+            const { consultationStorage } = await import("@/lib/ai/consultationStorage");
             const consultationData = {
               timestamp: new Date().toISOString(),
               type: 'condition_input',
               requestType: 'morning_plan',
               response: data,
-              isConditionFeedback: true
+              isConditionFeedback: true,
+              dateKey
             };
-            consultations.push(consultationData);
-            
-            localStorage.setItem(storageKey, JSON.stringify(consultations));
-            localStorage.setItem('ai-consultation-latest', JSON.stringify(data));
+            consultationStorage.save(dateKey, consultationData);
+            consultationStorage.saveLatest(data);
             
             console.log('💾 LocalStorageに保存完了');
             
@@ -194,24 +190,20 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             
             // LocalStorageに保存（配列形式で一貫性を保つ）
             const todayKey = getTodayKey(resetTime);
-            const storageKey = `ai-consultation-${todayKey}`;
-            
-            // 既存のデータがあるかチェック
-            const existing = localStorage.getItem(storageKey);
-            const consultations = existing ? JSON.parse(existing) : [];
+            const dateKey = todayKey;
             
             // 新しい相談データを追加
+            const { consultationStorage } = await import("@/lib/ai/consultationStorage");
             const consultationData = {
               timestamp: new Date().toISOString(),
               type: 'condition_input',
               requestType: 'morning_plan',
               response: data,
-              isConditionFeedback: true
+              isConditionFeedback: true,
+              dateKey
             };
-            consultations.push(consultationData);
-            
-            localStorage.setItem(storageKey, JSON.stringify(consultations));
-            localStorage.setItem('ai-consultation-latest', JSON.stringify(data));
+            consultationStorage.save(dateKey, consultationData);
+            consultationStorage.saveLatest(data);
             
             console.log('💾 LocalStorageに保存完了');
             

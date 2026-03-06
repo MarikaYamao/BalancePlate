@@ -135,10 +135,10 @@ export function PostMealFeedback({
 
       // AI相談データをローカルストレージに保存（履歴で表示するため）
       try {
+        const { consultationStorage } = await import("@/lib/ai/consultationStorage");
         const dateKey = getDateKey(new Date(), settings!.dayResetTime);
         const currentTime = new Date();
-        const existingData = localStorage.getItem(`ai-consultation-${dateKey}`);
-        const consultations = existingData ? JSON.parse(existingData) : [];
+        const consultations = consultationStorage.getByDateKey(dateKey);
 
         // 複数食事の場合は各食事に対してフィードバックを関連付け
         if (mealText.includes("【")) {
@@ -187,9 +187,11 @@ export function PostMealFeedback({
                 response: data.response || null,
                 requestType,
                 isIntegratedFeedback: true,
+                dateKey
               };
 
-              consultations.push(consultationData);
+              // 統合フィードバックとして保存
+              consultationStorage.save(dateKey, consultationData);
             }
           });
 
@@ -203,14 +205,10 @@ export function PostMealFeedback({
             mealText,
             response: data.response || null,
             requestType,
+            dateKey
           };
-          consultations.push(consultationData);
+          consultationStorage.save(dateKey, consultationData);
         }
-
-        localStorage.setItem(
-          `ai-consultation-${dateKey}`,
-          JSON.stringify(consultations),
-        );
       } catch (storageError) {
         console.warn("Failed to save consultation data:", storageError);
       }
@@ -238,6 +236,219 @@ export function PostMealFeedback({
       snack: "間食",
     };
     return labels[type];
+  };
+
+  const renderStructuredFeedback = (responseText: string) => {
+    try {
+      const data = JSON.parse(responseText);
+      return (
+        <div className="space-y-4">
+          {/* 今日のガイドライン */}
+          {data.todayGuideline && (
+            <div className="border-l-4 border-gray-300 pl-4">
+              <h4 className="font-semibold text-gray-800 mb-2">💡 今日のポイント</h4>
+              <p className="text-gray-600">{data.todayGuideline}</p>
+            </div>
+          )}
+
+          {/* フィードバック */}
+          {data.feedback && (
+            <div className="space-y-3">
+              {data.feedback.overall && (
+                <div className="border-l-4 border-gray-300 pl-4">
+                  <h4 className="font-semibold text-gray-800 mb-2">✨ 全体評価</h4>
+                  <p className="text-gray-600">{data.feedback.overall}</p>
+                </div>
+              )}
+
+              {data.feedback.positive && (
+                <div className="border-l-4 border-gray-300 pl-4">
+                  <h4 className="font-semibold text-gray-800 mb-2">🌟 良い点</h4>
+                  <p className="text-gray-600">{data.feedback.positive}</p>
+                </div>
+              )}
+
+              {data.feedback.suggestions && data.feedback.suggestions.length > 0 && (
+                <div className="border-l-4 border-gray-300 pl-4">
+                  <h4 className="font-semibold text-gray-800 mb-2">💪 改善提案</h4>
+                  <ul className="text-gray-600 space-y-1">
+                    {data.feedback.suggestions.map((suggestion: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{suggestion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {data.feedback.encouragement && (
+                <div className="border-l-4 border-gray-300 pl-4">
+                  <h4 className="font-semibold text-gray-800 mb-2">🌸 応援メッセージ</h4>
+                  <p className="text-gray-600">{data.feedback.encouragement}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 栄養アドバイス */}
+          {data.nutritionAdvice && (
+            <div className="border-l-4 border-gray-300 pl-4">
+              <h4 className="font-semibold text-gray-800 mb-3">🥗 栄養のポイント</h4>
+              <div className="text-gray-600 space-y-2">
+                {data.nutritionAdvice.focus && data.nutritionAdvice.focus.length > 0 && (
+                  <div>
+                    <span className="font-medium">意識したい栄養素:</span>
+                    <span className="ml-2">{data.nutritionAdvice.focus.join(', ')}</span>
+                  </div>
+                )}
+                {data.nutritionAdvice.avoid && data.nutritionAdvice.avoid.length > 0 && (
+                  <div>
+                    <span className="font-medium">控えたいもの:</span>
+                    <span className="ml-2">{data.nutritionAdvice.avoid.join(', ')}</span>
+                  </div>
+                )}
+                {data.nutritionAdvice.hydration && (
+                  <div>
+                    <span className="font-medium">水分補給:</span>
+                    <span className="ml-2">{data.nutritionAdvice.hydration}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 次の食事プラン */}
+          {data.mealSuggestions && Object.keys(data.mealSuggestions).length > 0 && (
+            <div className="space-y-4">
+              {Object.entries(data.mealSuggestions).map(([mealType, suggestions]: [string, any]) => {
+                const mealTypeLabel = mealType === 'breakfast' ? '朝食' : 
+                                     mealType === 'lunch' ? '昼食' : 
+                                     mealType === 'dinner' ? '夕食' : 
+                                     mealType === 'tomorrow' ? '明日に向けて' : 
+                                     mealType;
+                
+                // 明日に向けてのアドバイスは別形式で表示
+                if (mealType === 'tomorrow') {
+                  return (
+                    <div key={mealType} className="border-l-4 border-gray-300 pl-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">🌅 {mealTypeLabel}</h4>
+                      <div className="text-gray-600 space-y-1">
+                        {suggestions.focus && (
+                          <div><span className="font-medium">重視点:</span> {suggestions.focus}</div>
+                        )}
+                        {suggestions.timing && (
+                          <div><span className="font-medium">タイミング:</span> {suggestions.timing}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // 通常の食事提案（A/B/Cプラン）
+                return (
+                  <div key={mealType} className="bg-teal-50 border-l-4 border-teal-400 p-4 rounded">
+                    <h4 className="font-semibold text-teal-800 mb-3">🍽️ {mealTypeLabel}の提案（3プラン）</h4>
+                    <div className="grid gap-3">
+                      {/* Plan A */}
+                      {suggestions.planA && (
+                        <div className="bg-white p-3 rounded-lg border border-teal-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-teal-600 text-white px-2 py-0.5 rounded text-xs font-bold">A</span>
+                                <span className="font-semibold text-teal-900">{suggestions.planA.title}</span>
+                              </div>
+                              <p className="text-teal-800 text-sm mb-1">{suggestions.planA.menu}</p>
+                              <p className="text-teal-600 text-xs">{suggestions.planA.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Plan B */}
+                      {suggestions.planB && (
+                        <div className="bg-white p-3 rounded-lg border border-teal-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold">B</span>
+                                <span className="font-semibold text-teal-900">{suggestions.planB.title}</span>
+                              </div>
+                              <p className="text-teal-800 text-sm mb-1">{suggestions.planB.menu}</p>
+                              <p className="text-teal-600 text-xs">{suggestions.planB.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Plan C */}
+                      {suggestions.planC && (
+                        <div className="bg-white p-3 rounded-lg border border-teal-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-gray-500 text-white px-2 py-0.5 rounded text-xs font-bold">C</span>
+                                <span className="font-semibold text-teal-900">{suggestions.planC.title}</span>
+                              </div>
+                              <p className="text-teal-800 text-sm mb-1">{suggestions.planC.menu}</p>
+                              <p className="text-teal-600 text-xs">{suggestions.planC.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 明日に向けたアドバイス（consultation時のみ） */}
+          {data.tomorrowAdvice && (
+            <div className="border-l-4 border-gray-300 pl-4">
+              <h4 className="font-semibold text-gray-800 mb-3">🌅 明日に向けて</h4>
+              <div className="text-gray-600 space-y-2">
+                {data.tomorrowAdvice.focus && (
+                  <div>
+                    <span className="font-medium">重点:</span>
+                    <span className="ml-2">{data.tomorrowAdvice.focus}</span>
+                  </div>
+                )}
+                {data.tomorrowAdvice.preparation && (
+                  <div>
+                    <span className="font-medium">準備:</span>
+                    <span className="ml-2">{data.tomorrowAdvice.preparation}</span>
+                  </div>
+                )}
+                {data.tomorrowAdvice.mindset && (
+                  <div className="bg-gray-100 rounded p-2 mt-2">
+                    <span className="text-gray-700 text-sm font-medium">{data.tomorrowAdvice.mindset}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } catch (error) {
+      console.warn('Failed to parse JSON feedback:', error);
+      // JSONの解析に失敗した場合のフォールバック（従来のテキスト表示）
+      return (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+          <h4 className="font-semibold text-red-800 mb-2">⚠️ データ形式エラー</h4>
+          <p className="text-red-700 text-sm mb-2">
+            フィードバックの形式に問題があります。管理者にお知らせください。
+          </p>
+          <details className="mt-2">
+            <summary className="cursor-pointer text-red-600 text-sm">詳細情報</summary>
+            <pre className="text-xs bg-red-100 p-2 mt-2 rounded overflow-auto max-h-40">
+              {responseText}
+            </pre>
+          </details>
+        </div>
+      );
+    }
   };
 
   return (
@@ -324,93 +535,7 @@ export function PostMealFeedback({
               {/* フィードバック内容 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="prose prose-sm max-w-none">
-                  {feedback.response.split("\n").map((line, index) => {
-                    // ### で始まる行（h3見出し）
-                    if (line.startsWith("### ")) {
-                      return (
-                        <h3
-                          key={index}
-                          className="font-bold text-gray-800 mt-4 mb-2 text-lg"
-                        >
-                          {line.substring(4)}
-                        </h3>
-                      );
-                    }
-                    // #### で始まる行（h4見出し）
-                    else if (line.startsWith("#### ")) {
-                      return (
-                        <h4
-                          key={index}
-                          className="font-semibold text-gray-700 mt-3 mb-1 text-base"
-                        >
-                          {line.substring(5)}
-                        </h4>
-                      );
-                    }
-                    // **太字**の処理
-                    else if (line.startsWith("**") && line.endsWith("**")) {
-                      return (
-                        <h4
-                          key={index}
-                          className="font-bold text-gray-800 mt-4 mb-2 text-base"
-                        >
-                          {line.replace(/\*\*/g, "")}
-                        </h4>
-                      );
-                    }
-                    // - で始まるリストアイテム
-                    else if (line.startsWith("- ")) {
-                      // リスト内の**太字**も処理
-                      const content = line.substring(2);
-                      const processedContent = content.replace(
-                        /\*\*([^*]+)\*\*/g,
-                        "<strong>$1</strong>",
-                      );
-                      return (
-                        <li
-                          key={index}
-                          className="text-gray-700 mb-1 ml-4 list-none"
-                          dangerouslySetInnerHTML={{ __html: processedContent }}
-                        />
-                      );
-                    }
-                    // 絵文字付きポイント
-                    else if (
-                      line.startsWith("✨") ||
-                      line.startsWith("🌱") ||
-                      line.startsWith("💪") ||
-                      line.startsWith("🌙") ||
-                      line.startsWith("💡")
-                    ) {
-                      return (
-                        <p
-                          key={index}
-                          className="text-gray-700 mb-2 font-medium"
-                        >
-                          {line}
-                        </p>
-                      );
-                    }
-                    // 空行
-                    else if (line.trim() === "") {
-                      return <br key={index} />;
-                    }
-                    // 通常の文（太字のインライン処理）
-                    else {
-                      // **text** を <strong>text</strong> に変換
-                      const processedLine = line.replace(
-                        /\*\*([^*]+)\*\*/g,
-                        "<strong>$1</strong>",
-                      );
-                      return (
-                        <p
-                          key={index}
-                          className="text-gray-700 mb-2"
-                          dangerouslySetInnerHTML={{ __html: processedLine }}
-                        />
-                      );
-                    }
-                  })}
+                  {renderStructuredFeedback(feedback.response)}
                 </div>
               </div>
 

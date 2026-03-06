@@ -75,13 +75,8 @@ export function MealHistory({ dateKey, onEdit, onDelete, onShowDetail }: MealHis
   // 統合フィードバックデータの取得
   const getIntegratedFeedback = (dateKey: string): any | null => {
     try {
-      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
-      if (!storedConsultations) return null;
-      
-      const consultations = JSON.parse(storedConsultations);
-      // 統合フィードバック（isIntegratedFeedback: true）を探す
-      const integratedFeedback = consultations.find((c: any) => c.isIntegratedFeedback === true);
-      return integratedFeedback || null;
+      const { consultationStorage } = require("@/lib/ai/consultationStorage");
+      return consultationStorage.findIntegrated(dateKey);
     } catch (error) {
       return null;
     }
@@ -90,14 +85,8 @@ export function MealHistory({ dateKey, onEdit, onDelete, onShowDetail }: MealHis
   // フィードバックデータの存在確認（個別食事用）
   const checkStoredFeedback = (dateKey: string, mealTime: Date): boolean => {
     try {
-      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
-      if (!storedConsultations) return false;
-      
-      const consultations = JSON.parse(storedConsultations);
-      return consultations.some((c: any) => 
-        !c.isIntegratedFeedback && // 統合フィードバック以外
-        Math.abs(new Date(c.timestamp).getTime() - new Date(mealTime).getTime()) < 4 * 60 * 60 * 1000
-      );
+      const { consultationStorage } = require("@/lib/ai/consultationStorage");
+      return consultationStorage.checkStoredFeedback(dateKey, mealTime);
     } catch (error) {
       return false;
     }

@@ -116,23 +116,19 @@ export function useEnhancedAISuggestions() {
 
       // LocalStorageに保存（既存のパターンに合わせる）
       const todayKey = getTodayKey(resetTime);
-      const storageKey = `ai-consultation-${todayKey}`;
+      const dateKey = todayKey;
       
-      // 既存のデータがあるかチェック
-      const existing = localStorage.getItem(storageKey);
-      const consultations = existing ? JSON.parse(existing) : [];
-      
-      // 新しい相談データを追加
-      consultations.push({
+      const { consultationStorage } = await import("@/lib/ai/consultationStorage");
+      const consultationData = {
         timestamp: new Date().toISOString(),
+        dateKey,
         type: 'morning_plan',
         request: requestBody,
         response: enhancedResponse,
         includesFridgeItems: fridgeItemsData.length > 0
-      });
-      
-      localStorage.setItem(storageKey, JSON.stringify(consultations));
-      localStorage.setItem('ai-consultation-latest', JSON.stringify(enhancedResponse));
+      };
+      consultationStorage.save(dateKey, consultationData);
+      consultationStorage.saveLatest(enhancedResponse);
 
       // カスタムイベントを発行してUIを更新
       window.dispatchEvent(new CustomEvent('ai-consultation-updated'));

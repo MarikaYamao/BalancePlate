@@ -138,35 +138,20 @@ export default function DiaryPage() {
 
     // ローカルストレージから該当食事のフィードバックを取得
     try {
-      const storedConsultations = localStorage.getItem(
-        `ai-consultation-${meal.dateKey}`,
-      );
-      if (storedConsultations) {
-        const parsedData = JSON.parse(storedConsultations);
-
-        // データが配列かどうかを確認し、配列でなければ配列にラップ
-        const consultations = Array.isArray(parsedData)
-          ? parsedData
-          : [parsedData];
-
+      const { consultationStorage } = require("@/lib/ai/consultationStorage");
+      const consultations = consultationStorage.getByDateKey(meal.dateKey);
+      
+      if (consultations.length > 0) {
         // 統合フィードバックがある場合はそれを優先
-        const integratedFeedback = consultations.find(
-          (c: any) => c && c.isIntegratedFeedback === true,
-        );
+        const integratedFeedback = consultationStorage.findIntegrated(meal.dateKey);
         if (integratedFeedback) {
           mealWithFeedback.aiResponse = integratedFeedback.response;
         } else {
           // 個別フィードバックがある場合
-          const individualFeedback = consultations.find(
-            (c: any) =>
-              c &&
-              !c.isIntegratedFeedback &&
-              c.timestamp &&
-              Math.abs(
-                new Date(c.timestamp).getTime() -
-                  new Date(meal.actualTime).getTime(),
-              ) <
-                4 * 60 * 60 * 1000,
+          const individualFeedback = consultationStorage.findNearestByTimestamp(
+            meal.dateKey,
+            new Date(meal.actualTime).getTime(),
+            4
           );
           if (individualFeedback) {
             mealWithFeedback.aiResponse = individualFeedback.response;
