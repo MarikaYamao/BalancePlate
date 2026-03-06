@@ -28,7 +28,6 @@ export class DatabaseTester {
   async runAllTests(): Promise<TestResult[]> {
     this.results = [];
     
-    console.log('🧪 Starting database tests...');
     
     await this.testDatabaseInitialization();
     await this.testUserSettings();
@@ -36,7 +35,6 @@ export class DatabaseTester {
     await this.testMealLog();
     await this.testDateUtils();
     
-    console.log('✅ Database tests completed');
     return this.results;
   }
 
@@ -255,8 +253,7 @@ export class DatabaseTester {
     
     this.results.push(result);
     
-    const emoji = success ? '✅' : '❌';
-    console.log(`${emoji} ${message}`, data ? data : '');
+    // Removed debug logging
     
     if (error) {
       console.error('Error details:', error);
@@ -282,7 +279,7 @@ export async function runDatabaseTests(): Promise<TestResult[]> {
   const results = await tester.runAllTests();
   
   const summary = tester.getSummary();
-  console.log(`\n📊 Test Summary: ${summary.passed}/${summary.total} passed (${summary.passRate}%)`);
+  // Test summary removed from console output
   
   return results;
 }

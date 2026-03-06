@@ -62,7 +62,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
       }, resetTime);
 
       // AI食事提案を生成
-      console.log('✅ コンディション保存完了、AI提案を開始します...');
       try {
         // 暗号化DBを初期化
         const { initializeEncryptedDatabase } = await import('@/lib/db/encryptedDatabase');
@@ -70,14 +69,11 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
         
         const userSettingsRepo = new UserSettingsRepository();
         const userSettings = await userSettingsRepo.get();
-        console.log('👤 ユーザー設定取得:', userSettings ? 'あり' : 'なし');
         
         if (userSettings) {
           // 手持ち食材を取得
           const fridgeItems = await fridgeItemRepository.getAvailableFridgeItems();
           const availableIngredients = fridgeItems.map(item => item.name);
-          
-          console.log('🍽️ 手持ち食材:', availableIngredients);
           const goalTypeMapping: Record<string, string> = {
             'health': 'maintain',
             'weight_loss': 'weight_loss', 
@@ -97,7 +93,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             originalGoalType: userSettings.profile?.goalType,
             mappedGoalType: userSettings.profile?.goalType ? goalTypeMapping[userSettings.profile.goalType] : undefined,
           });
-          console.log('💭 今日のコンディション:', selectedTags);
 
           // APIリクエストボディを構築
           const requestBody = {
@@ -178,7 +173,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             consultationStorage.save(dateKey, consultationData);
             consultationStorage.saveLatest(data);
             
-            console.log('💾 LocalStorageに保存完了');
             
             // イベントを発行して画面を更新
             window.dispatchEvent(new CustomEvent('ai-consultation-updated'));
@@ -206,8 +200,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             requestType: 'morning_plan' as const,
           };
           
-          console.log('🚀 デフォルト設定でAI API リクエスト送信:', requestBody);
-          
           const response = await fetch('/api/ai/consultation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -216,7 +208,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
 
           if (response.ok) {
             const data = await response.json();
-            console.log('✨ AI食事提案を取得しました（デフォルト設定）:', data);
             
             // LocalStorageに保存（配列形式で一貫性を保つ）
             const todayKey = getTodayKey(resetTime);
@@ -235,7 +226,6 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
             consultationStorage.save(dateKey, consultationData);
             consultationStorage.saveLatest(data);
             
-            console.log('💾 LocalStorageに保存完了');
             
             // イベントを発行して画面を更新
             window.dispatchEvent(new CustomEvent('ai-consultation-updated'));

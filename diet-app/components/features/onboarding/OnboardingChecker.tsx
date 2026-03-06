@@ -12,14 +12,12 @@ export function OnboardingChecker({ children }: { children: React.ReactNode }) {
     // URLにonboarding完了フラグがある場合
     const params = new URLSearchParams(window.location.search);
     if (params.get('onboarding_completed') === 'true') {
-      console.log('Onboarding just completed, cleaning URL');
       // URLパラメータをクリア
       window.history.replaceState({}, document.title, '/home');
       return;
     }
     
     if (!isLoading && !settings?.onboardingCompleted) {
-      console.log('OnboardingChecker: User has not completed onboarding, redirecting');
       router.replace('/onboarding');
     }
   }, [settings, isLoading, router]);

@@ -103,18 +103,11 @@ export async function POST(request: NextRequest) {
       fridgeItems: validatedData.fridgeItems,
     };
 
-    console.log('AI Request:', {
-      requestType: validatedData.requestType,
-      userProfile: validatedData.userProfile,
-      timestamp: new Date().toISOString(),
-      usingMock: !isRealAPIKey || isMockEnabled(),
-    });
 
     let response: string;
 
     // モック機能を使用するかAPIを使用するかを判定
     if (!isRealAPIKey || isMockEnabled()) {
-      console.log('Using mock AI response');
       await delay(1500); // リアルなAPI感を演出
       response = generateMockResponse(context);
     } else {
@@ -139,13 +132,11 @@ export async function POST(request: NextRequest) {
       response = aiContent;
     }
 
-    console.log('AI Response generated successfully');
 
     // AIレスポンスをJSONとしてパース
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(response);
-      console.log('Successfully parsed structured AI response');
     } catch (parseError) {
       console.warn('Failed to parse AI response as JSON, treating as text:', parseError);
       // JSONパースに失敗した場合は従来通りのテキストレスポンス

@@ -87,9 +87,6 @@ export default function FoodPlanPage() {
         requestType: 'morning_plan'
       };
 
-      console.log('Food Plan Page - todayMeals raw:', todayMeals);
-      console.log('Food Plan Page - aiContext.todayMeals:', aiContext.todayMeals);
-
       setContext(aiContext);
       setExistingPlans(plans);
 
@@ -126,7 +123,6 @@ export default function FoodPlanPage() {
   };
 
   const handlePlanSelected = (plan: FoodPlan) => {
-    console.log('Plan selected:', plan);
     // 選択されたプランで状態を更新
     setExistingPlans(prev => 
       prev.map(p => ({ 

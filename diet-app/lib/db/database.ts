@@ -79,7 +79,6 @@ export const db = new DietDatabase();
 export async function initializeDatabase(): Promise<void> {
   try {
     await db.open();
-    console.log('Database initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database:', error);
     throw error;

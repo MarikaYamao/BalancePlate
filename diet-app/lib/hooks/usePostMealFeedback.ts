@@ -86,10 +86,6 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
       // 現在時刻を追加
       const currentTime = new Date();
       
-      console.log('usePostMealFeedback - todayMeals:', todayMeals);
-      console.log('usePostMealFeedback - todayMealData:', todayMealData);
-      console.log('usePostMealFeedback - requestType:', requestType);
-      
       const requestBody = {
         userProfile: {
           age: settings.profile?.birthYear

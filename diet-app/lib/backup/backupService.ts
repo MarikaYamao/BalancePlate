@@ -195,7 +195,6 @@ export class BackupService {
    * 全データをクリア
    */
   private async clearAllData(): Promise<void> {
-    console.log('Clearing all data before import...');
     
     // 各リポジトリのデータをクリア
     await Promise.all([

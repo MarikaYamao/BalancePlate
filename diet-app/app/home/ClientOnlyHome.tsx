@@ -44,26 +44,17 @@ export default function ClientOnlyHome() {
   
   // AI提案を読み込む関数（LocalStorageから最新のフィードバックを取得）
   const loadAISuggestions = async () => {
-    console.log('🔍 AI提案を読み込み中...');
     
     try {
       // 今日の日付キーを取得
       const { getDateKey } = await import("@/lib/utils/dateUtils");
       const { consultationStorage } = await import("@/lib/ai/consultationStorage");
       const dateKey = getDateKey(new Date(), resetTime);
-      console.log('🔍 探しているdateKey:', dateKey);
-      console.log('🔍 探しているキー:', `ai-consultation-${dateKey}`);
-      
-      // LocalStorageにあるai-consultation関連のキーを全て表示
-      const allKeys = consultationStorage.debugKeys();
-      console.log('🔍 LocalStorageにあるai-consultation関連キー:', allKeys);
       
       // LocalStorageから今日のAI相談データを取得
       const consultations = consultationStorage.getByDateKey(dateKey);
-      console.log('🔍 取得したデータ:', consultations);
       
       if (consultations.length > 0) {
-        console.log('🔍 正規化したデータ:', consultations);
         
         // 最新のフィードバックを探す（配列の最後が最新）
         const latestConsultation = consultations[consultations.length - 1];
@@ -79,11 +70,7 @@ export default function ClientOnlyHome() {
             if (parsedResponse.mealSuggestions) {
               const convertedMealPlans: any = {};
               
-              console.log('🔍 mealSuggestionsの内容:', parsedResponse.mealSuggestions);
-              console.log('🔍 unrecordedMealTypes:', unrecordedMealTypes);
-              
               Object.entries(parsedResponse.mealSuggestions).forEach(([mealType, suggestions]: [string, any]) => {
-                console.log(`🔍 処理中: ${mealType}`, { suggestions, isUnrecorded: unrecordedMealTypes.includes(mealType) });
                 
                 // 未記録の食事のみ表示
                 if (unrecordedMealTypes.includes(mealType)) {
@@ -97,7 +84,6 @@ export default function ClientOnlyHome() {
                       canMakeNow: true,
                       alternatives: suggestions.planB ? [suggestions.planB.menu.split('、')[0]] : []
                     };
-                    console.log(`✅ 変換完了: ${mealType}`, convertedMealPlans[mealType]);
                   }
                 }
               });
@@ -111,7 +97,6 @@ export default function ClientOnlyHome() {
               };
               
               setSuggestions(suggestion);
-              console.log('✅ AI提案データ取得成功:', suggestion);
               return;
             }
           } catch (error) {
@@ -121,7 +106,6 @@ export default function ClientOnlyHome() {
       }
       
       // データがない場合でも、テスト用のモックデータを使用
-      console.log('⚠️ 今日のAI提案データが見つかりません。テスト用データを使用します。');
       
       // テスト用のAI提案データを作成（実際のAPI応答と同じ形式）
       if (unrecordedMealTypes.length > 0) {
@@ -150,7 +134,6 @@ export default function ClientOnlyHome() {
         });
         
         setSuggestions(testSuggestion);
-        console.log('✅ テスト用AI提案データを設定:', testSuggestion);
         return;
       }
       
@@ -168,7 +151,6 @@ export default function ClientOnlyHome() {
     
     // カスタムイベントをリッスン
     const handleAIUpdate = () => {
-      console.log('🎉 AI提案更新イベントを受信');
       loadAISuggestions();
       loadMealData(); // 画面全体をリフレッシュ
     };
@@ -199,12 +181,6 @@ export default function ClientOnlyHome() {
         (type) => !recordedTypes.includes(type as MealType)
       );
       
-      console.log('🔄 リアルタイム更新:', { 
-        realTimeMealLogs: realTimeMealLogs.map(m => ({ type: m.mealType, text: m.text })),
-        recordedTypes, 
-        unrecorded,
-        allMealTypes 
-      });
       setUnrecordedMealTypes(unrecorded);
     }
   }, [realTimeMealLogs, settings?.mealsPerDay]);
@@ -225,13 +201,10 @@ export default function ClientOnlyHome() {
         todayState.conditionTags &&
         todayState.conditionTags.length > 0;
 
-      console.log("Condition check:", { todayState, hasConditionTags });
-
       setHasCondition(hasConditionTags);
 
       // コンディション未登録の場合はモーダルを表示
       if (!hasConditionTags) {
-        console.log("Setting showConditionModal to true");
         setShowConditionModal(true);
       }
 
@@ -470,13 +443,6 @@ export default function ClientOnlyHome() {
             ) : suggestions && unrecordedMealTypes.length > 0 ? (
               /* AI食事提案 - より魅力的に */
               (() => {
-                console.log('🔍 AI提案表示チェック:', { 
-                  suggestions, 
-                  unrecordedMealTypes, 
-                  suggestionsExists: !!suggestions, 
-                  unrecordedLength: unrecordedMealTypes.length,
-                  mealPlansKeys: suggestions?.mealPlans ? Object.keys(suggestions.mealPlans) : 'none'
-                });
                 return (
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-1 shadow-sm">
                     <div className="bg-white rounded-lg p-4">

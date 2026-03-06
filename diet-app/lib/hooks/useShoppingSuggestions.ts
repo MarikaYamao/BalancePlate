@@ -49,8 +49,6 @@ export function useShoppingSuggestions() {
         targetDays
       };
 
-      console.log('🛒 Shopping suggestions request:', requestBody);
-
       const response = await fetch('/api/shopping/suggestions', {
         method: 'POST',
         headers: {
@@ -66,8 +64,6 @@ export function useShoppingSuggestions() {
 
       const result = await response.json();
       const suggestionsData = result.suggestions;
-
-      console.log('🛒 Shopping suggestions response:', suggestionsData);
 
       setSuggestions(suggestionsData);
       return suggestionsData;

@@ -36,8 +36,6 @@ export function useEnhancedAISuggestions() {
         available: item.available
       })) || [];
 
-      console.log('🥬 冷蔵庫食材情報:', fridgeItemsData);
-
       // AI提案APIリクエスト用のデータを構築
       const requestBody = {
         userProfile: {
@@ -64,7 +62,6 @@ export function useEnhancedAISuggestions() {
         fridgeItems: fridgeItemsData
       };
 
-      console.log('📤 AI提案リクエスト:', requestBody);
 
       // APIリクエスト実行
       const response = await fetch('/api/ai/consultation', {

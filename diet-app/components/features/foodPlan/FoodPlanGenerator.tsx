@@ -59,7 +59,6 @@ export function FoodPlanGenerator({
       })));
 
       setPlans(parsedPlans);
-      console.log('Plans generated and saved:', parsedPlans);
       
     } catch (err) {
       console.error('Plan generation error:', err);
@@ -106,8 +105,7 @@ export function FoodPlanGenerator({
         onPlanSelected(selectedPlan);
       }
 
-      console.log(`Plan ${planType} selected`);
-      
+        
     } catch (err) {
       console.error('Plan selection error:', err);
       setError('プランの選択に失敗しました');

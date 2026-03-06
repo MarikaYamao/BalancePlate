@@ -4,9 +4,6 @@ import type { AIPromptContext } from './prompts';
 export function generateMockResponse(context: AIPromptContext): string {
   const { userProfile, todayCondition, requestType } = context;
   
-  console.log('Mock AI called with requestType:', requestType);
-  console.log('Mock AI context:', context);
-  
   // コンディションに基づく提案の調整
   const isOnPeriod = todayCondition.conditionTags.includes('period_during');
   const isPeriodBefore = todayCondition.conditionTags.includes('period_before');
@@ -190,10 +187,6 @@ export function generateMockResponse(context: AIPromptContext): string {
   const hasBreakfast = recordedMealTypes.includes('breakfast');
   const hasLunch = recordedMealTypes.includes('lunch');
   const hasDinner = recordedMealTypes.includes('dinner');
-  
-  console.log('Mock AI - todayMeals:', context.todayMeals);
-  console.log('Mock AI - recordedMealTypes:', recordedMealTypes);
-  console.log('Mock AI - hasBreakfast:', hasBreakfast, 'hasLunch:', hasLunch, 'hasDinner:', hasDinner);
   
   const todayGuideline = isPeriodBefore
     ? "生理前のため鉄分・マグネシウム強化、むくみ・イライラ対策重視"

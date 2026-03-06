@@ -13,5 +13,4 @@ const svgIcon = `
 // Save SVG
 fs.writeFileSync(path.join(__dirname, '..', 'public', 'icon.svg'), svgIcon.trim());
 
-console.log('Basic icon created as icon.svg');
-console.log('For production, replace with proper icons');
+// Icon generation completed

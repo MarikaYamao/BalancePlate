@@ -94,7 +94,6 @@ export default function OnboardingPage() {
     
     // 設定読み込み完了後、既にオンボーディング完了済みの場合のみリダイレクト
     if (!isLoading && settings?.onboardingCompleted) {
-      console.log('User already completed onboarding, redirecting to home');
       window.location.href = '/home';
     }
   }, [settings, isLoading, isSaving]);
@@ -159,22 +158,6 @@ export default function OnboardingPage() {
       setIsSaving(true);
       setSaveError(null);
       
-      console.log('Starting onboarding completion...');
-      console.log('Settings to save:', {
-        dayResetTime: tempSettings.dayResetTime,
-        mealsPerDay: tempSettings.mealsPerDay,
-        bodyConstitution: tempSettings.bodyConstitution,
-        lifestyle: tempSettings.lifestyle,
-        favoriteFoods: tempSettings.favoriteFoods,
-        dislikedFoods: tempSettings.dislikedFoods,
-        profile: {
-          gender,
-          currentWeight,
-          goalType,
-          targetWeight,
-          goalPeriod
-        }
-      });
       
       // userSettingsRepositoryを直接使用
       const { userSettingsRepository } = await import('@/lib/db/repositories');
@@ -199,8 +182,6 @@ export default function OnboardingPage() {
         onboardingCompleted: true,
       });
       
-      console.log('Settings saved successfully:', savedSettings);
-      
       // 初期体重を体重記録として保存
       if (currentWeight) {
         try {
@@ -223,10 +204,8 @@ export default function OnboardingPage() {
       
       // 保存確認のため、設定を再度読み込み
       const verifySettings = await userSettingsRepository.get();
-      console.log('Verification - Settings after save:', verifySettings);
       
       if (verifySettings?.onboardingCompleted) {
-        console.log('Onboarding completed successfully, navigating to home');
         // window.locationを使用して確実に遷移、フラグを付与
         window.location.href = '/home?onboarding_completed=true';
       } else {
