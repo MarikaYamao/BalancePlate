@@ -339,9 +339,75 @@ export function MealDetailModal({
                     lunch: "昼食",
                     dinner: "夕食",
                     snack: "間食",
+                    tomorrow: "明日に向けて",
                   };
                   const mealLabel = mealTypeLabels[mealType] || mealType;
                   
+                  // 明日に向けてのアドバイス
+                  if (mealType === 'tomorrow' && suggestions.focus) {
+                    return (
+                      <div key={mealType} className="bg-gray-50 rounded-lg p-3">
+                        <h5 className="text-sm font-semibold text-gray-800 mb-2">
+                          🌅 {mealLabel}
+                        </h5>
+                        <div className="text-sm text-gray-600">
+                          {suggestions.focus && <p>重視点: {suggestions.focus}</p>}
+                          {suggestions.timing && <p>タイミング: {suggestions.timing}</p>}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // A/B/Cプラン形式の場合
+                  if (suggestions.planA || suggestions.planB || suggestions.planC) {
+                    return (
+                      <div key={mealType} className="bg-teal-50 rounded-lg p-3">
+                        <h5 className="text-sm font-semibold text-teal-800 mb-2">
+                          🍴 {mealLabel}の提案
+                        </h5>
+                        <div className="space-y-2">
+                          {suggestions.planA && (
+                            <div className="bg-white p-2 rounded border border-teal-200">
+                              <div className="flex items-start gap-2">
+                                <span className="bg-teal-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">A</span>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-teal-900">{suggestions.planA.title}</div>
+                                  <div className="text-xs text-gray-700 mt-0.5">{suggestions.planA.menu}</div>
+                                  <div className="text-xs text-gray-500 mt-0.5">{suggestions.planA.description}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {suggestions.planB && (
+                            <div className="bg-white p-2 rounded border border-teal-200">
+                              <div className="flex items-start gap-2">
+                                <span className="bg-blue-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">B</span>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-teal-900">{suggestions.planB.title}</div>
+                                  <div className="text-xs text-gray-700 mt-0.5">{suggestions.planB.menu}</div>
+                                  <div className="text-xs text-gray-500 mt-0.5">{suggestions.planB.description}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {suggestions.planC && (
+                            <div className="bg-white p-2 rounded border border-teal-200">
+                              <div className="flex items-start gap-2">
+                                <span className="bg-gray-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">C</span>
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-teal-900">{suggestions.planC.title}</div>
+                                  <div className="text-xs text-gray-700 mt-0.5">{suggestions.planC.menu}</div>
+                                  <div className="text-xs text-gray-500 mt-0.5">{suggestions.planC.description}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // 旧形式のフォールバック（convenience, simpleCooking, normalCooking）
                   return (
                     <div key={mealType} className="bg-gray-50 rounded-lg p-3">
                       <h5 className="text-sm font-semibold text-gray-800 mb-2">

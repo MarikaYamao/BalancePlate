@@ -38,58 +38,138 @@ export default function ClientOnlyHome() {
   // AI提案のフック（LocalStorageから取得）
   const [suggestions, setSuggestions] = useState<any>(null);
   
-  // AI提案を読み込む関数
-  const loadAISuggestions = () => {
+  // AI提案を読み込む関数（LocalStorageから最新のフィードバックを取得）
+  const loadAISuggestions = async () => {
     console.log('🔍 AI提案を読み込み中...');
-    const storedData = localStorage.getItem('ai-consultation-latest');
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData);
-        console.log('✅ AI提案データ取得:', parsed);
+    
+    try {
+      // 今日の日付キーを取得
+      const { getDateKey } = await import("@/lib/utils/dateUtils");
+      const dateKey = getDateKey(new Date(), resetTime);
+      console.log('🔍 探しているdateKey:', dateKey);
+      console.log('🔍 探しているキー:', `ai-consultation-${dateKey}`);
+      
+      // LocalStorageにあるai-consultation関連のキーを全て表示
+      const allKeys = Object.keys(localStorage).filter(key => key.startsWith('ai-consultation'));
+      console.log('🔍 LocalStorageにあるai-consultation関連キー:', allKeys);
+      
+      // LocalStorageから今日のAI相談データを取得
+      const storedConsultations = localStorage.getItem(`ai-consultation-${dateKey}`);
+      console.log('🔍 取得したデータ:', storedConsultations);
+      
+      if (storedConsultations) {
+        const data = JSON.parse(storedConsultations);
+        console.log('🔍 パースしたデータ:', data);
         
-        // モックの提案データを生成
-        const mockSuggestion = {
+        // データ形式を正規化（旧形式の単一オブジェクトと新形式の配列の両方に対応）
+        let consultations;
+        if (Array.isArray(data)) {
+          // 新形式（配列）
+          consultations = data;
+        } else if (data.response && data.requestType) {
+          // 旧形式（単一オブジェクト）- 配列でラップ
+          consultations = [data];
+        } else {
+          console.warn('🚨 不明なデータ形式:', data);
+          return;
+        }
+        
+        console.log('🔍 正規化したデータ:', consultations);
+        
+        // 最新のフィードバックを探す（配列の最後が最新）
+        const latestConsultation = consultations[consultations.length - 1];
+        
+        if (latestConsultation && latestConsultation.response) {
+          try {
+            // レスポンスをパース
+            const parsedResponse = typeof latestConsultation.response === 'string' 
+              ? JSON.parse(latestConsultation.response)
+              : latestConsultation.response;
+            
+            // mealSuggestionsがある場合、MealSuggestions用の形式に変換
+            if (parsedResponse.mealSuggestions) {
+              const convertedMealPlans: any = {};
+              
+              console.log('🔍 mealSuggestionsの内容:', parsedResponse.mealSuggestions);
+              console.log('🔍 unrecordedMealTypes:', unrecordedMealTypes);
+              
+              Object.entries(parsedResponse.mealSuggestions).forEach(([mealType, suggestions]: [string, any]) => {
+                console.log(`🔍 処理中: ${mealType}`, { suggestions, isUnrecorded: unrecordedMealTypes.includes(mealType) });
+                
+                // 未記録の食事のみ表示
+                if (unrecordedMealTypes.includes(mealType)) {
+                  // 3プラン形式の場合はplanAを使用
+                  if (suggestions.planA) {
+                    convertedMealPlans[mealType] = {
+                      menu: suggestions.planA.menu.split('、').filter((item: string) => item.trim()),
+                      reason: suggestions.planA.description || suggestions.planA.title,
+                      calories: 500, // デフォルト値
+                      preparation: "簡単調理",
+                      canMakeNow: true,
+                      alternatives: suggestions.planB ? [suggestions.planB.menu.split('、')[0]] : []
+                    };
+                    console.log(`✅ 変換完了: ${mealType}`, convertedMealPlans[mealType]);
+                  }
+                }
+              });
+              
+              const suggestion = {
+                feedback: {
+                  overall: parsedResponse.todayGuideline || parsedResponse.feedback?.overall || "",
+                  encouragement: parsedResponse.feedback?.encouragement || ""
+                },
+                mealPlans: convertedMealPlans
+              };
+              
+              setSuggestions(suggestion);
+              console.log('✅ AI提案データ取得成功:', suggestion);
+              return;
+            }
+          } catch (error) {
+            console.error('AI提案データの解析エラー:', error);
+          }
+        }
+      }
+      
+      // データがない場合でも、テスト用のモックデータを使用
+      console.log('⚠️ 今日のAI提案データが見つかりません。テスト用データを使用します。');
+      
+      // テスト用のAI提案データを作成（実際のAPI応答と同じ形式）
+      if (unrecordedMealTypes.length > 0) {
+        const testSuggestion = {
           feedback: {
             overall: "今日のコンディションに合わせた食事プランを提案します。",
-            positive: [],
-            suggestions: [],
-            encouragement: ""
+            encouragement: "この調子で続けていきましょう！"
           },
-          mealPlans: {
-            breakfast: unrecordedMealTypes.includes('breakfast') ? {
-              menu: ["温かいおかゆ", "梅干し", "味噌汁"],
-              preparation: "消化に良いメニュー",
-              alternatives: ["お茶漬け", "うどん"],
-              reason: "体調を整えます"
-            } : undefined,
-            lunch: (settings?.mealsPerDay === 3 && unrecordedMealTypes.includes('lunch')) ? {
-              menu: ["野菜たっぷりスープ", "サンドイッチ"],
-              preparation: "栄養バランス重視",
-              alternatives: ["パスタ", "丼もの"],
-              reason: "エネルギー補給"
-            } : undefined,
-            dinner: unrecordedMealTypes.includes('dinner') ? {
-              menu: ["焼き魚", "ご飯", "野菜の煮物"],
-              preparation: "消化に良い和食",
-              alternatives: ["鍋料理", "雑炊"],
-              reason: "一日の疲れを癒す"
-            } : undefined
-          },
-          nutritionAdvice: {
-            focus: [],
-            avoid: [],
-            hydration: ""
-          },
-          metadata: {
-            generatedAt: new Date().toISOString(),
-            conditionTags: [],
-            context: 'morning' as const
-          }
+          mealPlans: {} as any
         };
-        setSuggestions(mockSuggestion);
-      } catch (error) {
-        console.error("Failed to parse AI consultation:", error);
+        
+        // 未記録の食事に対してプランを生成
+        unrecordedMealTypes.forEach(mealType => {
+          testSuggestion.mealPlans[mealType] = {
+            menu: mealType === 'breakfast' ? ["温かいおかゆ", "梅干し", "味噌汁"] :
+                  mealType === 'lunch' ? ["野菜たっぷりスープ", "サンドイッチ"] :
+                  ["焼き魚", "ご飯", "野菜の煮物"],
+            reason: mealType === 'breakfast' ? "体調を整える優しいメニュー" :
+                   mealType === 'lunch' ? "栄養バランスを考慮したランチ" :
+                   "一日の疲れを癒やす和食",
+            calories: 500,
+            preparation: "簡単調理",
+            canMakeNow: true,
+            alternatives: ["代替案1", "代替案2"]
+          };
+        });
+        
+        setSuggestions(testSuggestion);
+        console.log('✅ テスト用AI提案データを設定:', testSuggestion);
+        return;
       }
+      
+      setSuggestions(null);
+      
+    } catch (error) {
+      console.error('AI提案データの読み込みエラー:', error);
+      setSuggestions(null);
     }
   };
   
@@ -262,8 +342,22 @@ export default function ClientOnlyHome() {
   const hasAIAnalysis = () => {
     const today = new Date().toISOString().split("T")[0];
     try {
-      const consultations = localStorage.getItem(`ai-consultation-${today}`);
-      return consultations && JSON.parse(consultations).length > 0;
+      const storedData = localStorage.getItem(`ai-consultation-${today}`);
+      if (!storedData) return false;
+      
+      const data = JSON.parse(storedData);
+      
+      // 配列形式の場合
+      if (Array.isArray(data)) {
+        return data.length > 0;
+      }
+      
+      // 旧形式の単一オブジェクトの場合
+      if (data.response && data.requestType) {
+        return true;
+      }
+      
+      return false;
     } catch {
       return false;
     }
@@ -353,30 +447,6 @@ export default function ClientOnlyHome() {
 
         {/* メインコンテンツ */}
         <main className="px-4 pb-6 -mt-2">
-          {/* AI機能の価値訴求セクション */}
-          {hasAIAnalysis() && (
-            <section className="mb-6">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-4 shadow-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <span className="text-xl">🤖</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold">AI分析が完了しました！</h3>
-                    <p className="text-blue-100 text-sm">
-                      あなたの食事バランスを分析しました
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => (window.location.href = "/history")}
-                  className="w-full mt-2 bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg transition-colors font-medium"
-                >
-                  分析結果を見る ✨
-                </button>
-              </div>
-            </section>
-          )}
 
           {/* メインアクションエリア */}
           <section className="mb-6">
@@ -400,27 +470,38 @@ export default function ClientOnlyHome() {
               </div>
             ) : suggestions && unrecordedMealTypes.length > 0 ? (
               /* AI食事提案 - より魅力的に */
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-1 shadow-sm">
-                <div className="bg-white rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xl">🧠</span>
-                    <h3 className="font-bold text-gray-800">AI提案</h3>
-                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-                      おすすめ
-                    </span>
+              (() => {
+                console.log('🔍 AI提案表示チェック:', { 
+                  suggestions, 
+                  unrecordedMealTypes, 
+                  suggestionsExists: !!suggestions, 
+                  unrecordedLength: unrecordedMealTypes.length,
+                  mealPlansKeys: suggestions?.mealPlans ? Object.keys(suggestions.mealPlans) : 'none'
+                });
+                return (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-1 shadow-sm">
+                    <div className="bg-white rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xl">🧠</span>
+                        <h3 className="font-bold text-gray-800">AI提案</h3>
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
+                          おすすめ
+                        </span>
+                      </div>
+                      <MealSuggestions
+                        suggestions={suggestions}
+                        unrecordedMeals={unrecordedMealTypes as MealType[]}
+                        resetTime={resetTime}
+                      />
+                      
+                      {/* Phase20: 買い出し提案 */}
+                      <ShoppingPrompt
+                        mealPlans={Object.values(suggestions.mealPlans).filter(Boolean) as MealPlanDetail[]}
+                      />
+                    </div>
                   </div>
-                  <MealSuggestions
-                    suggestions={suggestions}
-                    unrecordedMeals={unrecordedMealTypes as MealType[]}
-                    resetTime={resetTime}
-                  />
-                  
-                  {/* Phase20: 買い出し提案 */}
-                  <ShoppingPrompt
-                    mealPlans={Object.values(suggestions.mealPlans).filter(Boolean) as MealPlanDetail[]}
-                  />
-                </div>
-              </div>
+                );
+              })()
             ) : (
               /* 統合された食事記録・アクションエリア */
               <div className="space-y-4">
