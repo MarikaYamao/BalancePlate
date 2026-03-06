@@ -138,7 +138,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
 
           {/* 詳細確認ボタン */}
           <button
-            onClick={onNavigateToDetail}
+            onClick={() => window.location.href = "/record/meal?tab=history"}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
           >
             今日の食事を詳しく見る →
