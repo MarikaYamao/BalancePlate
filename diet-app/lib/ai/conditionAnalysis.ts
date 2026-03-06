@@ -16,10 +16,28 @@ interface FoodSuggestion {
   avoid?: string[];
 }
 
+interface MealPlan {
+  planA: {
+    title: string;
+    menu: string;
+    description: string;
+  };
+  planB: {
+    title: string;
+    menu: string;
+    description: string;
+  };
+  planC: {
+    title: string;
+    menu: string;
+    description: string;
+  };
+}
+
 export async function generateConditionFeedback({
   conditionTags,
   note,
-}: ConditionFeedbackParams): Promise<{ feedback: string; foodSuggestions: FoodSuggestion }> {
+}: ConditionFeedbackParams): Promise<{ feedback: string; foodSuggestions: FoodSuggestion; mealPlans: { [key: string]: MealPlan } }> {
   // コンディションタグの詳細情報を取得
   const tagDetails = conditionTags
     .map((tagId) => conditionTagsInfo.find((t) => t.id === tagId))
@@ -88,8 +106,11 @@ export async function generateConditionFeedback({
 
   // 食事提案を生成
   const foodSuggestions = generateFoodSuggestions(conditionTags);
+  
+  // 食事プランを生成
+  const mealPlans = generateMealPlans(conditionTags);
 
-  return { feedback, foodSuggestions };
+  return { feedback, foodSuggestions, mealPlans };
 }
 
 function generateFoodSuggestions(conditionTags: ConditionTag[]): FoodSuggestion {
@@ -192,4 +213,164 @@ function generateFoodSuggestions(conditionTags: ConditionTag[]): FoodSuggestion 
     recommendations,
     avoid: avoid.length > 0 ? avoid : undefined
   };
+}
+
+function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: MealPlan } {
+  const hasPhysicalIssue = conditionTags.some(tag => 
+    tag.includes("tired") || tag.includes("sleep"));
+  const hasMentalIssue = conditionTags.some(tag => 
+    tag.includes("stress") || tag.includes("irritable"));
+  const hasGoodCondition = conditionTags.some(tag => 
+    tag.includes("good") || tag.includes("energetic"));
+  
+  let mealPlans: { [key: string]: MealPlan } = {};
+
+  if (hasPhysicalIssue) {
+    mealPlans.lunch = {
+      planA: {
+        title: "消化の良い定食",
+        menu: "鶏そぼろ丼、みそ汁、温野菜サラダ",
+        description: "胃に優しく、疲労回復に効果的なビタミンB群を豊富に含む"
+      },
+      planB: {
+        title: "栄養スープセット", 
+        menu: "野菜たっぷりスープ、全粒粉パン、ヨーグルト",
+        description: "温かく消化しやすい。タンパク質とビタミンをバランスよく摂取"
+      },
+      planC: {
+        title: "疲労回復うどん",
+        menu: "かけうどん、温泉卵、ほうれん草のおひたし",
+        description: "炭水化物で即効性のエネルギー補給。鉄分とビタミンも豊富"
+      }
+    };
+    
+    mealPlans.dinner = {
+      planA: {
+        title: "回復定食",
+        menu: "鮭の塩焼き、ご飯、具沢山みそ汁、納豆",
+        description: "良質なタンパク質とオメガ3で疲労回復をサポート"
+      },
+      planB: {
+        title: "温活鍋",
+        menu: "豆腐と野菜の湯豆腐、雑炊、漬物",
+        description: "身体を温めて消化を促進。優しい味付けで胃に負担をかけない"
+      },
+      planC: {
+        title: "栄養粥セット",
+        menu: "卵粥、蒸し野菜、豆乳スープ",
+        description: "消化に優しく栄養価の高い。就寝前でも安心して食べられる"
+      }
+    };
+  } else if (hasMentalIssue) {
+    mealPlans.lunch = {
+      planA: {
+        title: "リラックスランチ",
+        menu: "アボカドサーモン丼、具沢山スープ、ハーブティー",
+        description: "オメガ3とトリプトファンでストレス軽減をサポート"
+      },
+      planB: {
+        title: "癒しカフェセット",
+        menu: "キッシュ、サラダ、カモミールティー",
+        description: "リラックス効果のある食材とハーブで心を落ち着ける"
+      },
+      planC: {
+        title: "抗ストレス定食",
+        menu: "鶏むね肉のグリル、玄米、野菜炒め、緑茶",
+        description: "ビタミンB群とマグネシウムでストレス対処能力を向上"
+      }
+    };
+    
+    mealPlans.dinner = {
+      planA: {
+        title: "安眠サポート定食",
+        menu: "白身魚の煮付け、ご飯、温野菜、豆腐の味噌汁",
+        description: "トリプトファンと温かい料理で質の良い睡眠をサポート"
+      },
+      planB: {
+        title: "リラックス鍋",
+        menu: "豚しゃぶしゃぶ、うどん、温野菜、ポン酢",
+        description: "ビタミンB群豊富な豚肉と温かい鍋で心身をリラックス"
+      },
+      planC: {
+        title: "癒しの和食",
+        menu: "煮魚、炊き込みご飯、お吸い物、ひじきの煮物",
+        description: "優しい和食で心を落ち着け、栄養バランスも良好"
+      }
+    };
+  } else if (hasGoodCondition) {
+    mealPlans.lunch = {
+      planA: {
+        title: "エネルギーランチ",
+        menu: "パワーボウル（キヌア、アボカド、グリルチキン）、スムージー",
+        description: "良いコンディションを維持する栄養価の高いスーパーフード"
+      },
+      planB: {
+        title: "バランス定食",
+        menu: "鯖の塩焼き、玄米、野菜サラダ、味噌汁",
+        description: "オメガ3と食物繊維で健康状態をさらに向上させる"
+      },
+      planC: {
+        title: "活力パスタ",
+        menu: "全粒粉パスタ、野菜とシーフード、サラダ",
+        description: "複合炭水化物と良質なタンパク質でエネルギーを持続"
+      }
+    };
+    
+    mealPlans.dinner = {
+      planA: {
+        title: "完全栄養定食",
+        menu: "鶏むね肉のハーブ焼き、キヌア、ロースト野菜",
+        description: "高タンパク低脂肪で栄養価抜群。アクティブな生活をサポート"
+      },
+      planB: {
+        title: "地中海風ディナー",
+        menu: "魚のオリーブオイル焼き、全粒粉パン、サラダ",
+        description: "抗酸化物質と良質な脂質で健康維持に最適"
+      },
+      planC: {
+        title: "スーパーフード鍋",
+        menu: "豆腐と野菜の鍋、雑穀米、海藻サラダ",
+        description: "栄養密度の高い食材で体調の良い状態をキープ"
+      }
+    };
+  } else {
+    // デフォルト
+    mealPlans.lunch = {
+      planA: {
+        title: "バランスランチ",
+        menu: "鶏照り焼き定食、ご飯、味噌汁、サラダ",
+        description: "バランスの取れた定番メニューで栄養をしっかり摂取"
+      },
+      planB: {
+        title: "ヘルシー定食",
+        menu: "焼き魚、玄米、野菜炒め、豆腐スープ",
+        description: "良質なタンパク質と食物繊維で健康的な食事"
+      },
+      planC: {
+        title: "栄養パスタ",
+        menu: "ボロネーゼパスタ、サラダ、野菜スープ",
+        description: "炭水化物とタンパク質をバランスよく摂取できるイタリアン"
+      }
+    };
+    
+    mealPlans.dinner = {
+      planA: {
+        title: "家庭的定食",
+        menu: "豚しょうが焼き、ご飯、味噌汁、小鉢",
+        description: "栄養バランスが良く満足感のある定番の夕食"
+      },
+      planB: {
+        title: "和風ヘルシー",
+        menu: "鮭の西京焼き、ご飯、お吸い物、煮物",
+        description: "優しい味付けの和食で消化に良く栄養価も高い"
+      },
+      planC: {
+        title: "洋風ディナー",
+        menu: "チキンソテー、ライス、コーンスープ、サラダ",
+        description: "洋風の味付けで食欲をそそる栄養バランスの良い夕食"
+      }
+    };
+  }
+  
+  return mealPlans;
 }

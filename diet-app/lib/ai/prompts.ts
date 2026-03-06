@@ -463,6 +463,10 @@ export interface AIPromptContext {
     weight?: number;
     activityMemo?: string;
   };
+  todayMeals?: {
+    type: string;
+    content: string;
+  }[];
   // Phase19: 冷蔵庫食材情報
   fridgeItems?: {
     name: string;

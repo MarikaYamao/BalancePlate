@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { type MealType } from "@/types";
 
 interface FeedbackData {
@@ -19,7 +19,7 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const generateFeedback = async (mealType: MealType, mealText: string) => {
+  const generateFeedback = useCallback(async (mealType: MealType, mealText: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -47,7 +47,7 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
       const dateKey = getDateKey(new Date(), settings.dayResetTime);
       const dailyState = await dailyStateRepository.get(dateKey);
 
-      // 今日の食事データ取得
+      // 今日の食事データ取得（スキップ記録も含む）
       const { mealLogRepository } = await import("@/lib/db/repositories");
       const todayMeals = await mealLogRepository.getByDate(dateKey);
 
@@ -83,6 +83,13 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
       ];
 
       // AIにリクエスト送信
+      // 現在時刻を追加
+      const currentTime = new Date();
+      
+      console.log('usePostMealFeedback - todayMeals:', todayMeals);
+      console.log('usePostMealFeedback - todayMealData:', todayMealData);
+      console.log('usePostMealFeedback - requestType:', requestType);
+      
       const requestBody = {
         userProfile: {
           age: settings.profile?.birthYear
@@ -101,8 +108,13 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
           freeMemo: dailyState?.freeMemo || "",
         },
         previousDayData: {
-          meals: todayMealData, // 今日の食事データ（現在の食事を含む）
+          meals: previousMeals.map((meal) => ({
+            type: meal.mealType,
+            content: meal.text,
+          })),
         },
+        todayMeals: todayMealData, // 今日の食事データ（現在の食事を含む）
+        currentTime: currentTime.toISOString(), // 現在時刻を追加
         requestType,
       };
 
@@ -213,7 +225,7 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     feedback,

@@ -10,6 +10,7 @@ import { mealLogRepository } from '@/lib/db/repositories';
 import { initializeEncryptedDatabase } from '@/lib/db/encryptedDatabase';
 import { conditionTagsInfo } from '@/lib/constants/conditionTags';
 import type { DailyState, MealLog, MealType, AIConsultationResponse } from '@/types';
+import { isMealSkipped } from '@/lib/utils/mealUtils';
 
 interface TodaysSummaryProps {
   resetTime?: string;
@@ -56,24 +57,24 @@ export function TodaysSummary({ resetTime = '04:00' }: TodaysSummaryProps) {
     snack: { label: '間食', icon: '🍪' }
   };
 
-  const recordedMeals = meals.map(meal => meal.mealType);
-  const hasBreakfast = recordedMeals.includes('breakfast');
-  const hasLunch = recordedMeals.includes('lunch');
-  const hasDinner = recordedMeals.includes('dinner');
-
   // 各食事の記録を取得
   const breakfastMeal = meals.find(meal => meal.mealType === 'breakfast');
   const lunchMeal = meals.find(meal => meal.mealType === 'lunch');
   const dinnerMeal = meals.find(meal => meal.mealType === 'dinner');
 
+  // 内容のある食事記録があるかどうかを判定（スキップ記録は除外）
+  const hasBreakfast = breakfastMeal && !isMealSkipped(breakfastMeal);
+  const hasLunch = lunchMeal && !isMealSkipped(lunchMeal);
+  const hasDinner = dinnerMeal && !isMealSkipped(dinnerMeal);
+
   // 食事カードクリック時の処理
   const handleMealCardClick = (mealType: MealType, mealLog?: MealLog) => {
-    if (mealLog) {
-      // 記録済みの場合はモーダルで詳細表示
+    if (mealLog && !isMealSkipped(mealLog)) {
+      // 内容のある記録の場合はモーダルで詳細表示
       setSelectedMeal(mealLog);
       setIsModalOpen(true);
     } else {
-      // 未記録の場合は記録画面に遷移
+      // 未記録またはスキップ記録の場合は食事記録ページに遷移
       router.push(`/record/meal?type=${mealType}`);
     }
   };

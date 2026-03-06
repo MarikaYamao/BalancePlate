@@ -37,6 +37,10 @@ const RequestSchema = z.object({
     weight: z.number().optional(),
     activityMemo: z.string().optional(),
   }).optional(),
+  todayMeals: z.array(z.object({
+    type: z.string(),
+    content: z.string(),
+  })).optional(),
   requestType: z.enum(['morning_plan', 'after_breakfast', 'after_lunch', 'consultation']),
   consultationText: z.string().optional(),
   // Phase19: 冷蔵庫食材情報の追加
@@ -94,6 +98,7 @@ export async function POST(request: NextRequest) {
         ...validatedData.todayCondition,
         conditionTags: validatedData.todayCondition.conditionTags as any,
       },
+      todayMeals: validatedData.todayMeals,
       // Phase19: 冷蔵庫食材情報を追加
       fridgeItems: validatedData.fridgeItems,
     };
@@ -136,11 +141,28 @@ export async function POST(request: NextRequest) {
 
     console.log('AI Response generated successfully');
 
-    return NextResponse.json({
-      response,
-      requestType: validatedData.requestType,
-      timestamp: new Date().toISOString(),
-    }, {
+    // AIレスポンスをJSONとしてパース
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(response);
+      console.log('Successfully parsed structured AI response');
+    } catch (parseError) {
+      console.warn('Failed to parse AI response as JSON, treating as text:', parseError);
+      // JSONパースに失敗した場合は従来通りのテキストレスポンス
+      parsedResponse = {
+        response,
+        requestType: validatedData.requestType,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    // 構造化されたレスポンスにmetadataを追加
+    if (typeof parsedResponse === 'object' && parsedResponse !== null) {
+      parsedResponse.requestType = validatedData.requestType;
+      parsedResponse.timestamp = new Date().toISOString();
+    }
+
+    return NextResponse.json(parsedResponse, {
       headers: {
         'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
       }

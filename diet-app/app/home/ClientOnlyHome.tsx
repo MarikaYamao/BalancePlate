@@ -8,21 +8,25 @@ import { TodaysSummary } from "@/components/features/home/TodaysSummary";
 import { BulkMealInput } from "@/components/features/meal/BulkMealInput";
 import { MealSuggestions } from "@/components/features/home/MealSuggestions";
 import { ShoppingPrompt } from "@/components/features/home/ShoppingPrompt";
-import { PostMealFeedback } from "@/components/features/meal/PostMealFeedback";
+import { UnifiedMealFeedbackModal } from "@/components/features/meal/UnifiedMealFeedbackModal";
 import { ConditionModal } from "@/components/features/condition/ConditionModal";
 import { useUserSettings } from "@/lib/hooks/useUserSettings";
+import { useMealLogs } from "@/lib/hooks/useMealLogs";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EncryptedDailyStateRepository } from "@/lib/db/repositories/encryptedDailyStateRepository";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { mealLogRepository } from "@/lib/db/repositories";
 import { initializeEncryptedDatabase } from "@/lib/db/encryptedDatabase";
-import { detectMissedMeals, shouldShowBulkInput } from "@/lib/utils/mealUtils";
+import { detectMissedMeals, shouldShowBulkInput, getRecordedMealTypes } from "@/lib/utils/mealUtils";
 import type { MealType, MealLog, ConditionTag, MealPlanDetail } from "@/types";
 
 export default function ClientOnlyHome() {
   const { settings, isLoading, error } = useUserSettings();
   const resetTime = settings?.dayResetTime || "04:00";
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
+  
+  // リアルタイムで食事記録を監視
+  const { mealLogs: realTimeMealLogs } = useMealLogs();
   const [showBulkInput, setShowBulkInput] = useState(false);
   const [missedMeals, setMissedMeals] = useState<MealType[]>([]);
   const [isLoadingMeals, setIsLoadingMeals] = useState(false);
@@ -183,6 +187,28 @@ export default function ClientOnlyHome() {
     }
   }, [settings, resetTime]);
 
+  // リアルタイム食事記録の変更を監視して未記録食事タイプを更新
+  useEffect(() => {
+    if (realTimeMealLogs && settings?.mealsPerDay) {
+      // スキップされた食事も含めて記録済みとして扱う
+      const recordedTypes = getRecordedMealTypes(realTimeMealLogs);
+      const allMealTypes = settings.mealsPerDay === 2
+        ? ["breakfast", "dinner"]
+        : ["breakfast", "lunch", "dinner"];
+      const unrecorded = allMealTypes.filter(
+        (type) => !recordedTypes.includes(type as MealType)
+      );
+      
+      console.log('🔄 リアルタイム更新:', { 
+        realTimeMealLogs: realTimeMealLogs.map(m => ({ type: m.mealType, text: m.text })),
+        recordedTypes, 
+        unrecorded,
+        allMealTypes 
+      });
+      setUnrecordedMealTypes(unrecorded);
+    }
+  }, [realTimeMealLogs, settings?.mealsPerDay]);
+
   const loadMealData = async () => {
     setIsLoadingMeals(true);
     try {
@@ -210,7 +236,8 @@ export default function ClientOnlyHome() {
       }
 
       const currentTime = new Date();
-      const recordedTypes = todayMeals.map((meal) => meal.mealType);
+      // スキップされた食事も含めて記録済みとして扱う
+      const recordedTypes = getRecordedMealTypes(todayMeals);
       const missed = detectMissedMeals(currentTime, resetTime, recordedTypes, settings?.mealsPerDay || 3);
       setMissedMeals(missed);
 
@@ -602,7 +629,8 @@ export default function ClientOnlyHome() {
 
         {/* 食後フィードバックモーダル */}
         {showFeedback && (
-          <PostMealFeedback
+          <UnifiedMealFeedbackModal
+            isOpen={true}
             mealType={showFeedback.mealType}
             mealText={showFeedback.mealText}
             onClose={() => setShowFeedback(null)}

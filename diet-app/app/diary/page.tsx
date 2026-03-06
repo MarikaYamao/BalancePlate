@@ -140,10 +140,12 @@ export default function DiaryPage() {
     try {
       const { consultationStorage } = require("@/lib/ai/consultationStorage");
       const consultations = consultationStorage.getByDateKey(meal.dateKey);
-      
+
       if (consultations.length > 0) {
         // 統合フィードバックがある場合はそれを優先
-        const integratedFeedback = consultationStorage.findIntegrated(meal.dateKey);
+        const integratedFeedback = consultationStorage.findIntegrated(
+          meal.dateKey,
+        );
         if (integratedFeedback) {
           mealWithFeedback.aiResponse = integratedFeedback.response;
         } else {
@@ -151,7 +153,7 @@ export default function DiaryPage() {
           const individualFeedback = consultationStorage.findNearestByTimestamp(
             meal.dateKey,
             new Date(meal.actualTime).getTime(),
-            4
+            4,
           );
           if (individualFeedback) {
             mealWithFeedback.aiResponse = individualFeedback.response;
@@ -518,56 +520,6 @@ export default function DiaryPage() {
                           </button>
                         </div>
                       )}
-
-                    {/* 統合フィードバック */}
-                    {(() => {
-                      const integratedFeedback = getIntegratedFeedback(
-                        dayData.dateKey,
-                      );
-                      return integratedFeedback ? (
-                        <div className="mb-6">
-                          <div className="relative p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-start gap-3 mb-3">
-                              <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-white text-lg">🤖</span>
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-bold text-gray-800">
-                                    AIによる総合分析
-                                  </h3>
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-                                    ✨ おすすめ
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-600 mb-2">
-                                  今日の食事バランスと体調を総合評価
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="text-sm text-gray-700 mb-3 pl-13">
-                              {integratedFeedback.response?.substring(0, 120) +
-                                "..."}
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                if (dayData.meals.length > 0) {
-                                  handleMealClick({
-                                    ...dayData.meals[0],
-                                    aiResponse: integratedFeedback.response,
-                                  } as any);
-                                }
-                              }}
-                              className="w-full mt-2 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                            >
-                              フィードバックを読む 📖
-                            </button>
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
 
                     {/* 食事記録 */}
                     {dayData.meals.length > 0 ? (

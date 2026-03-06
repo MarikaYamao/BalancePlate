@@ -3,10 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type MealType } from "@/types";
-import { MealTypeSelector } from "@/components/features/meal/MealTypeSelector";
 import { MealTextInput } from "@/components/features/meal/MealTextInput";
 import { MealHistory } from "@/components/features/meal/MealHistory";
-import { PostMealFeedback } from "@/components/features/meal/PostMealFeedback";
+import { UnifiedMealFeedbackModal } from "@/components/features/meal/UnifiedMealFeedbackModal";
 import { MealDetailModal } from "@/components/features/meal/MealDetailModal";
 import { getDateKey } from "@/lib/utils/dateUtils";
 import { useMealLogs } from "@/lib/hooks/useMealLogs";
@@ -78,7 +77,7 @@ function MealRecordPageContent() {
     if (typeParam) {
       return;
     }
-    
+
     // 既に選択されている場合はスキップ
     if (selectedType) {
       return;
@@ -116,27 +115,35 @@ function MealRecordPageContent() {
 
     if (
       typeParam &&
-      ["breakfast", "lunch", "dinner", "snack"].includes(typeParam)
+      ["breakfast", "lunch", "dinner", "snack"].includes(typeParam) &&
+      typeParam !== selectedType // 同じ値の場合は更新しない
     ) {
       setSelectedType(typeParam);
     }
-    // URLパラメータがない場合は何もしない（自動選択に任せる）
 
-    if (suggestionParam) {
+    if (suggestionParam && suggestionParam !== mealText) {
       setMealText(suggestionParam);
     }
 
     if (editParam && mealLogs) {
       const mealToEdit = mealLogs.find((m) => m.id === editParam);
-      if (mealToEdit) {
+      if (mealToEdit && !editingMeal) {
+        // 編集中でない場合のみ
         handleEdit(mealToEdit);
       }
     }
 
-    if (tabParam === "history") {
+    if (tabParam === "history" && !showHistory) {
       setShowHistory(true);
     }
-  }, [searchParams, mealLogs, setMealText]);
+  }, [
+    searchParams,
+    mealLogs,
+    selectedType,
+    mealText,
+    editingMeal,
+    showHistory,
+  ]);
 
   useEffect(() => {
     // クリーンアップ: コンポーネントアンマウント時に一時テキストをクリア
@@ -225,10 +232,6 @@ function MealRecordPageContent() {
     setError(null);
   };
 
-  const handleShowMealDetail = (meal: any, aiResponse?: any) => {
-    setShowMealDetail({ meal, aiResponse });
-  };
-
   // 成功メッセージの自動消去
   useEffect(() => {
     if (successMessage) {
@@ -264,7 +267,6 @@ function MealRecordPageContent() {
     snack: { label: "間食", icon: "🍪", color: "from-gray-100 to-gray-100" },
   };
 
-  const currentMealInfo = selectedType ? mealTypeInfo[selectedType] : null;
   const todayMealCount = mealLogs.length;
 
   return (
@@ -466,7 +468,6 @@ function MealRecordPageContent() {
                 dateKey={todayKey}
                 onEdit={handleEdit}
                 onDelete={() => {}}
-                onShowDetail={handleShowMealDetail}
               />
             </div>
           )}
@@ -475,7 +476,8 @@ function MealRecordPageContent() {
 
       {/* 食後フィードバックモーダル */}
       {showFeedback && (
-        <PostMealFeedback
+        <UnifiedMealFeedbackModal
+          isOpen={true}
           mealType={showFeedback.mealType}
           mealText={showFeedback.mealText}
           onClose={() => {

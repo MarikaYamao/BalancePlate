@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { AIFeedbackDisplay } from "./AIFeedbackDisplay";
 import { FoodSuggestionDisplay } from "./FoodSuggestionDisplay";
 import { conditionTagsInfo } from "@/lib/constants/conditionTags";
+import { useConditionFeedback } from "@/lib/hooks/useConditionFeedback";
 import type { ConditionTag } from "@/types";
 
 interface PostConditionFeedbackProps {
@@ -14,86 +15,17 @@ interface PostConditionFeedbackProps {
   onClose: () => void;
 }
 
-interface FoodSuggestion {
-  characteristics: string[];
-  recommendations: {
-    category: string;
-    items: string[];
-  }[];
-  avoid?: string[];
-}
-
-interface MealPlan {
-  planA: {
-    title: string;
-    menu: string;
-    description: string;
-  };
-  planB: {
-    title: string;
-    menu: string;
-    description: string;
-  };
-  planC: {
-    title: string;
-    menu: string;
-    description: string;
-  };
-}
-
 export function PostConditionFeedback({
   conditionTags,
   freeMemo,
   dateKey,
   onClose,
 }: PostConditionFeedbackProps) {
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [foodSuggestions, setFoodSuggestions] = useState<FoodSuggestion | null>(
-    null,
-  );
-  const [mealPlans, setMealPlans] = useState<{ [key: string]: MealPlan } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { feedback, foodSuggestions, mealPlans, isLoading, error, generateFeedback } = useConditionFeedback();
 
   useEffect(() => {
-    generateFeedback();
-  }, []);
-
-  const generateFeedback = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/ai/condition-feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dateKey,
-          conditionTags,
-          note: freeMemo,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setFeedback(data.feedback);
-        setFoodSuggestions(data.foodSuggestions);
-        setMealPlans(data.mealPlans);
-
-        // フィードバックを保存
-        localStorage.setItem(
-          `condition-feedback-${dateKey}`,
-          JSON.stringify({
-            feedback: data.feedback,
-            foodSuggestions: data.foodSuggestions,
-            mealPlans: data.mealPlans,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      }
-    } catch (error) {
-      console.error("フィードバック生成エラー:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    generateFeedback({ dateKey, conditionTags, note: freeMemo });
+  }, [dateKey, conditionTags, freeMemo, generateFeedback]);
 
   const getConditionSummary = () => {
     const tags = conditionTags || [];

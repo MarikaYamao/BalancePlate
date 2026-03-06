@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type MealType } from "@/types";
 import { useUserSettings } from "@/lib/hooks/useUserSettings";
 import { usePostMealFeedback } from "@/lib/hooks/usePostMealFeedback";
+import { getMealTimeRange } from "@/lib/utils/mealUtils";
 
 interface PostMealFeedbackProps {
   mealType: MealType;
@@ -37,6 +38,7 @@ export function PostMealFeedback({
   };
 
   const renderStructuredFeedback = (responseText: string) => {
+    // まずJSONとして解析を試みる
     try {
       const data = JSON.parse(responseText);
       return (
@@ -119,17 +121,45 @@ export function PostMealFeedback({
           {/* 次の食事プラン */}
           {data.mealSuggestions && Object.keys(data.mealSuggestions).length > 0 && (
             <div className="space-y-4">
-              {Object.entries(data.mealSuggestions).map(([mealType, suggestions]: [string, any]) => {
-                const mealTypeLabel = mealType === 'breakfast' ? '朝食' : 
-                                     mealType === 'lunch' ? '昼食' : 
-                                     mealType === 'dinner' ? '夕食' : 
-                                     mealType === 'tomorrow' ? '明日に向けて' : 
-                                     mealType;
+              {Object.entries(data.mealSuggestions)
+                .filter(([suggestionMealType]) => {
+                  // 夕食記録後は食事プラン提案を表示しない
+                  if (mealType === 'dinner') return false;
+                  
+                  // 朝食記録後は朝食プランを表示しない
+                  if (mealType === 'breakfast' && suggestionMealType === 'breakfast') return false;
+                  
+                  // 昼食記録後は朝食・昼食プランを表示しない  
+                  if (mealType === 'lunch' && (suggestionMealType === 'breakfast' || suggestionMealType === 'lunch')) return false;
+                  
+                  // 時間ベースのフィルタリング: 時間帯を過ぎた食事のプランは表示しない
+                  const currentHour = new Date().getHours();
+                  const { end } = getMealTimeRange(suggestionMealType as any);
+                  
+                  // リセット時間を考慮（4:00と仮定）
+                  let adjustedHour = currentHour;
+                  if (currentHour >= 0 && currentHour < 4) {
+                    adjustedHour = currentHour + 24;
+                  }
+                  
+                  // 食事の時間帯を過ぎている場合は除外
+                  if (adjustedHour > end) {
+                    return false;
+                  }
+                  
+                  return true;
+                })
+                .map(([suggestionMealType, suggestions]: [string, any]) => {
+                const mealTypeLabel = suggestionMealType === 'breakfast' ? '朝食' : 
+                                     suggestionMealType === 'lunch' ? '昼食' : 
+                                     suggestionMealType === 'dinner' ? '夕食' : 
+                                     suggestionMealType === 'tomorrow' ? '明日に向けて' : 
+                                     suggestionMealType;
                 
                 // 明日に向けてのアドバイスは別形式で表示
-                if (mealType === 'tomorrow') {
+                if (suggestionMealType === 'tomorrow') {
                   return (
-                    <div key={mealType} className="border-l-4 border-gray-300 pl-4">
+                    <div key={suggestionMealType} className="border-l-4 border-gray-300 pl-4">
                       <h4 className="font-semibold text-gray-800 mb-2">🌅 {mealTypeLabel}</h4>
                       <div className="text-gray-600 space-y-1">
                         {suggestions.focus && (
@@ -145,7 +175,7 @@ export function PostMealFeedback({
                 
                 // 通常の食事提案（A/B/Cプラン）
                 return (
-                  <div key={mealType} className="bg-teal-50 border-l-4 border-teal-400 p-4 rounded">
+                  <div key={suggestionMealType} className="bg-teal-50 border-l-4 border-teal-400 p-4 rounded">
                     <h4 className="font-semibold text-teal-800 mb-3">🍽️ {mealTypeLabel}の提案（3プラン）</h4>
                     <div className="grid gap-3">
                       {/* Plan A */}
@@ -230,20 +260,57 @@ export function PostMealFeedback({
         </div>
       );
     } catch (error) {
-      console.warn('Failed to parse JSON feedback:', error);
-      // JSONの解析に失敗した場合のフォールバック（従来のテキスト表示）
+      console.warn('Failed to parse JSON feedback, treating as markdown:', error);
+      // JSONの解析に失敗した場合は、Markdownテキストとして表示
       return (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-          <h4 className="font-semibold text-red-800 mb-2">⚠️ データ形式エラー</h4>
-          <p className="text-red-700 text-sm mb-2">
-            フィードバックの形式に問題があります。管理者にお知らせください。
-          </p>
-          <details className="mt-2">
-            <summary className="cursor-pointer text-red-600 text-sm">詳細情報</summary>
-            <pre className="text-xs bg-red-100 p-2 mt-2 rounded overflow-auto max-h-40">
-              {responseText}
-            </pre>
-          </details>
+        <div className="space-y-4">
+          <div className="prose prose-sm max-w-none text-gray-700">
+            {/* シンプルなMarkdown風のレンダリング */}
+            {responseText.split('\n').map((line, index) => {
+              // ヘッダー（### で始まる行）
+              if (line.startsWith('### ')) {
+                return (
+                  <h4 key={index} className="font-semibold text-gray-800 mt-4 mb-2 border-l-4 border-gray-300 pl-3">
+                    {line.replace('### ', '')}
+                  </h4>
+                );
+              }
+              // リスト項目（- で始まる行）
+              if (line.trim().startsWith('- ')) {
+                return (
+                  <div key={index} className="flex items-start ml-4 mb-1">
+                    <span className="mr-2 text-gray-500">•</span>
+                    <span>{line.replace(/^\s*-\s*/, '')}</span>
+                  </div>
+                );
+              }
+              // 太字（**text** 形式）
+              if (line.includes('**') && line.trim() !== '') {
+                const parts = line.split('**');
+                return (
+                  <p key={index} className="mb-2">
+                    {parts.map((part, partIndex) => 
+                      partIndex % 2 === 1 ? (
+                        <strong key={partIndex} className="font-semibold text-gray-800">{part}</strong>
+                      ) : (
+                        <span key={partIndex}>{part}</span>
+                      )
+                    )}
+                  </p>
+                );
+              }
+              // 通常の行
+              if (line.trim() !== '') {
+                return (
+                  <p key={index} className="mb-2">
+                    {line}
+                  </p>
+                );
+              }
+              // 空行
+              return <div key={index} className="h-2"></div>;
+            })}
+          </div>
         </div>
       );
     }

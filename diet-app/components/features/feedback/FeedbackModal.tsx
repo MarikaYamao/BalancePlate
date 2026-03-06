@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useFeedbackSubmit } from '@/lib/hooks/useFeedbackSubmit';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -11,45 +12,21 @@ interface FeedbackModalProps {
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { submitStatus, submitFeedback, error } = useFeedbackSubmit();
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
 
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: content.trim(),
-          path: window.location.pathname,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit feedback');
-      }
-
-      setSubmitStatus('success');
+      await submitFeedback({ content });
       setContent('');
       
       // 2秒後に自動的にモーダルを閉じる
       setTimeout(() => {
         onClose();
-        setSubmitStatus('idle');
       }, 2000);
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
+      // エラーはフック内で処理される
     }
   };
 
@@ -93,7 +70,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {submitStatus === 'error' && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">
-                  送信に失敗しました。もう一度お試しください。
+                  {error || '送信に失敗しました。もう一度お試しください。'}
                 </p>
               </div>
             )}
@@ -104,16 +81,16 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 onClick={onClose}
                 variant="secondary"
                 className="flex-1"
-                disabled={isSubmitting}
+                disabled={submitStatus === 'submitting'}
               >
                 キャンセル
               </Button>
               <Button
                 onClick={handleSubmit}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
-                disabled={isSubmitting || !content.trim()}
+                disabled={submitStatus === 'submitting' || !content.trim()}
               >
-                {isSubmitting ? (
+                {submitStatus === 'submitting' ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="animate-spin">⏳</span> 送信中...
                   </span>

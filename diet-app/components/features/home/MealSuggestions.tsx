@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import type { MealType, MealPlanDetail, AIConsultationResponse } from "@/types";
+import { getMealTimeRange } from "@/lib/utils/mealUtils";
 
 interface MealSuggestionsProps {
   suggestions: AIConsultationResponse | null;
@@ -34,7 +35,25 @@ export function MealSuggestions({
     return null;
   }
 
-  const availableSuggestions = unrecordedMeals
+  // 現在時刻を取得
+  const currentHour = new Date().getHours();
+  const [resetHour] = resetTime.split(':').map(Number);
+  
+  // 時間帯を過ぎた食事は提案から除外
+  const timeLimitedMeals = unrecordedMeals.filter((mealType) => {
+    const { end } = getMealTimeRange(mealType);
+    let adjustedHour = currentHour;
+    
+    // リセット時間が朝4時の場合、深夜0-4時は前日扱いにしない
+    if (resetHour <= 4 && currentHour >= 0 && currentHour < resetHour) {
+      adjustedHour = currentHour + 24;
+    }
+    
+    // 食事の時間帯を過ぎていない場合のみ提案対象とする
+    return adjustedHour <= end;
+  });
+
+  const availableSuggestions = timeLimitedMeals
     .map((mealType) => ({
       mealType,
       plan: suggestions.mealPlans[mealType],

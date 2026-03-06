@@ -1,4 +1,25 @@
-import type { MealType } from '@/types';
+import type { MealType, MealLog } from '@/types';
+
+/**
+ * 食事がスキップされたかどうかを判定
+ */
+export function isMealSkipped(mealLog: MealLog): boolean {
+  return mealLog.text.trim() === '';
+}
+
+/**
+ * スキップされた食事も含めて実際に記録されている食事タイプを取得
+ */
+export function getRecordedMealTypes(mealLogs: MealLog[]): MealType[] {
+  return mealLogs.map(meal => meal.mealType);
+}
+
+/**
+ * 内容のある（スキップでない）食事タイプを取得
+ */
+export function getContentfulMealTypes(mealLogs: MealLog[]): MealType[] {
+  return mealLogs.filter(meal => !isMealSkipped(meal)).map(meal => meal.mealType);
+}
 
 export function detectMissedMeals(
   currentTime: Date, 

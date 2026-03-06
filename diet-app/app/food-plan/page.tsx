@@ -46,12 +46,14 @@ export default function FoodPlanPage() {
         userSettings,
         dailyState,
         plans,
-        yesterdayMeals
+        yesterdayMeals,
+        todayMeals
       ] = await Promise.all([
         userSettingsRepository.get(),
         dailyStateRepository.get(currentDateKey),
         foodPlanRepository.getByDate(currentDateKey),
-        getYesterdayMeals(currentDateKey, resetTime)
+        getYesterdayMeals(currentDateKey, resetTime),
+        mealLogRepository.getByDate(currentDateKey)
       ]);
 
       // ユーザー設定が存在しない場合
@@ -78,8 +80,15 @@ export default function FoodPlanPage() {
             content: meal.text
           }))
         } : undefined,
+        todayMeals: todayMeals.map(meal => ({
+          type: meal.mealType,
+          content: meal.text
+        })),
         requestType: 'morning_plan'
       };
+
+      console.log('Food Plan Page - todayMeals raw:', todayMeals);
+      console.log('Food Plan Page - aiContext.todayMeals:', aiContext.todayMeals);
 
       setContext(aiContext);
       setExistingPlans(plans);

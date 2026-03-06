@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { SimpleMealInput } from '@/components/shared/inputs';
-import type { MealType } from '@/types';
+import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { SimpleMealInput } from "@/components/shared/inputs";
+import type { MealType } from "@/types";
 
 interface BulkMealInputProps {
   missedMeals: MealType[];
@@ -12,72 +12,56 @@ interface BulkMealInputProps {
   onCancel: () => void;
 }
 
-export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInputProps) {
+export function BulkMealInput({
+  missedMeals,
+  onSubmit,
+  onCancel,
+}: BulkMealInputProps) {
   const [mealData, setMealData] = useState<Record<MealType, string>>({
-    breakfast: '',
-    lunch: '',
-    dinner: '',
-    snack: ''
+    breakfast: "",
+    lunch: "",
+    dinner: "",
+    snack: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [skippedMeals, setSkippedMeals] = useState<Set<MealType>>(new Set());
-
   const mealLabels = {
-    breakfast: { label: '朝食', icon: '🌅', time: '朝' },
-    lunch: { label: '昼食', icon: '☀️', time: '昼' },
-    dinner: { label: '夕食', icon: '🌙', time: '夜' },
-    snack: { label: '間食', icon: '🍪', time: '間' }
+    breakfast: { label: "朝食", icon: "🌅", time: "朝" },
+    lunch: { label: "昼食", icon: "☀️", time: "昼" },
+    dinner: { label: "夕食", icon: "🌙", time: "夜" },
+    snack: { label: "間食", icon: "🍪", time: "間" },
   };
 
   const handleInputChange = (mealType: MealType, value: string) => {
-    setMealData(prev => ({
+    setMealData((prev) => ({
       ...prev,
-      [mealType]: value
+      [mealType]: value,
     }));
-  };
-
-  const handleSkipToggle = (mealType: MealType) => {
-    setSkippedMeals(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(mealType)) {
-        newSet.delete(mealType);
-      } else {
-        newSet.add(mealType);
-      }
-      return newSet;
-    });
   };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
-      // スキップされた食事は空文字に設定
-      const submissionData: Record<MealType, string> = { ...mealData };
-      skippedMeals.forEach(mealType => {
-        submissionData[mealType] = '';
+      // 全ての食事を送信（空欄の場合は空文字でスキップ記録）
+      const submissionData: Record<MealType, string> = {} as Record<
+        MealType,
+        string
+      >;
+      missedMeals.forEach((mealType) => {
+        submissionData[mealType] = mealData[mealType].trim() || "";
       });
 
-      // 実際に入力された食事のみ送信
-      const filteredData: Record<MealType, string> = {} as Record<MealType, string>;
-      missedMeals.forEach(mealType => {
-        if (!skippedMeals.has(mealType) && mealData[mealType].trim()) {
-          filteredData[mealType] = mealData[mealType];
-        }
-      });
-
-      await onSubmit(filteredData);
+      await onSubmit(submissionData);
     } catch (error) {
-      console.error('Failed to submit bulk meals:', error);
+      console.error("Failed to submit bulk meals:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const hasAnyInput = missedMeals.some(mealType => 
-    !skippedMeals.has(mealType) && mealData[mealType].trim()
-  );
+  // 何か入力があるか、または何もしなくても保存可能とする
+  const canSubmit = true;
 
   if (missedMeals.length === 0) {
     return null;
@@ -92,51 +76,30 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
             未入力の食事を記録
           </h3>
         </div>
-        
+
         <p className="text-sm text-[var(--color-text-secondary)] font-medium mb-4">
           {missedMeals.length}つの食事が未記録です。まとめて入力できます。
         </p>
 
         <div className="space-y-4">
-          {missedMeals.map(mealType => {
-            const isSkipped = skippedMeals.has(mealType);
-            
+          {missedMeals.map((mealType) => {
             return (
-              <div key={mealType} className={`
-                border rounded-lg p-3 transition-all duration-200
-                ${isSkipped ? 'border-[var(--color-border-light)] bg-[var(--color-bg-subtle)] opacity-60' : 'border-[var(--color-border-default)] bg-[var(--color-bg-surface)]'}
-              `}>
+              <div
+                key={mealType}
+                className="border rounded-lg p-3 transition-all duration-200 border-[var(--color-border-default)] bg-[var(--color-bg-surface)]"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-lg">{mealLabels[mealType].icon}</span>
                   <span className="font-semibold text-[var(--color-text-primary)]">
                     {mealLabels[mealType].label}
                   </span>
-                  <div className="flex-1" />
-                  <button
-                    type="button"
-                    onClick={() => handleSkipToggle(mealType)}
-                    className={`
-                      px-2 py-1 text-xs rounded font-medium transition-colors duration-200
-                      ${isSkipped 
-                        ? 'bg-[var(--color-bg-subtle)] text-[var(--color-text-tertiary)]' 
-                        : 'bg-[var(--color-warning)] bg-opacity-20 text-[var(--color-warning)] hover:bg-opacity-30'}
-                    `}
-                  >
-                    {isSkipped ? '記録する' : 'スキップ'}
-                  </button>
                 </div>
-                
+
                 <textarea
                   value={mealData[mealType]}
                   onChange={(e) => handleInputChange(mealType, e.target.value)}
-                  disabled={isSkipped}
-                  placeholder={isSkipped ? 'スキップされました' : `${mealLabels[mealType].time}に食べたものを入力してください...`}
-                  className={`
-                    w-full p-2 border rounded text-sm resize-none font-medium
-                    ${isSkipped 
-                      ? 'bg-[var(--color-bg-subtle)] text-[var(--color-text-tertiary)] cursor-not-allowed' 
-                      : 'border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]'}
-                  `}
+                  placeholder={`${mealLabels[mealType].time}に食べたものを入力してください... （空欄の場合はスキップされます）`}
+                  className="w-full p-2 border rounded text-sm resize-none font-medium border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]"
                   rows={2}
                 />
               </div>
@@ -147,11 +110,11 @@ export function BulkMealInput({ missedMeals, onSubmit, onCancel }: BulkMealInput
         <div className="flex gap-3 mt-6">
           <Button
             onClick={handleSubmit}
-            disabled={!hasAnyInput || isSubmitting}
+            disabled={isSubmitting}
             variant="primary"
             className="flex-1"
           >
-            {isSubmitting ? '保存中...' : '記録を保存'}
+            {isSubmitting ? "保存中..." : "記録を保存"}
           </Button>
           <Button
             onClick={onCancel}

@@ -23,10 +23,11 @@ export class MealLogRepository extends BaseRepository {
    */
   async save(input: MealLogInput, resetTime: string = '04:00'): Promise<MealLog> {
     try {
-      this.validateRequired(input, ['mealType', 'text']);
+      this.validateRequired(input, ['mealType']);
       
-      if (input.text.trim().length === 0) {
-        throw new Error('Meal text cannot be empty');
+      // textが未定義またはnullの場合は空文字に設定（スキップした食事として記録）
+      if (input.text === undefined || input.text === null) {
+        input.text = '';
       }
 
       const dateKey = input.dateKey || getTodayKey(resetTime);

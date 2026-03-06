@@ -195,13 +195,9 @@ export const LandingPage = () => {
             {features.map((feature, index) => (
               <Card 
                 key={index}
-                className="p-6 h-full transition-all duration-300 hover:scale-105"
-                style={{
-                  backgroundColor: colors.bg.surface,
-                  border: `1px solid ${colors.border.default}`,
-                  borderRadius: radius.lg,
-                  boxShadow: `0 4px 16px ${colors.shadow.sm}`
-                }}
+                className="h-full transition-all duration-300 hover:scale-105"
+                padding="large"
+                shadow="md"
               >
                 <div className="text-center">
                   <div className="text-4xl mb-4">{feature.icon}</div>

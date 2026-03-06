@@ -6,16 +6,19 @@ import { MealLog, AIConsultationResponse } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
+import { getMealTimeRange } from "@/lib/utils/mealUtils";
 
 interface MealDetailModalProps {
   isOpen: boolean;
   mealLog: MealLog | null;
+  recordedMealType?: string; // 現在記録した食事のタイプ（フィードバック表示制御用）
   onClose: () => void;
 }
 
 export function MealDetailModal({
   isOpen,
   mealLog,
+  recordedMealType,
   onClose,
 }: MealDetailModalProps) {
   const router = useRouter();
@@ -332,8 +335,38 @@ export function MealDetailModal({
               </h4>
             </div>
             <div className="space-y-3">
-              {Object.entries(data.mealSuggestions).map(
-                ([mealType, suggestions]: [string, any]) => {
+              {Object.entries(data.mealSuggestions)
+                .filter(([suggestionMealType]) => {
+                  // recordedMealTypeが指定されている場合のフィルタリング（フィードバック表示時）
+                  if (recordedMealType) {
+                    // 夕食記録後は食事プラン提案を表示しない
+                    if (recordedMealType === 'dinner') return false;
+                    
+                    // 朝食記録後は朝食プランを表示しない
+                    if (recordedMealType === 'breakfast' && suggestionMealType === 'breakfast') return false;
+                    
+                    // 昼食記録後は朝食・昼食プランを表示しない  
+                    if (recordedMealType === 'lunch' && (suggestionMealType === 'breakfast' || suggestionMealType === 'lunch')) return false;
+                  }
+                  
+                  // 時間ベースのフィルタリング: 時間帯を過ぎた食事のプランは表示しない
+                  const currentHour = new Date().getHours();
+                  const { end } = getMealTimeRange(suggestionMealType as any);
+                  
+                  // リセット時間を考慮（4:00と仮定）
+                  let adjustedHour = currentHour;
+                  if (currentHour >= 0 && currentHour < 4) {
+                    adjustedHour = currentHour + 24;
+                  }
+                  
+                  // 食事の時間帯を過ぎている場合は除外
+                  if (adjustedHour > end) {
+                    return false;
+                  }
+                  
+                  return true;
+                })
+                .map(([mealType, suggestions]: [string, any]) => {
                   const mealTypeLabels: Record<string, string> = {
                     breakfast: "朝食",
                     lunch: "昼食",

@@ -78,11 +78,24 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
           const availableIngredients = fridgeItems.map(item => item.name);
           
           console.log('🍽️ 手持ち食材:', availableIngredients);
+          const goalTypeMapping: Record<string, string> = {
+            'health': 'maintain',
+            'weight_loss': 'weight_loss', 
+            'weight_gain': 'weight_gain',
+            'muscle_gain': 'weight_gain',
+            'body_recomposition': 'body_recomposition',
+            'energy_boost': 'health_improvement',
+            'better_sleep': 'health_improvement',
+            'stress_management': 'health_improvement',
+            'maintain': 'maintain'
+          };
+          
           console.log('👤 ユーザー設定:', {
             bodyConstitution: userSettings.bodyConstitution,
             lifestyle: userSettings.lifestyle,
             currentWeight: userSettings.profile?.currentWeight,
-            goalType: userSettings.profile?.goalType
+            originalGoalType: userSettings.profile?.goalType,
+            mappedGoalType: userSettings.profile?.goalType ? goalTypeMapping[userSettings.profile.goalType] : undefined,
           });
           console.log('💭 今日のコンディション:', selectedTags);
 
@@ -102,10 +115,27 @@ export function ConditionModal({ isOpen, onClose, resetTime, onSave }: Condition
               mealsPerDay: userSettings.mealsPerDay || 3,
               additionalNotes: userSettings.additionalNotes || '',
             },
-            goals: userSettings.profile?.goalType ? {
-              goalType: userSettings.profile.goalType,
-              targetWeight: userSettings.profile.targetWeight,
-            } : undefined,
+            goals: userSettings.profile?.goalType ? (() => {
+              // EnhancedGoalSettingsの8つのGoalTypeをAPIで受け入れられる5つにマッピング
+              const goalTypeMapping: Record<string, string> = {
+                'health': 'maintain',
+                'weight_loss': 'weight_loss', 
+                'weight_gain': 'weight_gain',
+                'muscle_gain': 'weight_gain', // 筋肉増強は増量として扱う
+                'body_recomposition': 'body_recomposition',
+                'energy_boost': 'health_improvement', // 活力向上は健康改善として扱う
+                'better_sleep': 'health_improvement', // 睡眠改善は健康改善として扱う
+                'stress_management': 'health_improvement', // ストレス管理は健康改善として扱う
+                'maintain': 'maintain'
+              };
+              
+              const mappedGoalType = goalTypeMapping[userSettings.profile.goalType];
+              
+              return mappedGoalType ? {
+                goalType: mappedGoalType,
+                targetWeight: userSettings.profile.targetWeight,
+              } : undefined;
+            })() : undefined,
             todayCondition: {
               conditionTags: selectedTags,
               freeMemo: memo || '',
