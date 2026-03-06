@@ -14,10 +14,7 @@ export const metadata: Metadata = {
   description: "体質と習慣に寄り添うダイエット支援アプリ",
   manifest: "/manifest.json",
   icons: {
-    icon: [
-      { url: "/logo.png", sizes: "192x192", type: "image/png" },
-      { url: "/logo.png", sizes: "512x512", type: "image/png" },
-    ],
+    icon: "/favicon.ico",
     apple: "/logo.png",
   },
 };
