@@ -247,7 +247,6 @@ export interface DietGoals {
   weeklyWeightChangeTarget?: number; // 週間目標体重変化 (kg/週)
   
   // 行動目標
-  dailyCalorieTarget?: number; // 1日のカロリー目標
   dailyProteinTarget?: number; // タンパク質目標 (g)
   dailyWaterTarget?: number; // 水分摂取目標 (ml)
   

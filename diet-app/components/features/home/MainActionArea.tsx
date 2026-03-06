@@ -39,7 +39,7 @@ export const MainActionArea: React.FC<MainActionAreaProps> = ({
   onBulkInputCancel,
 }) => {
   // 晩御飯が記録されている場合は完了画面を表示（最優先）
-  const hasDinner = mealLogs.some(log => log.mealType === 'dinner');
+  const hasDinner = mealLogs.some((log) => log.mealType === "dinner");
   if (hasDinner) {
     return (
       <CompletedDayView
@@ -88,19 +88,20 @@ export const MainActionArea: React.FC<MainActionAreaProps> = ({
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">🧠</span>
               <h3 className="font-bold text-gray-800">AI提案</h3>
-              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
-                おすすめ
-              </span>
             </div>
             <MealSuggestions
               suggestions={suggestions}
               unrecordedMeals={unrecordedMealTypes as MealType[]}
               resetTime={resetTime}
             />
-            
+
             {/* Phase20: 買い出し提案 */}
             <ShoppingPrompt
-              mealPlans={Object.values(suggestions.mealPlans).filter(Boolean) as MealPlanDetail[]}
+              mealPlans={
+                Object.values(suggestions.mealPlans).filter(
+                  Boolean,
+                ) as MealPlanDetail[]
+              }
             />
           </div>
         </div>

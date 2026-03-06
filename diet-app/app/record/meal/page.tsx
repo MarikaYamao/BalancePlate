@@ -11,6 +11,10 @@ import { getDateKey } from "@/lib/utils/dateUtils";
 import { useMealLogs } from "@/lib/hooks/useMealLogs";
 import { useUserSettings } from "@/lib/hooks/useUserSettings";
 import { useAppStore } from "@/lib/stores/useAppStore";
+import {
+  getRecordedMealTypes,
+  getActualUnrecordedMeals,
+} from "@/lib/utils/mealUtils";
 
 function MealRecordPageContent() {
   const router = useRouter();
@@ -56,7 +60,8 @@ function MealRecordPageContent() {
     isUpdating,
   } = useMealLogs(todayKey);
 
-  const recordedTypes = mealLogs.map((m) => m.mealType);
+  // 実際に記録されたタイプ + 暗黙的に完了とみなすタイプ
+  const actualRecordedTypes = getRecordedMealTypes(mealLogs);
   const loading = settingsLoading || mealsLoading || !mounted;
   const saving = isCreating || isUpdating;
 
@@ -83,23 +88,26 @@ function MealRecordPageContent() {
       return;
     }
 
-    // 2食設定の場合の食事タイプリスト
-    const availableMealTypes =
-      mealsPerDay === 2
-        ? (["breakfast", "dinner", "snack"] as MealType[])
-        : (["breakfast", "lunch", "dinner", "snack"] as MealType[]);
+    // 新しいロジックで実際に記録が必要な食事タイプを取得
+    const actualUnrecorded = getActualUnrecordedMeals(
+      actualRecordedTypes,
+      mealsPerDay,
+    );
+
+    // 間食も選択肢に含める
+    const allUnrecorded = [...actualUnrecorded, "snack"].filter(
+      (type) => !actualRecordedTypes.includes(type as MealType),
+    );
 
     // 未記録の最初の食事タイプを選択
-    const nextMealType = availableMealTypes.find(
-      (type) => !recordedTypes.includes(type),
-    );
+    const nextMealType = allUnrecorded[0];
     if (nextMealType) {
-      setSelectedType(nextMealType);
+      setSelectedType(nextMealType as MealType);
     }
   }, [
     mounted,
     mealsLoading,
-    recordedTypes,
+    actualRecordedTypes,
     mealsPerDay,
     editingMeal,
     searchParams,
@@ -321,36 +329,59 @@ function MealRecordPageContent() {
         <div className="space-y-6">
           {/* 食事タイプ選択 - セグメントコントロール */}
           {!editingMeal && (
-            <div className="flex gap-1 p-1 bg-gray-50 rounded-xl">
+            <div className="flex gap-2 p-1">
               {["breakfast", "lunch", "dinner", "snack"]
                 .filter((type) => !(mealsPerDay === 2 && type === "lunch"))
                 .map((type) => {
                   const info = mealTypeInfo[type as keyof typeof mealTypeInfo];
-                  const isRecorded = recordedTypes.includes(type as any);
+                  const isActuallyRecorded = mealLogs.some(
+                    (m) => m.mealType === type,
+                  );
+                  const isImplicitlyCompleted =
+                    actualRecordedTypes.includes(type as any) &&
+                    !isActuallyRecorded;
                   const isSelected = selectedType === type;
 
                   return (
                     <button
                       key={type}
-                      onClick={() =>
-                        setSelectedType(isSelected ? null : (type as any))
-                      }
-                      disabled={isRecorded}
+                      onClick={() => {
+                        if (isActuallyRecorded) {
+                          // 実際に記録済みの場合は編集モードに
+                          const existingMeal = mealLogs.find(
+                            (m) => m.mealType === type,
+                          );
+                          if (existingMeal) {
+                            handleEdit(existingMeal);
+                          }
+                        } else if (isImplicitlyCompleted) {
+                          // 暗黙的完了の場合は何もしない（視覚的フィードバックのみ）
+                          return;
+                        } else {
+                          // 未記録の場合は通常の選択
+                          setSelectedType(isSelected ? null : (type as any));
+                        }
+                      }}
                       className={`
-                        flex-1 py-2.5 px-3 rounded-lg font-medium text-sm transition-all
+                        flex-1 py-2.5 px-2 rounded-lg font-medium text-sm transition-all
                         ${
                           isSelected
                             ? "bg-teal-600 text-white"
-                            : isRecorded
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-gray-700 hover:bg-white"
+                            : isActuallyRecorded
+                              ? "text-green-600 bg-green-50 hover:bg-green-100"
+                              : "text-gray-700 bg-gray-100 hover:bg-white"
                         }
                       `}
                     >
                       <div className="flex items-center justify-center gap-1.5">
                         <span className="text-base">{info.icon}</span>
                         <span>{info.label}</span>
-                        {isRecorded && <span className="text-xs">✓</span>}
+                        {isActuallyRecorded && (
+                          <span className="text-xs text-green-600">✓</span>
+                        )}
+                        {isImplicitlyCompleted && (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </div>
                     </button>
                   );
@@ -495,7 +526,7 @@ function MealRecordPageContent() {
                     : "lunch"
                   : "dinner";
               // 次の食事が記録されていない場合のみ遷移
-              if (!recordedTypes.includes(nextMealType as MealType)) {
+              if (!actualRecordedTypes.includes(nextMealType as MealType)) {
                 setSelectedType(nextMealType as MealType);
                 setShowHistory(false);
               } else {

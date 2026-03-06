@@ -175,45 +175,22 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
               </div>
             )}
 
-            {meal.aiAnalysis && (
+            {meal.aiAnalysis && meal.aiAnalysis.suggestions && meal.aiAnalysis.suggestions.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 rounded text-sm">
                 <div className="font-medium text-blue-900 mb-1">AI分析</div>
-                {meal.aiAnalysis.estimatedNutrients && (
-                  <div className="text-blue-700">
-                    推定カロリー: {meal.aiAnalysis.estimatedNutrients.calories}
-                    kcal
-                  </div>
-                )}
-                {meal.aiAnalysis.suggestions &&
-                  meal.aiAnalysis.suggestions.length > 0 && (
-                    <ul className="mt-1 space-y-1">
-                      {meal.aiAnalysis.suggestions.map((suggestion, idx) => (
-                        <li key={idx} className="text-blue-600">
-                          • {suggestion}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <ul className="mt-1 space-y-1">
+                  {meal.aiAnalysis.suggestions.map((suggestion, idx) => (
+                    <li key={idx} className="text-blue-600">
+                      • {suggestion}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* 合計カロリー（AI分析がある場合） */}
-      {meals.some((m) => m.aiAnalysis?.estimatedNutrients?.calories) && (
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <div className="font-medium text-gray-700">本日の推定合計</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {meals.reduce(
-              (sum, meal) =>
-                sum + (meal.aiAnalysis?.estimatedNutrients?.calories || 0),
-              0,
-            )}{" "}
-            kcal
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -88,3 +88,53 @@ export function shouldShowBulkInput(
   const missedMeals = detectMissedMeals(currentTime, resetTime, recordedMealTypes, mealsPerDay);
   return missedMeals.length >= minMissedMeals;
 }
+
+/**
+ * 食事の順序を定義
+ */
+const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner'];
+
+/**
+ * 後の食事が記録されている場合、前の食事も完了したものとして扱う
+ * 例：昼食が記録されていれば朝食も完了したとみなす
+ */
+export function getImplicitlyCompletedMeals(recordedMealTypes: MealType[]): MealType[] {
+  const implicitlyCompleted: MealType[] = [];
+  
+  // 記録済みの食事の中で最も遅い食事を見つける
+  let latestMealIndex = -1;
+  recordedMealTypes.forEach(mealType => {
+    const index = MEAL_ORDER.indexOf(mealType);
+    if (index > latestMealIndex) {
+      latestMealIndex = index;
+    }
+  });
+  
+  // 最も遅い食事より前の全ての食事は完了したものとみなす
+  for (let i = 0; i < latestMealIndex; i++) {
+    const mealType = MEAL_ORDER[i];
+    if (!recordedMealTypes.includes(mealType)) {
+      implicitlyCompleted.push(mealType);
+    }
+  }
+  
+  return implicitlyCompleted;
+}
+
+/**
+ * 実際に記録が必要な未記録食事を取得
+ * （後の食事が記録されている場合、前の食事は完了扱い）
+ */
+export function getActualUnrecordedMeals(
+  recordedMealTypes: MealType[], 
+  mealsPerDay: 2 | 3 = 3
+): MealType[] {
+  const allMealTypes: MealType[] = mealsPerDay === 2 
+    ? ['breakfast', 'dinner']
+    : ['breakfast', 'lunch', 'dinner'];
+  
+  const implicitlyCompleted = getImplicitlyCompletedMeals(recordedMealTypes);
+  const effectivelyRecorded = [...recordedMealTypes, ...implicitlyCompleted];
+  
+  return allMealTypes.filter(mealType => !effectivelyRecorded.includes(mealType));
+}

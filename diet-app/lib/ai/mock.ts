@@ -211,9 +211,9 @@ export function generateMockResponse(context: AIPromptContext): string {
                         isTired ? "疲労回復のためビタミンB群重視" :
                         "体調安定のためバランス重視";
   
-  const goalPart = context.goals?.goalType === 'weight_loss' ? "カロリー控えめ" :
-                   context.goals?.goalType === 'weight_gain' ? "カロリーしっかり" :
-                   "適正カロリー維持";
+  const goalPart = context.goals?.goalType === 'weight_loss' ? "量控えめ" :
+                   context.goals?.goalType === 'weight_gain' ? "しっかり食べる" :
+                   "バランス維持";
   
   const adjustmentRule = `${conditionPart}、${goalPart}で調整`;
 

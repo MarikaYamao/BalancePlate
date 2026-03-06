@@ -30,7 +30,7 @@ export const LandingPage = () => {
     {
       icon: '📊',
       title: 'シンプルな記録',
-      description: 'テキストで食事を記録するだけ。カロリー計算や複雑な入力は必要ありません。'
+      description: 'テキストで食事を記録するだけ。複雑な計算や入力は必要ありません。'
     },
     {
       icon: '🌟',

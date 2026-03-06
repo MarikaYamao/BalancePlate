@@ -121,11 +121,11 @@ function getBaseIngredients(goalMode?: string, bodyConstitution?: string[]) {
 
   // ゴールモード別調整
   if (goalMode === 'CUT') {
-    // 減量モードは低カロリー食材優先
+    // 減量モードはヘルシー食材優先
     baseSet.protein = ['鶏胸肉', '白身魚', '豆腐', '卵白', 'ギリシャヨーグルト'];
     baseSet.vegetables.push('レタス', 'きゅうり', 'セロリ');
   } else if (goalMode === 'GAIN') {
-    // 増量モードは高カロリー食材追加
+    // 増量モードは栄養価の高い食材追加
     baseSet.protein.push('牛肉', 'マグロ', 'プロテインパウダー');
     baseSet.fats.push('ピーナッツバター', '胡麻', 'MCTオイル');
     baseSet.grains.push('白米', 'パスタ', 'ベーグル');
@@ -245,7 +245,7 @@ function getVersatilityScore(item: string): number {
 
 function getRecommendationReason(item: string, goalMode?: string, category?: string): string {
   if (goalMode === 'CUT' && category === 'protein') {
-    return '高タンパク低カロリーで減量をサポート';
+    return '高タンパク低脂質で減量をサポート';
   }
   if (goalMode === 'GAIN' && category === 'fats') {
     return '良質な脂質で健康的な増量をサポート';

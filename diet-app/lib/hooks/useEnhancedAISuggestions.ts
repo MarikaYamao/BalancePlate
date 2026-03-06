@@ -194,7 +194,6 @@ function generateFallbackResponse(conditionTags: ConditionTag[], fridgeItems: an
         preparation: "簡単" as const,
         alternatives: ["パン", "シリアル"],
         reason: hasIngredients ? "手持ち食材を活用" : "栄養バランス重視",
-        calories: 400,
         timing: "8:00頃",
         // Phase19: 食材利用可能性情報
         availableIngredients: hasIngredients ? availableItems.map(i => i.name) : [],

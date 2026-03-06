@@ -23,7 +23,6 @@ const RequestSchema = z.object({
     goalType: z.enum(['weight_loss', 'weight_gain', 'maintain', 'body_recomposition', 'health_improvement']),
     targetWeight: z.number().optional(),
     weeklyWeightChangeTarget: z.number().optional(),
-    dailyCalorieTarget: z.number().optional(),
   }).optional(),
   todayCondition: z.object({
     conditionTags: z.array(z.string()),

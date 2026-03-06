@@ -35,7 +35,6 @@ export default function TestAIPage() {
         goals: {
           goalType: 'weight_loss',
           targetWeight: 55,
-          dailyCalorieTarget: 1500,
         },
         previousDayData: {
           meals: [

@@ -3,7 +3,6 @@
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export interface NutrientEstimate {
-  calories?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
@@ -71,7 +70,6 @@ export interface MealPlanDetail {
   preparation: string;       // 準備方法（簡単/手軽など）
   alternatives: string[];    // 代替案
   reason: string;           // この提案の理由
-  calories?: number;        // カロリー目安
   timing?: string;          // 推奨時間
   // Phase19: 食材利用可能性情報
   availableIngredients?: string[];   // 利用可能な食材

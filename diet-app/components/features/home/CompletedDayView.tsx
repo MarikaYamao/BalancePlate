@@ -29,11 +29,6 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
   if (!hasBreakfast) missingMeals.push('朝食');
   if (!hasLunch) missingMeals.push('昼食');
 
-  // カロリー計算（仮の値）
-  const totalCalories = mealLogs.length * 500; // 実際は食事内容から計算
-  const targetCalories = 2000; // 実際はユーザー設定から取得
-  const caloriePercentage = Math.min(100, Math.round((totalCalories / targetCalories) * 100));
-
   // 栄養バランス評価（仮のデータ）
   const nutritionScore = 85; // 実際はAI分析から取得
 
@@ -124,43 +119,20 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
             })}
           </div>
 
-          {/* カロリーと栄養バランス */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-blue-50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🔥</span>
-                <span className="text-sm font-medium text-gray-700">
-                  カロリー
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-blue-600">
-                {totalCalories}
-                <span className="text-sm text-gray-600 font-normal">
-                  / {targetCalories}kcal
-                </span>
-              </div>
-              <div className="mt-2 bg-white rounded-full h-2">
-                <div
-                  className="h-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-                  style={{ width: `${caloriePercentage}%` }}
-                />
-              </div>
+          {/* 栄養バランス */}
+          <div className="bg-purple-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">⚖️</span>
+              <span className="text-sm font-medium text-gray-700">
+                栄養バランス
+              </span>
             </div>
-
-            <div className="bg-purple-50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">⚖️</span>
-                <span className="text-sm font-medium text-gray-700">
-                  栄養バランス
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-purple-600">
-                {nutritionScore}
-                <span className="text-sm text-gray-600 font-normal">点</span>
-              </div>
-              <div className="text-xs text-gray-600 mt-1">
-                バランスの取れた食事でした
-              </div>
+            <div className="text-2xl font-bold text-purple-600">
+              {nutritionScore}
+              <span className="text-sm text-gray-600 font-normal">点</span>
+            </div>
+            <div className="text-xs text-gray-600 mt-1">
+              バランスの取れた食事でした
             </div>
           </div>
 

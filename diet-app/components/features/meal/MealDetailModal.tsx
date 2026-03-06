@@ -598,12 +598,6 @@ export function MealDetailModal({
               <h3 className="font-medium text-blue-900 mb-2">栄養分析</h3>
               {mealLog.aiAnalysis.estimatedNutrients && (
                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                  {mealLog.aiAnalysis.estimatedNutrients.calories && (
-                    <div>
-                      カロリー: {mealLog.aiAnalysis.estimatedNutrients.calories}
-                      kcal
-                    </div>
-                  )}
                   {mealLog.aiAnalysis.estimatedNutrients.protein && (
                     <div>
                       タンパク質:{" "}

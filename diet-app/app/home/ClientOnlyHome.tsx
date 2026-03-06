@@ -17,6 +17,7 @@ import {
   detectMissedMeals,
   shouldShowBulkInput,
   getRecordedMealTypes,
+  getActualUnrecordedMeals,
 } from "@/lib/utils/mealUtils";
 import type { MealType, MealLog, ConditionTag, MealPlanDetail } from "@/types";
 
@@ -91,7 +92,6 @@ export default function ClientOnlyHome() {
                         reason:
                           suggestions.planA.description ||
                           suggestions.planA.title,
-                        calories: suggestions.planA.calories || 500,
                         preparation:
                           suggestions.planA.preparation || "簡単調理",
                         canMakeNow:
@@ -118,7 +118,6 @@ export default function ClientOnlyHome() {
                               .split("、")
                               .filter((item: string) => item.trim()),
                         reason: suggestions.reason || suggestions.description,
-                        calories: suggestions.calories || 500,
                         preparation: suggestions.preparation || "簡単調理",
                         canMakeNow:
                           suggestions.canMakeNow !== undefined
@@ -155,7 +154,6 @@ export default function ClientOnlyHome() {
                             parsedResponse.adjustmentRule ||
                             parsedResponse.todayGuideline ||
                             "今日のコンディションに合わせた提案",
-                          calories: 500,
                           preparation: preparationType,
                           canMakeNow: true,
                           alternatives: [],
@@ -175,6 +173,7 @@ export default function ClientOnlyHome() {
                   encouragement: parsedResponse.feedback?.encouragement || "",
                 },
                 mealPlans: convertedMealPlans,
+                nutritionAdvice: parsedResponse.nutritionAdvice,
               };
 
               setSuggestions(suggestion);
@@ -230,7 +229,6 @@ export default function ClientOnlyHome() {
                         reason:
                           suggestions.planA.description ||
                           suggestions.planA.title,
-                        calories: suggestions.planA.calories || 500,
                         preparation:
                           suggestions.planA.preparation || "簡単調理",
                         canMakeNow:
@@ -256,7 +254,6 @@ export default function ClientOnlyHome() {
                               .split("、")
                               .filter((item: string) => item.trim()),
                         reason: suggestions.reason || suggestions.description,
-                        calories: suggestions.calories || 500,
                         preparation: suggestions.preparation || "簡単調理",
                         canMakeNow:
                           suggestions.canMakeNow !== undefined
@@ -279,7 +276,6 @@ export default function ClientOnlyHome() {
                           reason:
                             parsedResponse.adjustmentRule ||
                             parsedResponse.todayGuideline,
-                          calories: 500,
                           preparation: suggestions.convenience
                             ? "コンビニ"
                             : suggestions.simpleCooking
@@ -304,6 +300,7 @@ export default function ClientOnlyHome() {
                     encouragement: parsedResponse.feedback?.encouragement || "",
                   },
                   mealPlans: convertedMealPlans,
+                  nutritionAdvice: parsedResponse.nutritionAdvice,
                 };
 
                 setSuggestions(suggestion);
@@ -354,16 +351,11 @@ export default function ClientOnlyHome() {
   useEffect(() => {
     if (realTimeMealLogs && settings?.mealsPerDay) {
       // スキップされた食事も含めて記録済みとして扱う
+      // 後の食事が記録されている場合、前の食事は完了扱い
       const recordedTypes = getRecordedMealTypes(realTimeMealLogs);
-      const allMealTypes =
-        settings.mealsPerDay === 2
-          ? ["breakfast", "dinner"]
-          : ["breakfast", "lunch", "dinner"];
-      const unrecorded = allMealTypes.filter(
-        (type) => !recordedTypes.includes(type as MealType),
-      );
+      const actualUnrecorded = getActualUnrecordedMeals(recordedTypes, settings.mealsPerDay);
 
-      setUnrecordedMealTypes(unrecorded);
+      setUnrecordedMealTypes(actualUnrecorded);
     }
   }, [realTimeMealLogs, settings?.mealsPerDay]);
 
@@ -401,15 +393,13 @@ export default function ClientOnlyHome() {
       );
       setMissedMeals(missed);
 
-      // ユーザーのmealsPerDay設定に応じた食事タイプから未記録のものを取得
-      const allMealTypes: MealType[] =
-        settings?.mealsPerDay === 2
-          ? ["breakfast", "dinner"] // 2食の場合は朝食と夕食のみ
-          : ["breakfast", "lunch", "dinner"]; // 3食の場合は朝昼晩
-      const unrecorded = allMealTypes.filter(
-        (type) => !recordedTypes.includes(type),
+      // ユーザーのmealsPerDay設定に応じた未記録食事を取得
+      // 後の食事が記録されている場合、前の食事は完了扱い
+      const actualUnrecorded = getActualUnrecordedMeals(
+        recordedTypes, 
+        settings?.mealsPerDay || 3
       );
-      setUnrecordedMealTypes(unrecorded);
+      setUnrecordedMealTypes(actualUnrecorded);
 
       // 食事設定に応じてバルク入力のしきい値を調整
       const bulkInputThreshold = settings?.mealsPerDay === 2 ? 2 : 2; // 2食でも3食でも2つ以上未記録で表示

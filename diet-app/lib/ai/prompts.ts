@@ -54,7 +54,7 @@ export const FRIDGE_AWARE_PROMPT = `
 export const GOAL_MODE_PROMPTS = {
   CUT: `
 【CUTモード（減量）の提案優先順位】
-1. 過食抑制: 満足感を保ちながらカロリーをコントロール
+1. 過食抑制: 満足感を保ちながら適切な量をコントロール
 2. 塩分・むくみ対策: 塩分控えめ、水分代謝促進
 3. タンパク質確保: 筋肉量維持のためのタンパク質摂取
 4. 習慣維持: 無理のない継続可能な食事
@@ -79,20 +79,20 @@ export const GOAL_MODE_PROMPTS = {
 
   GAIN: `
 【GAINモード（増量）の提案優先順位】
-1. 総摂取量確保: カロリー不足を避ける
+1. 総摂取量確保: 栄養不足を避ける
 2. タンパク質摂取: 筋肉・組織の材料確保
 3. 消化・食欲サポート: 食べやすさ重視
 4. 分割摂取: 無理なく量を増やす工夫
 
 特別な調整・検知：
 - 食事量少ない → 回数を増やす（4〜5回/日）
-- すぐ満腹 → 液体カロリー（スムージー、プロテイン）活用
+- すぐ満腹 → 液体栄養（スムージー、プロテイン）活用
 - 固形物が辛い → スープ、ヨーグルト、牛乳、豆乳
 - 運動後 → 必ず1回追加摂取（摂取窓を活用）
-- 脂質を足す: オリーブオイル、ナッツ、チーズ（少量で高カロリー）
+- 脂質を足す: オリーブオイル、ナッツ、チーズ（効率的に栄養摂取）
 
 GAINモード特別提案テンプレート：
-- 朝: しっかり食べる + 液体カロリー追加
+- 朝: しっかり食べる + 液体栄養追加
 - 間食1: 10時にナッツ・ヨーグルト
 - 昼: 普通量＋良質な脂質
 - 間食2: 15時にプロテインスムージー
@@ -136,7 +136,7 @@ export const CONSTRAINT_PROMPTS = {
 【ホルモン療法中（FTM）の配慮】
 体組成変化対応：
 - 筋肉量変化に対応したタンパク質摂取
-- 代謝変化を考慮したカロリー調整
+- 代謝変化を考慮した量調整
 - ホルモン変動時は平準化テンプレを優先
 
 メンタル・体調サポート：
@@ -148,7 +148,7 @@ export const CONSTRAINT_PROMPTS = {
   hormone_mtf: `
 【ホルモン療法中（MTF）の配慮】
 体組成変化対応：
-- 代謝変化を考慮したカロリー調整  
+- 代謝変化を考慮した量調整  
 - ホルモン変動時は平準化テンプレを優先
 - 骨密度維持のカルシウム・ビタミンD
 
@@ -213,7 +213,6 @@ JSONの構造は以下の通りです：
     //   "preparation": "簡単" | "普通" | "手間",
     //   "alternatives": ["代替案1", "代替案2"],
     //   "reason": "この提案をする理由",
-    //   "calories": 推定カロリー数値,
     //   "timing": "推奨時間"
     // }
   },
@@ -235,7 +234,6 @@ JSONの構造は以下の通りです：
 - ダブルクォートは\\"でエスケープ
 - avoidTodayが空の場合は[]を返す。「特になし」は入れない
 - adjustmentRuleには必ずユーザーの条件を1つ以上反映
-- caloriesは数値型で出力
 `;
 }
 
@@ -446,7 +444,6 @@ export interface AIPromptContext {
     goalType: GoalType;
     targetWeight?: number;
     weeklyWeightChangeTarget?: number;
-    dailyCalorieTarget?: number;
   };
   // Phase21: 新しいゴール設定
   goalMode?: GoalMode;
@@ -513,9 +510,6 @@ export function buildPrompt(context: AIPromptContext): string {
     }
     if (context.goals.targetWeight) {
       goalInfo.push(`目標体重: ${context.goals.targetWeight}kg`);
-    }
-    if (context.goals.dailyCalorieTarget) {
-      goalInfo.push(`1日目標カロリー: ${context.goals.dailyCalorieTarget}kcal`);
     }
   }
 

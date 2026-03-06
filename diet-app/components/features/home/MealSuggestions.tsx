@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import type { MealType, MealPlanDetail, AIConsultationResponse } from "@/types";
-import { getMealTimeRange } from "@/lib/utils/mealUtils";
 
 interface MealSuggestionsProps {
   suggestions: AIConsultationResponse | null;
@@ -35,25 +34,8 @@ export function MealSuggestions({
     return null;
   }
 
-  // 現在時刻を取得
-  const currentHour = new Date().getHours();
-  const [resetHour] = resetTime.split(':').map(Number);
-  
-  // 時間帯を過ぎた食事は提案から除外
-  const timeLimitedMeals = unrecordedMeals.filter((mealType) => {
-    const { end } = getMealTimeRange(mealType);
-    let adjustedHour = currentHour;
-    
-    // リセット時間が朝4時の場合、深夜0-4時は前日扱いにしない
-    if (resetHour <= 4 && currentHour >= 0 && currentHour < resetHour) {
-      adjustedHour = currentHour + 24;
-    }
-    
-    // 食事の時間帯を過ぎていない場合のみ提案対象とする
-    return adjustedHour <= end;
-  });
-
-  const availableSuggestions = timeLimitedMeals
+  // 時間制限なしで全ての未記録食事を提案対象とする
+  const availableSuggestions = unrecordedMeals
     .map((mealType) => ({
       mealType,
       plan: suggestions.mealPlans[mealType],
@@ -78,13 +60,10 @@ export function MealSuggestions({
   return (
     <Card className="mb-4 bg-[var(--color-bg-subtle)] border-[var(--color-border-light)]">
       <div className="flex items-center gap-2 mb-4">
-        <div className="text-lg">✨</div>
+        <span className="text-lg">✨</span>
         <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
           おすすめの食事
         </h3>
-        <div className="text-xs font-semibold text-[var(--color-brand-primary)] bg-[var(--color-bg-elevated)] px-2 py-1 rounded-full ml-auto border border-[var(--color-border-light)]">
-          AI提案
-        </div>
       </div>
 
       {suggestions.feedback.overall && (
@@ -92,6 +71,70 @@ export function MealSuggestions({
           <p className="text-sm font-medium text-[var(--color-text-secondary)]">
             {suggestions.feedback.overall}
           </p>
+        </div>
+      )}
+
+      {/* 栄養アドバイス */}
+      {(suggestions as any).nutritionAdvice && (
+        <div className="mb-4 p-3 bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border-light)]">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🥗</span>
+            <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">
+              栄養のポイント
+            </h4>
+          </div>
+          
+          <div className="space-y-3">
+            {/* 意識したい栄養素 */}
+            {(suggestions as any).nutritionAdvice.focus && (suggestions as any).nutritionAdvice.focus.length > 0 && (
+              <div>
+                <h5 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">
+                  意識したい栄養素
+                </h5>
+                <div className="flex flex-wrap gap-1">
+                  {(suggestions as any).nutritionAdvice.focus.map((nutrient: string, index: number) => (
+                    <span 
+                      key={index} 
+                      className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"
+                    >
+                      {nutrient}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* 控えめにしたいもの */}
+            {(suggestions as any).nutritionAdvice.avoid && (suggestions as any).nutritionAdvice.avoid.length > 0 && (
+              <div>
+                <h5 className="text-xs font-semibold text-[var(--color-text-secondary)] mb-1">
+                  控えめに
+                </h5>
+                <div className="flex flex-wrap gap-1">
+                  {(suggestions as any).nutritionAdvice.avoid.map((item: string, index: number) => (
+                    <span 
+                      key={index} 
+                      className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* 水分補給 */}
+            {(suggestions as any).nutritionAdvice.hydration && (
+              <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">💧</span>
+                  <p className="text-xs text-blue-800 font-medium">
+                    {(suggestions as any).nutritionAdvice.hydration}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -250,28 +293,6 @@ export function MealSuggestions({
                       </p>
                     </div>
                   )}
-
-                  {/* カロリーと準備方法 */}
-                  <div className="flex gap-4 mb-3 text-xs">
-                    {plan.calories && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-[var(--color-text-tertiary)]">
-                          🔥
-                        </span>
-                        <span className="text-[var(--color-text-secondary)] font-medium">
-                          {plan.calories}kcal
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <span className="text-[var(--color-text-tertiary)]">
-                        ⏱️
-                      </span>
-                      <span className="text-[var(--color-text-secondary)] font-medium">
-                        {plan.preparation}
-                      </span>
-                    </div>
-                  </div>
 
                   {/* 代替案 */}
                   {plan.alternatives && plan.alternatives.length > 0 && (
