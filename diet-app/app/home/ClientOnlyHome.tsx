@@ -13,14 +13,18 @@ import { EncryptedDailyStateRepository } from "@/lib/db/repositories/encryptedDa
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { mealLogRepository } from "@/lib/db/repositories";
 import { initializeEncryptedDatabase } from "@/lib/db/encryptedDatabase";
-import { detectMissedMeals, shouldShowBulkInput, getRecordedMealTypes } from "@/lib/utils/mealUtils";
+import {
+  detectMissedMeals,
+  shouldShowBulkInput,
+  getRecordedMealTypes,
+} from "@/lib/utils/mealUtils";
 import type { MealType, MealLog, ConditionTag, MealPlanDetail } from "@/types";
 
 export default function ClientOnlyHome() {
   const { settings, isLoading, error } = useUserSettings();
   const resetTime = settings?.dayResetTime || "04:00";
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
-  
+
   // リアルタイムで食事記録を監視
   const { mealLogs: realTimeMealLogs } = useMealLogs();
   const [showBulkInput, setShowBulkInput] = useState(false);
@@ -37,124 +41,305 @@ export default function ClientOnlyHome() {
 
   // AI提案のフック（LocalStorageから取得）
   const [suggestions, setSuggestions] = useState<any>(null);
-  
-  // AI提案を読み込む関数（LocalStorageから最新のフィードバックを取得）
+
+  // AI提案を読み込む関数（LocalStorage → IndexedDB の順で最新のフィードバックを取得）
   const loadAISuggestions = async () => {
-    
     try {
       // 今日の日付キーを取得
-      const { getDateKey } = await import("@/lib/utils/dateUtils");
-      const { consultationStorage } = await import("@/lib/ai/consultationStorage");
+      const { getDateKey, getTodayKey } = await import("@/lib/utils/dateUtils");
+      const { consultationStorage } =
+        await import("@/lib/ai/consultationStorage");
+      const { EncryptedDailyStateRepository } =
+        await import("@/lib/db/repositories/encryptedDailyStateRepository");
       const dateKey = getDateKey(new Date(), resetTime);
-      
-      // LocalStorageから今日のAI相談データを取得
-      const consultations = consultationStorage.getByDateKey(dateKey);
-      
+      const todayKey = getTodayKey(resetTime);
+
+      // 1. まずLocalStorageから今日のAI相談データを取得
+      let consultations = consultationStorage.getByDateKey(dateKey);
+
       if (consultations.length > 0) {
+        // responseが実際にあるデータを探す（isConditionFeedbackなど）
+        const consultationWithResponse = consultations.find(
+          (c: any) => c.response && c.response !== null
+        );
         
-        // 最新のフィードバックを探す（配列の最後が最新）
-        const latestConsultation = consultations[consultations.length - 1];
-        
+        const latestConsultation = consultationWithResponse || consultations[consultations.length - 1];
+        console.log("latestConsultation", latestConsultation);
+
         if (latestConsultation && latestConsultation.response) {
           try {
             // レスポンスをパース
-            const parsedResponse = typeof latestConsultation.response === 'string' 
-              ? JSON.parse(latestConsultation.response)
-              : latestConsultation.response;
-            
+            const parsedResponse =
+              typeof latestConsultation.response === "string"
+                ? JSON.parse(latestConsultation.response)
+                : latestConsultation.response;
+
             // mealSuggestionsがある場合、MealSuggestions用の形式に変換
             if (parsedResponse.mealSuggestions) {
               const convertedMealPlans: any = {};
-              
-              Object.entries(parsedResponse.mealSuggestions).forEach(([mealType, suggestions]: [string, any]) => {
-                
-                // 未記録の食事のみ表示
-                if (unrecordedMealTypes.includes(mealType)) {
-                  // 3プラン形式の場合はplanAを使用
-                  if (suggestions.planA) {
-                    convertedMealPlans[mealType] = {
-                      menu: suggestions.planA.menu.split('、').filter((item: string) => item.trim()),
-                      reason: suggestions.planA.description || suggestions.planA.title,
-                      calories: 500, // デフォルト値
-                      preparation: "簡単調理",
-                      canMakeNow: true,
-                      alternatives: suggestions.planB ? [suggestions.planB.menu.split('、')[0]] : []
-                    };
+
+              Object.entries(parsedResponse.mealSuggestions).forEach(
+                ([mealType, suggestions]: [string, any]) => {
+                  // 未記録の食事のみ表示
+                  if (unrecordedMealTypes.includes(mealType)) {
+                    // 3プラン形式の場合はplanAを使用
+                    if (suggestions.planA) {
+                      convertedMealPlans[mealType] = {
+                        menu: suggestions.planA.menu
+                          .split("、")
+                          .filter((item: string) => item.trim()),
+                        reason:
+                          suggestions.planA.description ||
+                          suggestions.planA.title,
+                        calories: suggestions.planA.calories || 500,
+                        preparation:
+                          suggestions.planA.preparation || "簡単調理",
+                        canMakeNow:
+                          suggestions.planA.canMakeNow !== undefined
+                            ? suggestions.planA.canMakeNow
+                            : true,
+                        alternatives: suggestions.planB
+                          ? [suggestions.planB.menu.split("、")[0]]
+                          : [],
+                        availableIngredients:
+                          suggestions.planA.availableIngredients,
+                        missingIngredients:
+                          suggestions.planA.missingIngredients,
+                      };
+                    } else if (
+                      typeof suggestions === "object" &&
+                      suggestions.menu
+                    ) {
+                      // 直接フォーマットの場合
+                      convertedMealPlans[mealType] = {
+                        menu: Array.isArray(suggestions.menu)
+                          ? suggestions.menu
+                          : suggestions.menu
+                              .split("、")
+                              .filter((item: string) => item.trim()),
+                        reason: suggestions.reason || suggestions.description,
+                        calories: suggestions.calories || 500,
+                        preparation: suggestions.preparation || "簡単調理",
+                        canMakeNow:
+                          suggestions.canMakeNow !== undefined
+                            ? suggestions.canMakeNow
+                            : true,
+                        alternatives: suggestions.alternatives || [],
+                        availableIngredients: suggestions.availableIngredients,
+                        missingIngredients: suggestions.missingIngredients,
+                      };
+                    } else if (typeof suggestions === "object") {
+                      // convenience/simpleCooking/normalCooking形式の場合
+                      // 3つのプランをチェックして、存在するものを採用
+                      let selectedPlan = null;
+                      let preparationType = "選択してください";
+
+                      // 優先順位: normalCooking > simpleCooking > convenience
+                      if (suggestions.normalCooking) {
+                        selectedPlan = suggestions.normalCooking;
+                        preparationType = "通常調理";
+                      } else if (suggestions.simpleCooking) {
+                        selectedPlan = suggestions.simpleCooking;
+                        preparationType = "簡単調理";
+                      } else if (suggestions.convenience) {
+                        selectedPlan = suggestions.convenience;
+                        preparationType = "コンビニ";
+                      }
+
+                      if (selectedPlan) {
+                        convertedMealPlans[mealType] = {
+                          menu: selectedPlan
+                            .split("、")
+                            .filter((item: string) => item.trim()),
+                          reason:
+                            parsedResponse.adjustmentRule ||
+                            parsedResponse.todayGuideline ||
+                            "今日のコンディションに合わせた提案",
+                          calories: 500,
+                          preparation: preparationType,
+                          canMakeNow: true,
+                          alternatives: [],
+                        };
+                      }
+                    }
                   }
-                }
-              });
-              
+                },
+              );
+
               const suggestion = {
                 feedback: {
-                  overall: parsedResponse.todayGuideline || parsedResponse.feedback?.overall || "",
-                  encouragement: parsedResponse.feedback?.encouragement || ""
+                  overall:
+                    parsedResponse.todayGuideline ||
+                    parsedResponse.feedback?.overall ||
+                    "",
+                  encouragement: parsedResponse.feedback?.encouragement || "",
                 },
-                mealPlans: convertedMealPlans
+                mealPlans: convertedMealPlans,
               };
-              
+
               setSuggestions(suggestion);
               return;
             }
           } catch (error) {
-            console.error('AI提案データの解析エラー:', error);
+            console.error("AI提案データの解析エラー:", error);
           }
         }
       }
-      
-      // データがない場合でも、テスト用のモックデータを使用
-      
-      // テスト用のAI提案データを作成（実際のAPI応答と同じ形式）
-      if (unrecordedMealTypes.length > 0) {
-        const testSuggestion = {
-          feedback: {
-            overall: "今日のコンディションに合わせた食事プランを提案します。",
-            encouragement: "この調子で続けていきましょう！"
-          },
-          mealPlans: {} as any
-        };
-        
-        // 未記録の食事に対してプランを生成
-        unrecordedMealTypes.forEach(mealType => {
-          testSuggestion.mealPlans[mealType] = {
-            menu: mealType === 'breakfast' ? ["温かいおかゆ", "梅干し", "味噌汁"] :
-                  mealType === 'lunch' ? ["野菜たっぷりスープ", "サンドイッチ"] :
-                  ["焼き魚", "ご飯", "野菜の煮物"],
-            reason: mealType === 'breakfast' ? "体調を整える優しいメニュー" :
-                   mealType === 'lunch' ? "栄養バランスを考慮したランチ" :
-                   "一日の疲れを癒やす和食",
-            calories: 500,
-            preparation: "簡単調理",
-            canMakeNow: true,
-            alternatives: ["代替案1", "代替案2"]
-          };
-        });
-        
-        setSuggestions(testSuggestion);
-        return;
+
+      // 2. LocalStorageになければ、過去のLocalStorageから最新のものを探す
+      if (consultations.length === 0) {
+        try {
+          // 最新のAI提案を取得（日付に関係なく）
+          const latestConsultation = consultationStorage.getLatest();
+          if (latestConsultation) {
+            consultations = [latestConsultation];
+          }
+        } catch (dbError) {
+          console.error("最新AIデータ取得エラー:", dbError);
+        }
       }
-      
+
+      // 3. 再度consultationsをチェック（IndexedDBから取得された可能性があるため）
+      if (consultations.length > 0) {
+        // responseが実際にあるデータを探す
+        const consultationWithResponse = consultations.find(
+          (c: any) => c.response && c.response !== null
+        );
+        
+        const latestConsultation = consultationWithResponse || consultations[consultations.length - 1];
+
+        if (latestConsultation && latestConsultation.response) {
+          try {
+            const parsedResponse =
+              typeof latestConsultation.response === "string"
+                ? JSON.parse(latestConsultation.response)
+                : latestConsultation.response;
+
+            if (parsedResponse.mealSuggestions) {
+              const convertedMealPlans: any = {};
+
+              Object.entries(parsedResponse.mealSuggestions).forEach(
+                ([mealType, suggestions]: [string, any]) => {
+                  if (unrecordedMealTypes.includes(mealType)) {
+                    // 変換処理（既存と同じ）
+                    if (suggestions.planA) {
+                      convertedMealPlans[mealType] = {
+                        menu: suggestions.planA.menu
+                          .split("、")
+                          .filter((item: string) => item.trim()),
+                        reason:
+                          suggestions.planA.description ||
+                          suggestions.planA.title,
+                        calories: suggestions.planA.calories || 500,
+                        preparation:
+                          suggestions.planA.preparation || "簡単調理",
+                        canMakeNow:
+                          suggestions.planA.canMakeNow !== undefined
+                            ? suggestions.planA.canMakeNow
+                            : true,
+                        alternatives: suggestions.planB
+                          ? [suggestions.planB.menu.split("、")[0]]
+                          : [],
+                        availableIngredients:
+                          suggestions.planA.availableIngredients,
+                        missingIngredients:
+                          suggestions.planA.missingIngredients,
+                      };
+                    } else if (
+                      typeof suggestions === "object" &&
+                      suggestions.menu
+                    ) {
+                      convertedMealPlans[mealType] = {
+                        menu: Array.isArray(suggestions.menu)
+                          ? suggestions.menu
+                          : suggestions.menu
+                              .split("、")
+                              .filter((item: string) => item.trim()),
+                        reason: suggestions.reason || suggestions.description,
+                        calories: suggestions.calories || 500,
+                        preparation: suggestions.preparation || "簡単調理",
+                        canMakeNow:
+                          suggestions.canMakeNow !== undefined
+                            ? suggestions.canMakeNow
+                            : true,
+                        alternatives: suggestions.alternatives || [],
+                        availableIngredients: suggestions.availableIngredients,
+                        missingIngredients: suggestions.missingIngredients,
+                      };
+                    } else if (typeof suggestions === "object") {
+                      const menuText =
+                        suggestions.convenience ||
+                        suggestions.simpleCooking ||
+                        suggestions.normalCooking;
+                      if (menuText) {
+                        convertedMealPlans[mealType] = {
+                          menu: menuText
+                            .split("、")
+                            .filter((item: string) => item.trim()),
+                          reason:
+                            parsedResponse.adjustmentRule ||
+                            parsedResponse.todayGuideline,
+                          calories: 500,
+                          preparation: suggestions.convenience
+                            ? "コンビニ"
+                            : suggestions.simpleCooking
+                              ? "簡単調理"
+                              : "通常調理",
+                          canMakeNow: true,
+                          alternatives: [],
+                        };
+                      }
+                    }
+                  }
+                },
+              );
+
+              if (Object.keys(convertedMealPlans).length > 0) {
+                const suggestion = {
+                  feedback: {
+                    overall:
+                      parsedResponse.todayGuideline ||
+                      parsedResponse.feedback?.overall ||
+                      "",
+                    encouragement: parsedResponse.feedback?.encouragement || "",
+                  },
+                  mealPlans: convertedMealPlans,
+                };
+
+                setSuggestions(suggestion);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error("AI提案データの解析エラー:", error);
+          }
+        }
+      }
+
+      // 4. 最終フォールバック - コンディション登録を促す
+      // (フォールバック提案は表示せず、コンディション登録を優先する)
+
       setSuggestions(null);
-      
     } catch (error) {
-      console.error('AI提案データの読み込みエラー:', error);
+      console.error("AI提案データの読み込みエラー:", error);
       setSuggestions(null);
     }
   };
-  
+
   // 初回読み込みとイベントリスナー
   useEffect(() => {
     loadAISuggestions();
-    
+
     // カスタムイベントをリッスン
     const handleAIUpdate = () => {
       loadAISuggestions();
       loadMealData(); // 画面全体をリフレッシュ
     };
-    
-    window.addEventListener('ai-consultation-updated', handleAIUpdate);
-    
+
+    window.addEventListener("ai-consultation-updated", handleAIUpdate);
+
     return () => {
-      window.removeEventListener('ai-consultation-updated', handleAIUpdate);
+      window.removeEventListener("ai-consultation-updated", handleAIUpdate);
     };
   }, [unrecordedMealTypes]);
 
@@ -170,13 +355,14 @@ export default function ClientOnlyHome() {
     if (realTimeMealLogs && settings?.mealsPerDay) {
       // スキップされた食事も含めて記録済みとして扱う
       const recordedTypes = getRecordedMealTypes(realTimeMealLogs);
-      const allMealTypes = settings.mealsPerDay === 2
-        ? ["breakfast", "dinner"]
-        : ["breakfast", "lunch", "dinner"];
+      const allMealTypes =
+        settings.mealsPerDay === 2
+          ? ["breakfast", "dinner"]
+          : ["breakfast", "lunch", "dinner"];
       const unrecorded = allMealTypes.filter(
-        (type) => !recordedTypes.includes(type as MealType)
+        (type) => !recordedTypes.includes(type as MealType),
       );
-      
+
       setUnrecordedMealTypes(unrecorded);
     }
   }, [realTimeMealLogs, settings?.mealsPerDay]);
@@ -207,13 +393,19 @@ export default function ClientOnlyHome() {
       const currentTime = new Date();
       // スキップされた食事も含めて記録済みとして扱う
       const recordedTypes = getRecordedMealTypes(todayMeals);
-      const missed = detectMissedMeals(currentTime, resetTime, recordedTypes, settings?.mealsPerDay || 3);
+      const missed = detectMissedMeals(
+        currentTime,
+        resetTime,
+        recordedTypes,
+        settings?.mealsPerDay || 3,
+      );
       setMissedMeals(missed);
 
       // ユーザーのmealsPerDay設定に応じた食事タイプから未記録のものを取得
-      const allMealTypes: MealType[] = settings?.mealsPerDay === 2 
-        ? ["breakfast", "dinner"]  // 2食の場合は朝食と夕食のみ
-        : ["breakfast", "lunch", "dinner"];  // 3食の場合は朝昼晩
+      const allMealTypes: MealType[] =
+        settings?.mealsPerDay === 2
+          ? ["breakfast", "dinner"] // 2食の場合は朝食と夕食のみ
+          : ["breakfast", "lunch", "dinner"]; // 3食の場合は朝昼晩
       const unrecorded = allMealTypes.filter(
         (type) => !recordedTypes.includes(type),
       );
@@ -222,7 +414,13 @@ export default function ClientOnlyHome() {
       // 食事設定に応じてバルク入力のしきい値を調整
       const bulkInputThreshold = settings?.mealsPerDay === 2 ? 2 : 2; // 2食でも3食でも2つ以上未記録で表示
       setShowBulkInput(
-        shouldShowBulkInput(currentTime, resetTime, recordedTypes, bulkInputThreshold, settings?.mealsPerDay || 3),
+        shouldShowBulkInput(
+          currentTime,
+          resetTime,
+          recordedTypes,
+          bulkInputThreshold,
+          settings?.mealsPerDay || 3,
+        ),
       );
     } catch (error) {
       console.error("Failed to load meal data:", error);
@@ -326,9 +524,9 @@ export default function ClientOnlyHome() {
     <MainLayout>
       <div className="min-h-screen">
         {/* ヘッダー部分 - より魅力的に */}
-        <ProgressHeader 
-          mealsPerDay={mealsPerDay} 
-          todayProgress={todayProgress} 
+        <ProgressHeader
+          mealsPerDay={mealsPerDay}
+          todayProgress={todayProgress}
         />
 
         {/* メインコンテンツ */}
