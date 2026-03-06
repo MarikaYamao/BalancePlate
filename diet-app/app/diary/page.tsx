@@ -414,127 +414,126 @@ export default function DiaryPage() {
             <div className="space-y-4">
               {historyData.map((dayData) => (
                 <Card key={dayData.dateKey} className="overflow-hidden">
-                  <div className="p-4">
-                    {/* 日付ヘッダー */}
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`rounded-lg px-3 py-2 ${
-                            isToday(dayData.dateKey)
-                              ? "bg-gradient-to-br from-blue-100 to-blue-200"
-                              : "bg-gradient-to-br from-gray-100 to-gray-200"
-                          }`}
-                        >
-                          <div className="text-lg font-bold text-gray-800 text-center">
+                  {/* 日付ヘッダー */}
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`rounded-lg px-3 py-2 ${
+                          isToday(dayData.dateKey)
+                            ? "bg-gradient-to-br from-blue-100 to-blue-200"
+                            : "bg-gradient-to-br from-gray-100 to-gray-200"
+                        }`}
+                      >
+                        <div className="text-lg font-bold text-blue-900 text-center">
+                          {dayData.date.toLocaleDateString("ja-JP", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          <span className="text-xs text-blue-900 ml-1">
+                            (
                             {dayData.date.toLocaleDateString("ja-JP", {
-                              month: "short",
-                              day: "numeric",
+                              weekday: "short",
                             })}
-                            <span className="text-xs text-gray-600 ml-1">
-                              (
-                              {dayData.date.toLocaleDateString("ja-JP", {
-                                weekday: "short",
-                              })}
-                              )
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          {isToday(dayData.dateKey) && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                              今日
-                            </span>
-                          )}
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                            🍽️ {dayData.meals.length}食事
+                            )
                           </span>
-                          {(() => {
-                            const integratedFeedback = getIntegratedFeedback(
-                              dayData.dateKey,
-                            );
-                            return integratedFeedback ? (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                🤖 AI分析済み
-                              </span>
-                            ) : null;
-                          })()}
                         </div>
                       </div>
-
-                      {/* 今日からの日数表示 */}
-                      {!isToday(dayData.dateKey) &&
-                        (() => {
-                          const today = new Date();
-                          const diffDays = Math.floor(
-                            (today.getTime() - dayData.date.getTime()) /
-                              (1000 * 60 * 60 * 24),
+                      <div className="flex gap-2">
+                        {isToday(dayData.dateKey) && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                            今日
+                          </span>
+                        )}
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                          🍽️ {dayData.meals.length}食事
+                        </span>
+                        {(() => {
+                          const integratedFeedback = getIntegratedFeedback(
+                            dayData.dateKey,
                           );
-                          return diffDays === 1 ? (
-                            <span className="text-xs text-gray-500">昨日</span>
-                          ) : (
-                            <span className="text-xs text-gray-400">
-                              {diffDays}日前
+                          return integratedFeedback ? (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              🤖 AI分析済み
                             </span>
-                          );
+                          ) : null;
                         })()}
+                      </div>
                     </div>
 
-                    {/* コンディション */}
-                    {dayData.dailyState?.conditionTags &&
-                      dayData.dailyState.conditionTags.length > 0 && (
-                        <div className="mb-4">
-                          <div className="text-sm text-gray-600 mb-2">
-                            コンディション
-                          </div>
-                          <button
-                            onClick={() => {
-                              setSelectedCondition({
-                                dailyState: dayData.dailyState!,
-                                dateKey: dayData.dateKey,
-                              });
-                              setIsConditionModalOpen(true);
-                            }}
-                            className="w-full text-left group"
-                          >
-                            <div className="flex flex-wrap gap-2 transition-all hover:opacity-80 cursor-pointer">
-                              {dayData.dailyState.conditionTags.map((tagId) => {
-                                const tagInfo = conditionTagsInfo.find(
-                                  (t) => t.id === tagId,
-                                );
-                                if (!tagInfo) return null;
+                    {/* 今日からの日数表示 */}
+                    {!isToday(dayData.dateKey) &&
+                      (() => {
+                        const today = new Date();
+                        const diffDays = Math.floor(
+                          (today.getTime() - dayData.date.getTime()) /
+                            (1000 * 60 * 60 * 24),
+                        );
+                        return diffDays === 1 ? (
+                          <span className="text-xs text-gray-500">昨日</span>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            {diffDays}日前
+                          </span>
+                        );
+                      })()}
+                  </div>
 
-                                return (
-                                  <span
-                                    key={tagId}
-                                    className="px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs flex items-center gap-1"
-                                  >
-                                    <span>{tagInfo.icon}</span>
-                                    <span>{tagInfo.label}</span>
-                                  </span>
-                                );
-                              })}
-                              <span className="ml-auto text-xs text-gray-500 group-hover:text-gray-700">
-                                フィードバックを見る
-                              </span>
-                            </div>
-                          </button>
+                  {/* コンディション */}
+                  {dayData.dailyState?.conditionTags &&
+                    dayData.dailyState.conditionTags.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm text-gray-600 mb-2">
+                          コンディション
                         </div>
-                      )}
+                        <button
+                          onClick={() => {
+                            setSelectedCondition({
+                              dailyState: dayData.dailyState!,
+                              dateKey: dayData.dateKey,
+                            });
+                            setIsConditionModalOpen(true);
+                          }}
+                          className="w-full text-left group"
+                        >
+                          <div className="flex flex-wrap gap-2 transition-all hover:opacity-80 cursor-pointer">
+                            {dayData.dailyState.conditionTags.map((tagId) => {
+                              const tagInfo = conditionTagsInfo.find(
+                                (t) => t.id === tagId,
+                              );
+                              if (!tagInfo) return null;
 
-                    {/* 食事記録 */}
-                    {dayData.meals.length > 0 ? (
-                      <div className="space-y-3">
-                        {dayData.meals.map((meal) => {
-                          const mealInfo = mealTypeLabels[meal.mealType];
-                          const hasFeedback =
-                            meal.aiAnalysis ||
-                            checkStoredFeedback(meal.dateKey, meal.actualTime);
+                              return (
+                                <span
+                                  key={tagId}
+                                  className="px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs flex items-center gap-1"
+                                >
+                                  <span>{tagInfo.icon}</span>
+                                  <span>{tagInfo.label}</span>
+                                </span>
+                              );
+                            })}
+                            <span className="ml-auto text-xs text-gray-500 group-hover:text-gray-700">
+                              フィードバックを見る
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
 
-                          return (
-                            <button
-                              key={meal.id}
-                              onClick={() => handleMealClick(meal)}
-                              className={`
+                  {/* 食事記録 */}
+                  {dayData.meals.length > 0 ? (
+                    <div className="space-y-3">
+                      {dayData.meals.map((meal) => {
+                        const mealInfo = mealTypeLabels[meal.mealType];
+                        const hasFeedback =
+                          meal.aiAnalysis ||
+                          checkStoredFeedback(meal.dateKey, meal.actualTime);
+
+                        return (
+                          <button
+                            key={meal.id}
+                            onClick={() => handleMealClick(meal)}
+                            className={`
                               w-full text-left p-3 border rounded-lg transition-colors
                               ${
                                 hasFeedback
@@ -542,51 +541,50 @@ export default function DiaryPage() {
                                   : "border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                               }
                             `}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="text-lg mt-0.5">
-                                  {mealInfo.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-sm text-gray-800">
-                                      {mealInfo.label}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(meal.actualTime).toLocaleString(
-                                        "ja-JP",
-                                        {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        },
-                                      )}
-                                    </span>
-                                    {meal.followedPlan && (
-                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded">
-                                        プラン準拠
-                                      </span>
-                                    )}
-                                    {hasFeedback && (
-                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
-                                        💬 フィードバックあり
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-gray-700 line-clamp-2">
-                                    {meal.text}
-                                  </p>
-                                </div>
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="text-lg mt-0.5">
+                                {mealInfo.icon}
                               </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-gray-500 text-sm">
-                        この日は食事の記録がありません
-                      </div>
-                    )}
-                  </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm text-gray-800">
+                                    {mealInfo.label}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(meal.actualTime).toLocaleString(
+                                      "ja-JP",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
+                                  </span>
+                                  {meal.followedPlan && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                      プラン準拠
+                                    </span>
+                                  )}
+                                  {hasFeedback && (
+                                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded flex items-center gap-1">
+                                      💬 フィードバックあり
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-700 line-clamp-2">
+                                  {meal.text}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      この日は食事の記録がありません
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>

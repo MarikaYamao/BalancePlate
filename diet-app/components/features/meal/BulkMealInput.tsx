@@ -68,68 +68,69 @@ export function BulkMealInput({
   }
 
   return (
-    <Card className="mx-4 mb-4 bg-[var(--color-bg-subtle)] border-[var(--color-border-default)]">
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="text-lg">📝</div>
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
-            未入力の食事を記録
-          </h3>
-        </div>
-
-        <p className="text-sm text-[var(--color-text-secondary)] font-medium mb-4">
-          {missedMeals.length}つの食事が未記録です。まとめて入力できます。
-        </p>
-
-        <div className="space-y-4">
-          {missedMeals.map((mealType) => {
-            return (
-              <div
-                key={mealType}
-                className="border rounded-lg p-3 transition-all duration-200 border-[var(--color-border-default)] bg-[var(--color-bg-surface)]"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{mealLabels[mealType].icon}</span>
-                  <span className="font-semibold text-[var(--color-text-primary)]">
-                    {mealLabels[mealType].label}
-                  </span>
-                </div>
-
-                <textarea
-                  value={mealData[mealType]}
-                  onChange={(e) => handleInputChange(mealType, e.target.value)}
-                  placeholder={`${mealLabels[mealType].time}に食べたものを入力してください... （空欄の場合はスキップされます）`}
-                  className="w-full p-2 border rounded text-sm resize-none font-medium border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]"
-                  rows={2}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            variant="primary"
-            className="flex-1"
-          >
-            {isSubmitting ? "保存中..." : "記録を保存"}
-          </Button>
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="flex-1"
-            disabled={isSubmitting}
-          >
-            キャンセル
-          </Button>
-        </div>
-
-        <p className="text-xs text-[var(--color-text-tertiary)] font-medium mt-2 text-center">
-          空欄の食事は記録されません
-        </p>
+    <Card
+      className="mb-4 bg-[var(--color-bg-subtle)] border-[var(--color-border-default)]"
+      padding="small"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="text-lg">📝</div>
+        <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+          未入力の食事を記録
+        </h3>
       </div>
+
+      <p className="text-sm text-[var(--color-text-secondary)] font-medium mb-4">
+        {missedMeals.length}つの食事が未記録です。まとめて入力できます。
+      </p>
+
+      <div className="space-y-4">
+        {missedMeals.map((mealType) => {
+          return (
+            <div
+              key={mealType}
+              className="border rounded-lg p-3 transition-all duration-200 border-[var(--color-border-default)] bg-[var(--color-bg-surface)]"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{mealLabels[mealType].icon}</span>
+                <span className="font-semibold text-[var(--color-text-primary)]">
+                  {mealLabels[mealType].label}
+                </span>
+              </div>
+
+              <textarea
+                value={mealData[mealType]}
+                onChange={(e) => handleInputChange(mealType, e.target.value)}
+                placeholder={`${mealLabels[mealType].time}に食べたものを入力してください... （空欄の場合はスキップされます）`}
+                className="w-full p-2 border rounded text-sm resize-none font-medium border-[var(--color-border-default)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]"
+                rows={2}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          variant="primary"
+          className="flex-1"
+        >
+          {isSubmitting ? "保存中..." : "記録を保存"}
+        </Button>
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="flex-1"
+          disabled={isSubmitting}
+        >
+          キャンセル
+        </Button>
+      </div>
+
+      <p className="text-xs text-[var(--color-text-tertiary)] font-medium mt-2 text-center">
+        空欄の食事は記録されません
+      </p>
     </Card>
   );
 }
