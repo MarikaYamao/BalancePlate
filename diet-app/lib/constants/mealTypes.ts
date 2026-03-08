@@ -14,11 +14,18 @@ export const MEAL_TYPE_ICONS: Record<MealType, string> = {
   snack: "🍪",
 } as const;
 
-export const MEAL_TYPE_INFO: Record<MealType, { label: string; icon: string }> = {
-  breakfast: { label: MEAL_TYPE_LABELS.breakfast, icon: MEAL_TYPE_ICONS.breakfast },
-  lunch: { label: MEAL_TYPE_LABELS.lunch, icon: MEAL_TYPE_ICONS.lunch },
-  dinner: { label: MEAL_TYPE_LABELS.dinner, icon: MEAL_TYPE_ICONS.dinner },
-  snack: { label: MEAL_TYPE_LABELS.snack, icon: MEAL_TYPE_ICONS.snack },
+export const MEAL_TYPE_COLORS: Record<MealType, "yellow" | "orange" | "purple" | "pink"> = {
+  breakfast: "yellow",
+  lunch: "orange",
+  dinner: "purple",
+  snack: "pink",
+} as const;
+
+export const MEAL_TYPE_INFO: Record<MealType, { label: string; icon: string; color: "yellow" | "orange" | "purple" | "pink" }> = {
+  breakfast: { label: MEAL_TYPE_LABELS.breakfast, icon: MEAL_TYPE_ICONS.breakfast, color: MEAL_TYPE_COLORS.breakfast },
+  lunch: { label: MEAL_TYPE_LABELS.lunch, icon: MEAL_TYPE_ICONS.lunch, color: MEAL_TYPE_COLORS.lunch },
+  dinner: { label: MEAL_TYPE_LABELS.dinner, icon: MEAL_TYPE_ICONS.dinner, color: MEAL_TYPE_COLORS.dinner },
+  snack: { label: MEAL_TYPE_LABELS.snack, icon: MEAL_TYPE_ICONS.snack, color: MEAL_TYPE_COLORS.snack },
 } as const;
 
 // 拡張版（AI提案用の"tomorrow"を含む）

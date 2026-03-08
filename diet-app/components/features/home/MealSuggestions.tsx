@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
+import { MEAL_TYPE_INFO } from "@/lib/constants/mealTypes";
 import type { MealType, MealPlanDetail, AIConsultationResponse } from "@/types";
 
 interface MealSuggestionsProps {
@@ -23,12 +24,6 @@ export function MealSuggestions({
   );
   const router = useRouter();
 
-  const mealLabels = {
-    breakfast: { label: "朝食", icon: "🌅", color: "yellow" as const },
-    lunch: { label: "昼食", icon: "☀️", color: "orange" as const },
-    dinner: { label: "夕食", icon: "🌙", color: "purple" as const },
-    snack: { label: "間食", icon: "🍪", color: "pink" as const },
-  };
 
   if (!suggestions || unrecordedMeals.length === 0) {
     return null;
@@ -142,7 +137,7 @@ export function MealSuggestions({
         {availableSuggestions.map(({ mealType, plan }) => {
           if (!plan) return null;
 
-          const mealInfo = mealLabels[mealType];
+          const mealInfo = MEAL_TYPE_INFO[mealType];
           const isExpanded = expandedMeal === mealType;
           const colorClasses = {
             yellow:

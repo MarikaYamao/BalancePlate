@@ -17,6 +17,7 @@ import { TodayConditionSection } from "@/components/features/diary/TodayConditio
 import { QuickActionsSection } from "@/components/features/diary/QuickActionsSection";
 import { HistoryTabControl } from "@/components/features/diary/HistoryTabControl";
 import { MealHistoryList } from "@/components/features/diary/MealHistoryList";
+import { getDateKey } from "@/lib/utils/dateUtils";
 import type { MealLog, DailyState, WeightLog } from "@/types";
 
 interface DayData {
@@ -55,7 +56,7 @@ export default function DiaryPage() {
   useEffect(() => {
     if (settings) {
       const today = new Date();
-      const dateKey = generateDateKey(today, resetTime);
+      const dateKey = getDateKey(today, resetTime);
       setTodayDateKey(dateKey);
     }
   }, [settings, resetTime]);
@@ -67,16 +68,6 @@ export default function DiaryPage() {
     }
   }, [settings, todayDateKey, daysToShow]);
 
-  const generateDateKey = (date: Date, resetTime: string): string => {
-    const resetHour = parseInt(resetTime.split(":")[0]);
-    const adjustedDate = new Date(date);
-
-    if (date.getHours() < resetHour) {
-      adjustedDate.setDate(date.getDate() - 1);
-    }
-
-    return adjustedDate.toISOString().split("T")[0];
-  };
 
   const loadHistoryData = async () => {
     setIsLoading(true);
@@ -96,7 +87,7 @@ export default function DiaryPage() {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() - i);
 
-        const dateKey = generateDateKey(targetDate, resetTime);
+        const dateKey = getDateKey(targetDate, resetTime);
 
         // その日の食事記録を取得
         const meals = await mealRepository.getByDate(dateKey);

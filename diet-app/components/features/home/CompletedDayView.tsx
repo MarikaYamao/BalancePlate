@@ -22,12 +22,12 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
   onNavigateToDetail,
 }) => {
   // 未記録の食事を確認
-  const hasBreakfast = mealLogs.some(log => log.mealType === 'breakfast');
-  const hasLunch = mealLogs.some(log => log.mealType === 'lunch');
-  const hasDinner = mealLogs.some(log => log.mealType === 'dinner');
+  const hasBreakfast = mealLogs.some((log) => log.mealType === "breakfast");
+  const hasLunch = mealLogs.some((log) => log.mealType === "lunch");
+  const hasDinner = mealLogs.some((log) => log.mealType === "dinner");
   const missingMeals = [];
-  if (!hasBreakfast) missingMeals.push('朝食');
-  if (!hasLunch) missingMeals.push('昼食');
+  if (!hasBreakfast) missingMeals.push("朝食");
+  if (!hasLunch) missingMeals.push("昼食");
 
   // 栄養バランス評価（仮のデータ）
   const nutritionScore = 85; // 実際はAI分析から取得
@@ -42,10 +42,9 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
             晚ご飯を記録しました！
           </h2>
           <p className="text-gray-600 text-sm">
-            {missingMeals.length > 0 
-              ? `お疲れさまでした。${missingMeals.join('・')}も必要に応じて記録できます。`
-              : '今日の全食事記録完了！素晴らしい！'
-            }
+            {missingMeals.length > 0
+              ? `お疲れさまでした。${missingMeals.join("・")}も必要に応じて記録できます。`
+              : "今日の全食事記録完了！素晴らしい！"}
           </p>
         </div>
       </div>
@@ -56,12 +55,12 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
           <span className="text-xl">📊</span>
           今日の成果
         </h3>
-        
+
         <div className="space-y-4">
           {/* 食事記録詳細 */}
           <div className="grid grid-cols-3 gap-3">
             {["breakfast", "lunch", "dinner"].map((mealType) => {
-              const meal = mealLogs.find(log => log.mealType === mealType);
+              const meal = mealLogs.find((log) => log.mealType === mealType);
               const icons = {
                 breakfast: "🌅",
                 lunch: "☀️",
@@ -72,7 +71,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
                 lunch: "昼食",
                 dinner: "夕食",
               };
-              
+
               if (meal) {
                 // 記録済みの場合
                 return (
@@ -88,10 +87,13 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
                     </div>
                     <div className="text-xs text-gray-500">
                       {meal.actualTime
-                        ? new Date(meal.actualTime).toLocaleTimeString("ja-JP", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                        ? new Date(meal.actualTime).toLocaleTimeString(
+                            "ja-JP",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
                         : "記録済み"}
                     </div>
                   </div>
@@ -110,9 +112,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
                     <div className="text-xs font-medium text-gray-500 mb-1">
                       {labels[mealType as keyof typeof labels]}
                     </div>
-                    <div className="text-xs text-blue-600">
-                      記録する
-                    </div>
+                    <div className="text-xs text-blue-600">記録する</div>
                   </button>
                 );
               }
@@ -138,7 +138,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
 
           {/* 詳細確認ボタン */}
           <button
-            onClick={() => window.location.href = "/record/meal?tab=history"}
+            onClick={() => (window.location.href = "/record/meal?tab=history")}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
           >
             今日の食事を詳しく見る →
@@ -152,7 +152,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
           <span className="text-xl">🌟</span>
           明日への準備
         </h3>
-        
+
         <div className="space-y-3">
           <div className="bg-white rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -163,27 +163,10 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
                 </span>
               </div>
               <button
-                onClick={() => window.location.href = "/shopping"}
+                onClick={() => (window.location.href = "/shopping")}
                 className="text-sm text-purple-600 hover:text-purple-800"
               >
                 作成する →
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>📝</span>
-                <span className="text-sm font-medium text-gray-700">
-                  明日の食事プラン
-                </span>
-              </div>
-              <button
-                onClick={() => window.location.href = "/food-plan"}
-                className="text-sm text-purple-600 hover:text-purple-800"
-              >
-                計画する →
               </button>
             </div>
           </div>
@@ -197,7 +180,7 @@ export const CompletedDayView: React.FC<CompletedDayViewProps> = ({
                 </span>
               </div>
               <button
-                onClick={() => window.location.href = "/diary"}
+                onClick={() => (window.location.href = "/diary")}
                 className="text-sm text-purple-600 hover:text-purple-800"
               >
                 記録する →
