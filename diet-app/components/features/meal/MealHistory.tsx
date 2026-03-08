@@ -1,22 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { type MealLog, type MealType } from "@/types";
+import { type MealLog } from "@/types";
 import { mealLogRepository } from "@/lib/db/repositories";
 import { isMealSkipped } from "@/lib/utils/mealUtils";
+import { MEAL_TYPE_INFO } from "@/lib/constants/mealTypes";
 
 interface MealHistoryProps {
   dateKey: string;
   onEdit?: (meal: MealLog) => void;
   onDelete?: (meal: MealLog) => void;
 }
-
-const mealTypeLabels: Record<MealType, { label: string; icon: string }> = {
-  breakfast: { label: "朝食", icon: "🌅" },
-  lunch: { label: "昼食", icon: "☀️" },
-  dinner: { label: "夕食", icon: "🌙" },
-  snack: { label: "間食", icon: "🍿" },
-};
 
 export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
   const [meals, setMeals] = useState<MealLog[]>([]);
@@ -50,7 +44,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
 
   const handleDelete = async (meal: MealLog) => {
     if (
-      !confirm(`${mealTypeLabels[meal.mealType].label}の記録を削除しますか？`)
+      !confirm(`${MEAL_TYPE_INFO[meal.mealType].label}の記録を削除しますか？`)
     ) {
       return;
     }
@@ -114,7 +108,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
   return (
     <div className="space-y-3">
       {meals.map((meal) => {
-        const typeInfo = mealTypeLabels[meal.mealType];
+        const typeInfo = MEAL_TYPE_INFO[meal.mealType];
         const isDeleting = deletingId === meal.id;
         const hasFeedback =
           meal.aiAnalysis || checkStoredFeedback(dateKey, meal.actualTime);

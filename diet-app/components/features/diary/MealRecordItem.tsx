@@ -1,4 +1,5 @@
 import { MealLog } from "@/types";
+import { MEAL_TYPE_INFO } from "@/lib/constants/mealTypes";
 
 interface MealRecordItemProps {
   meal: MealLog;
@@ -6,15 +7,8 @@ interface MealRecordItemProps {
   onClick: (meal: MealLog) => void;
 }
 
-const mealTypeLabels = {
-  breakfast: { label: "朝食", icon: "🌅" },
-  lunch: { label: "昼食", icon: "☀️" },
-  dinner: { label: "夕食", icon: "🌙" },
-  snack: { label: "間食", icon: "🍪" },
-};
-
 export function MealRecordItem({ meal, hasFeedback, onClick }: MealRecordItemProps) {
-  const mealInfo = mealTypeLabels[meal.mealType];
+  const mealInfo = MEAL_TYPE_INFO[meal.mealType];
 
   return (
     <button

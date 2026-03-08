@@ -1,17 +1,10 @@
 import { getMealTimeRange } from "@/lib/utils/mealUtils";
+import { EXTENDED_MEAL_TYPE_LABELS } from "@/lib/constants/mealTypes";
 
 interface MealSuggestionsProps {
   mealSuggestions: any;
   recordedMealType?: string;
 }
-
-const mealTypeLabels: Record<string, string> = {
-  breakfast: "朝食",
-  lunch: "昼食",
-  dinner: "夕食",
-  snack: "間食",
-  tomorrow: "明日に向けて",
-};
 
 export function MealSuggestions({ mealSuggestions, recordedMealType }: MealSuggestionsProps) {
   if (!mealSuggestions) return null;
@@ -48,7 +41,7 @@ export function MealSuggestions({ mealSuggestions, recordedMealType }: MealSugge
             return true;
           })
           .map(([mealType, suggestions]: [string, any]) => {
-            const mealLabel = mealTypeLabels[mealType] || mealType;
+            const mealLabel = EXTENDED_MEAL_TYPE_LABELS[mealType] || mealType;
             
             if (mealType === 'tomorrow' && suggestions.focus) {
               return (

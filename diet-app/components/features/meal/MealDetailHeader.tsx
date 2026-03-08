@@ -1,23 +1,10 @@
 import { MealLog } from "@/types";
+import { MEAL_TYPE_LABELS, MEAL_TYPE_ICONS } from "@/lib/constants/mealTypes";
 
 interface MealDetailHeaderProps {
   mealLog: MealLog;
   onClose: () => void;
 }
-
-const mealTypeLabels = {
-  breakfast: "朝食",
-  lunch: "昼食",
-  dinner: "夕食",
-  snack: "間食",
-};
-
-const mealTypeEmojis = {
-  breakfast: "🌅",
-  lunch: "☀️",
-  dinner: "🌙",
-  snack: "🍪",
-};
 
 export function MealDetailHeader({ mealLog, onClose }: MealDetailHeaderProps) {
   return (
@@ -25,7 +12,7 @@ export function MealDetailHeader({ mealLog, onClose }: MealDetailHeaderProps) {
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
           <span className="text-lg">
-            {mealTypeEmojis[mealLog.mealType]}
+            {MEAL_TYPE_ICONS[mealLog.mealType]}
           </span>
         </div>
         <div>
@@ -33,7 +20,7 @@ export function MealDetailHeader({ mealLog, onClose }: MealDetailHeaderProps) {
             id="meal-modal-title"
             className="text-lg font-semibold text-gray-900"
           >
-            {mealTypeLabels[mealLog.mealType]}
+            {MEAL_TYPE_LABELS[mealLog.mealType]}
           </h2>
           <p className="text-sm text-gray-500">
             {new Date(mealLog.actualTime).toLocaleString("ja-JP", {
