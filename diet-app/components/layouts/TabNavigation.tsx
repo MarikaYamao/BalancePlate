@@ -9,6 +9,7 @@ interface TabItem {
   label: string;
   href: string;
   icon: string;
+  disabled?: boolean;
 }
 
 const tabs: TabItem[] = [
@@ -28,7 +29,8 @@ const tabs: TabItem[] = [
     id: 'shopping',
     label: '買い出し',
     href: '/shopping',
-    icon: '🛒'
+    icon: '🛒',
+    disabled: true
   },
   {
     id: 'diary',
@@ -67,13 +69,20 @@ export function TabNavigation() {
           <ul className="flex justify-around items-center h-16">
             {tabs.map((tab) => (
               <li key={tab.id} className="flex-1">
-                <Link
-                  href={tab.href}
-                  className="flex flex-col items-center justify-center h-full py-2 text-[var(--color-text-tertiary)]"
-                >
-                  <span className="text-xl mb-1 opacity-70">{tab.icon}</span>
-                  <span className="text-[12px] font-semibold">{tab.label}</span>
-                </Link>
+                {tab.disabled ? (
+                  <div className="flex flex-col items-center justify-center h-full py-2 text-gray-300 cursor-not-allowed">
+                    <span className="text-xl mb-1 opacity-30">{tab.icon}</span>
+                    <span className="text-[12px] font-semibold">{tab.label}</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={tab.href}
+                    className="flex flex-col items-center justify-center h-full py-2 text-[var(--color-text-tertiary)]"
+                  >
+                    <span className="text-xl mb-1 opacity-70">{tab.icon}</span>
+                    <span className="text-[12px] font-semibold">{tab.label}</span>
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -90,20 +99,27 @@ export function TabNavigation() {
             const isActive = isActiveTab(tab.href);
             return (
               <li key={tab.id} className="flex-1">
-                <Link
-                  href={tab.href}
-                  className={`
-                    flex flex-col items-center justify-center h-full py-2
-                    transition-all duration-200
-                    ${isActive 
-                      ? 'text-[var(--color-brand-primary)]' 
-                      : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
-                    }
-                  `}
-                >
-                  <span className={`text-xl mb-1 transition-all ${isActive ? 'scale-110' : 'opacity-70'}`}>{tab.icon}</span>
-                  <span className={`text-[12px] font-semibold ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
-                </Link>
+                {tab.disabled ? (
+                  <div className="flex flex-col items-center justify-center h-full py-2 text-gray-300 cursor-not-allowed">
+                    <span className="text-xl mb-1 opacity-30">{tab.icon}</span>
+                    <span className="text-[12px] font-semibold">{tab.label}</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={tab.href}
+                    className={`
+                      flex flex-col items-center justify-center h-full py-2
+                      transition-all duration-200
+                      ${isActive 
+                        ? 'text-[var(--color-brand-primary)]' 
+                        : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+                      }
+                    `}
+                  >
+                    <span className={`text-xl mb-1 transition-all ${isActive ? 'scale-110' : 'opacity-70'}`}>{tab.icon}</span>
+                    <span className={`text-[12px] font-semibold ${isActive ? 'font-bold' : ''}`}>{tab.label}</span>
+                  </Link>
+                )}
               </li>
             );
           })}

@@ -12,7 +12,7 @@ interface FeedbackModalProps {
 
 export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [content, setContent] = useState("");
-  const { submitStatus, submitFeedback, error } = useFeedbackSubmit();
+  const { submitStatus, submitFeedback, error, reset } = useFeedbackSubmit();
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
@@ -21,8 +21,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       await submitFeedback({ content });
       setContent("");
 
-      // 2秒後に自動的にモーダルを閉じる
+      // 2秒後に自動的にモーダルを閉じてステータスをリセット
       setTimeout(() => {
+        reset();
         onClose();
       }, 2000);
     } catch (error) {
@@ -78,7 +79,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* ボタン */}
             <div className="flex gap-3">
               <Button
-                onClick={onClose}
+                onClick={() => {
+                  reset();
+                  onClose();
+                }}
                 variant="secondary"
                 className="flex-1"
                 disabled={submitStatus === "submitting"}

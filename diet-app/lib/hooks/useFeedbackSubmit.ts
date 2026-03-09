@@ -9,6 +9,7 @@ interface UseFeedbackSubmitResult {
   submitStatus: 'idle' | 'submitting' | 'success' | 'error';
   submitFeedback: (params: FeedbackSubmitParams) => Promise<void>;
   error: string | null;
+  reset: () => void;
 }
 
 export function useFeedbackSubmit(): UseFeedbackSubmitResult {
@@ -47,9 +48,15 @@ export function useFeedbackSubmit(): UseFeedbackSubmitResult {
     }
   }, []);
 
+  const reset = useCallback(() => {
+    setSubmitStatus('idle');
+    setError(null);
+  }, []);
+
   return {
     submitStatus,
     submitFeedback,
     error,
+    reset,
   };
 }
