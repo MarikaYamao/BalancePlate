@@ -9,7 +9,7 @@ export const openai = new OpenAI({
 export const AI_CONFIG = {
   model: 'gpt-4o',
   temperature: 0.2,
-  maxTokens: 1000,
+  maxTokens: 2000,
 } as const;
 
 // レート制限設定

@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
         ],
         temperature: AI_CONFIG.temperature,
         max_tokens: AI_CONFIG.maxTokens,
+        response_format: { type: "json_object" },
       });
 
       const aiContent = completion.choices[0]?.message?.content;
@@ -135,7 +136,14 @@ export async function POST(request: NextRequest) {
     // AIレスポンスをJSONとしてパース
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(response);
+      // マークダウンのコードブロックを除去
+      let cleanedResponse = response
+        .replace(/^```json\s*/i, '') // 開始の```jsonを除去
+        .replace(/^```\s*/i, '') // 開始の```を除去
+        .replace(/\s*```$/i, '') // 終了の```を除去
+        .trim();
+      
+      parsedResponse = JSON.parse(cleanedResponse);
     } catch (parseError) {
       console.warn('Failed to parse AI response as JSON, treating as text:', parseError);
       // JSONパースに失敗した場合は従来通りのテキストレスポンス

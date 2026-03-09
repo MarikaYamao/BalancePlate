@@ -5,7 +5,9 @@ import { Modal } from "@/components/ui/Modal";
 import { AIFeedbackDisplay } from "./AIFeedbackDisplay";
 import { FoodSuggestionDisplay } from "./FoodSuggestionDisplay";
 import { conditionTagsInfo } from "@/lib/constants/conditionTags";
-import type { DailyState, ConditionTag } from "@/types";
+import { MEAL_TYPE_LABELS } from "@/lib/constants/mealTypes";
+import { UserSettingsRepository } from "@/lib/db/repositories/userSettingsRepository";
+import type { DailyState, ConditionTag, UserSettings } from "@/types";
 
 interface ConditionFeedbackModalProps {
   isOpen: boolean;
@@ -40,14 +42,24 @@ export function ConditionFeedbackModal({
 }: ConditionFeedbackModalProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [foodSuggestions, setFoodSuggestions] = useState<any | null>(null);
-  const [mealPlans, setMealPlans] = useState<{ [key: string]: MealPlan } | null>(null);
+  const [mealPlans, setMealPlans] = useState<{
+    [key: string]: MealPlan;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
 
   useEffect(() => {
     if (isOpen && dailyState) {
+      loadSettings();
       loadStoredFeedback();
     }
   }, [isOpen, dailyState, dateKey]);
+
+  const loadSettings = async () => {
+    const userSettingsRepository = new UserSettingsRepository();
+    const userSettings = await userSettingsRepository.get();
+    setSettings(userSettings);
+  };
 
   const loadStoredFeedback = () => {
     // ローカルストレージからコンディションフィードバックを取得
@@ -71,6 +83,16 @@ export function ConditionFeedbackModal({
   const generateFeedback = async () => {
     setIsLoading(true);
     try {
+      // ユーザー設定と冷蔵庫の食材を取得
+      const { UserSettingsRepository } = await import('@/lib/db/repositories/userSettingsRepository');
+      const { FridgeItemRepository } = await import('@/lib/db/repositories/fridgeItemRepository');
+      const userSettingsRepo = new UserSettingsRepository();
+      const fridgeItemRepo = new FridgeItemRepository();
+      
+      const userSettings = await userSettingsRepo.get();
+      const fridgeItems = await fridgeItemRepo.getAvailableFridgeItems();
+      const availableIngredients = fridgeItems.map(item => item.name);
+      
       // コンディションタグに基づいてフィードバックを生成
       const response = await fetch("/api/ai/condition-feedback", {
         method: "POST",
@@ -79,6 +101,15 @@ export function ConditionFeedbackModal({
           dateKey,
           conditionTags: dailyState.conditionTags,
           note: dailyState.freeMemo,
+          mealsPerDay: settings?.mealsPerDay || userSettings?.mealsPerDay || 3,
+          userProfile: userSettings ? {
+            favoriteFoods: userSettings.favoriteFoods,
+            dislikedFoods: userSettings.dislikedFoods,
+            bodyConstitution: userSettings.bodyConstitution,
+            lifestyle: userSettings.lifestyle,
+            additionalNotes: userSettings.additionalNotes,
+          } : undefined,
+          availableIngredients,
         }),
       });
 
@@ -223,8 +254,8 @@ export function ConditionFeedbackModal({
 
         {/* AIフィードバック */}
         <div className="pt-4 border-t">
-          <AIFeedbackDisplay 
-            feedback={feedback} 
+          <AIFeedbackDisplay
+            feedback={feedback}
             isLoading={isLoading}
             onGenerateFeedback={generateFeedback}
           />
@@ -235,55 +266,89 @@ export function ConditionFeedbackModal({
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">🍽️</span>
-              <h3 className="font-medium text-teal-800">今日の食事プラン（3プラン）</h3>
+              <h3 className="font-medium text-teal-800">
+                今日の食事プラン（3プラン）
+              </h3>
             </div>
             {Object.entries(mealPlans).map(([mealType, plans]) => {
-              const mealTypeLabel = mealType === 'breakfast' ? '朝食' : 
-                                   mealType === 'lunch' ? '昼食' : 
-                                   mealType === 'dinner' ? '夕食' : 
-                                   mealType;
+              // 2食設定の場合、lunchは表示しない
+              if (settings?.mealsPerDay === 2 && mealType === "lunch") {
+                return null;
+              }
+              const mealTypeLabel =
+                MEAL_TYPE_LABELS[mealType as keyof typeof MEAL_TYPE_LABELS] ||
+                mealType;
               return (
-                <div key={mealType} className="bg-teal-50 border-l-4 border-teal-400 p-4 rounded">
-                  <h4 className="font-semibold text-teal-800 mb-3">🍴 {mealTypeLabel}の提案</h4>
+                <div
+                  key={mealType}
+                  className="bg-teal-50 border-l-4 border-teal-400 p-4 rounded"
+                >
+                  <h4 className="font-semibold text-teal-800 mb-3">
+                    🍴 {mealTypeLabel}の提案
+                  </h4>
                   <div className="grid gap-3">
                     {/* Plan A */}
                     <div className="bg-white p-3 rounded-lg border border-teal-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="bg-teal-600 text-white px-2 py-0.5 rounded text-xs font-bold">A</span>
-                            <span className="font-semibold text-teal-900">{plans.planA.title}</span>
+                            <span className="bg-teal-600 text-white px-2 py-0.5 rounded text-xs font-bold">
+                              A
+                            </span>
+                            <span className="font-semibold text-teal-900">
+                              {plans.planA.title}
+                            </span>
                           </div>
-                          <p className="text-teal-800 text-sm mb-1">{plans.planA.menu}</p>
-                          <p className="text-teal-600 text-xs">{plans.planA.description}</p>
+                          <p className="text-teal-800 text-sm mb-1">
+                            {plans.planA.menu}
+                          </p>
+                          <p className="text-teal-600 text-xs">
+                            {plans.planA.description}
+                          </p>
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Plan B */}
                     <div className="bg-white p-3 rounded-lg border border-teal-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold">B</span>
-                            <span className="font-semibold text-teal-900">{plans.planB.title}</span>
+                            <span className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                              B
+                            </span>
+                            <span className="font-semibold text-teal-900">
+                              {plans.planB.title}
+                            </span>
                           </div>
-                          <p className="text-teal-800 text-sm mb-1">{plans.planB.menu}</p>
-                          <p className="text-teal-600 text-xs">{plans.planB.description}</p>
+                          <p className="text-teal-800 text-sm mb-1">
+                            {plans.planB.menu}
+                          </p>
+                          <p className="text-teal-600 text-xs">
+                            {plans.planB.description}
+                          </p>
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Plan C */}
                     <div className="bg-white p-3 rounded-lg border border-teal-200">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="bg-gray-500 text-white px-2 py-0.5 rounded text-xs font-bold">C</span>
-                            <span className="font-semibold text-teal-900">{plans.planC.title}</span>
+                            <span className="bg-gray-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                              C
+                            </span>
+                            <span className="font-semibold text-teal-900">
+                              {plans.planC.title}
+                            </span>
                           </div>
-                          <p className="text-teal-800 text-sm mb-1">{plans.planC.menu}</p>
-                          <p className="text-teal-600 text-xs">{plans.planC.description}</p>
+                          <p className="text-teal-800 text-sm mb-1">
+                            {plans.planC.menu}
+                          </p>
+                          <p className="text-teal-600 text-xs">
+                            {plans.planC.description}
+                          </p>
                         </div>
                       </div>
                     </div>

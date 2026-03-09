@@ -310,8 +310,8 @@ export function generateMockResponse(context: AIPromptContext): string {
 
 // モック機能の有効/無効を切り替える
 export function isMockEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true' || 
-         process.env.NODE_ENV === 'development';
+  // 明示的にモックを有効にする場合のみtrueを返す
+  return process.env.NEXT_PUBLIC_ENABLE_MOCK === 'true';
 }
 
 // 遅延を入れてリアルなAPI感を演出

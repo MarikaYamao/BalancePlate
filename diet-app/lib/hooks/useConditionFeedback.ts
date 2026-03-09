@@ -83,6 +83,12 @@ export function useConditionFeedback(): UseConditionFeedbackResult {
         );
       } else {
         const errorData = await response.json().catch(() => ({}));
+        console.error('🔴 API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData.error,
+          details: errorData.details
+        });
         throw new Error(errorData.error || `フィードバックの生成に失敗しました (${response.status})`);
       }
     } catch (err) {

@@ -5,6 +5,7 @@ interface ConditionFeedbackParams {
   conditionTags: ConditionTag[];
   note?: string;
   dateKey: string;
+  mealsPerDay?: 2 | 3;
 }
 
 interface FoodSuggestion {
@@ -37,6 +38,7 @@ interface MealPlan {
 export async function generateConditionFeedback({
   conditionTags,
   note,
+  mealsPerDay = 3,
 }: ConditionFeedbackParams): Promise<{ feedback: string; foodSuggestions: FoodSuggestion; mealPlans: { [key: string]: MealPlan } }> {
   // コンディションタグの詳細情報を取得
   const tagDetails = conditionTags
@@ -108,7 +110,7 @@ export async function generateConditionFeedback({
   const foodSuggestions = generateFoodSuggestions(conditionTags);
   
   // 食事プランを生成
-  const mealPlans = generateMealPlans(conditionTags);
+  const mealPlans = generateMealPlans(conditionTags, mealsPerDay);
 
   return { feedback, foodSuggestions, mealPlans };
 }
@@ -215,7 +217,7 @@ function generateFoodSuggestions(conditionTags: ConditionTag[]): FoodSuggestion 
   };
 }
 
-function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: MealPlan } {
+function generateMealPlans(conditionTags: ConditionTag[], mealsPerDay: 2 | 3 = 3): { [key: string]: MealPlan } {
   const hasPhysicalIssue = conditionTags.some(tag => 
     tag.includes("tired") || tag.includes("sleep"));
   const hasMentalIssue = conditionTags.some(tag => 
@@ -226,7 +228,30 @@ function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: Meal
   let mealPlans: { [key: string]: MealPlan } = {};
 
   if (hasPhysicalIssue) {
-    mealPlans.lunch = {
+    // 3食設定の場合は朝食も追加
+    if (mealsPerDay === 3) {
+      mealPlans.breakfast = {
+        planA: {
+          title: "元気チャージ朝食",
+          menu: "卵かけご飯、納豆、みそ汁、果物",
+          description: "消化に良く、一日のエネルギーをしっかり補給"
+        },
+        planB: {
+          title: "軽やか朝食セット",
+          menu: "トースト、ヨーグルト、サラダ、フルーツジュース",
+          description: "軽めながら必要な栄養素をバランスよく摂取"
+        },
+        planC: {
+          title: "和風回復朝食",
+          menu: "おかゆ、焼き魚、漬物、お茶",
+          description: "胃に優しい和食で体調回復をサポート"
+        }
+      };
+    }
+
+    // 2食設定の場合は朝食、3食設定の場合は昼食
+    const middleMealKey = mealsPerDay === 2 ? 'breakfast' : 'lunch';
+    mealPlans[middleMealKey] = {
       planA: {
         title: "消化の良い定食",
         menu: "鶏そぼろ丼、みそ汁、温野菜サラダ",
@@ -262,7 +287,30 @@ function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: Meal
       }
     };
   } else if (hasMentalIssue) {
-    mealPlans.lunch = {
+    // 3食設定の場合は朝食も追加
+    if (mealsPerDay === 3) {
+      mealPlans.breakfast = {
+        planA: {
+          title: "リラックス朝食",
+          menu: "バナナトースト、豆乳、ナッツ、ハーブティー",
+          description: "トリプトファンとマグネシウムで心を落ち着ける"
+        },
+        planB: {
+          title: "癒しの朝食セット",
+          menu: "オートミール、ベリー、ヨーグルト、カモミールティー",
+          description: "ストレス軽減効果のある食材で一日をスタート"
+        },
+        planC: {
+          title: "和み朝食",
+          menu: "玄米おにぎり、味噌汁、納豆、緑茶",
+          description: "和食の優しさで心身ともにリラックス"
+        }
+      };
+    }
+
+    // 2食設定の場合は朝食、3食設定の場合は昼食
+    const middleMealKey = mealsPerDay === 2 ? 'breakfast' : 'lunch';
+    mealPlans[middleMealKey] = {
       planA: {
         title: "リラックスランチ",
         menu: "アボカドサーモン丼、具沢山スープ、ハーブティー",
@@ -298,7 +346,30 @@ function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: Meal
       }
     };
   } else if (hasGoodCondition) {
-    mealPlans.lunch = {
+    // 3食設定の場合は朝食も追加
+    if (mealsPerDay === 3) {
+      mealPlans.breakfast = {
+        planA: {
+          title: "パワフル朝食",
+          menu: "スクランブルエッグ、全粒粉パン、サラダ、スムージー",
+          description: "良いコンディションを活かす栄養満点の朝食"
+        },
+        planB: {
+          title: "エナジー和朝食",
+          menu: "焼き魚定食、玄米、野菜の小鉢、味噌汁",
+          description: "バランスの良い和食で一日の活力をチャージ"
+        },
+        planC: {
+          title: "フレッシュモーニング",
+          menu: "グラノーラボウル、フルーツ、ヨーグルト、野菜ジュース",
+          description: "ビタミンとミネラル豊富で爽やかな朝食"
+        }
+      };
+    }
+
+    // 2食設定の場合は朝食、3食設定の場合は昼食
+    const middleMealKey = mealsPerDay === 2 ? 'breakfast' : 'lunch';
+    mealPlans[middleMealKey] = {
       planA: {
         title: "エネルギーランチ",
         menu: "パワーボウル（キヌア、アボカド、グリルチキン）、スムージー",
@@ -335,7 +406,30 @@ function generateMealPlans(conditionTags: ConditionTag[]): { [key: string]: Meal
     };
   } else {
     // デフォルト
-    mealPlans.lunch = {
+    // 3食設定の場合は朝食も追加
+    if (mealsPerDay === 3) {
+      mealPlans.breakfast = {
+        planA: {
+          title: "定番朝食",
+          menu: "トースト、目玉焼き、サラダ、コーヒー",
+          description: "シンプルながら栄養バランスの取れた朝食"
+        },
+        planB: {
+          title: "和定番朝食",
+          menu: "ご飯、焼き魚、納豆、味噌汁",
+          description: "日本の伝統的な朝食で健康的な一日をスタート"
+        },
+        planC: {
+          title: "軽快朝食",
+          menu: "シリアル、牛乳、果物、ヨーグルト",
+          description: "手軽に準備できて栄養価の高い朝食"
+        }
+      };
+    }
+
+    // 2食設定の場合は朝食、3食設定の場合は昼食
+    const middleMealKey = mealsPerDay === 2 ? 'breakfast' : 'lunch';
+    mealPlans[middleMealKey] = {
       planA: {
         title: "バランスランチ",
         menu: "鶏照り焼き定食、ご飯、味噌汁、サラダ",
