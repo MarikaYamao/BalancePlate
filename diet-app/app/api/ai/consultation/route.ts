@@ -102,7 +102,6 @@ export async function POST(request: NextRequest) {
       fridgeItems: validatedData.fridgeItems,
     };
 
-
     let response: string;
 
     // モック機能を使用するかAPIを使用するかを判定

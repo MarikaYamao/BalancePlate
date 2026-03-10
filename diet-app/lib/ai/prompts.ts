@@ -529,6 +529,16 @@ export function buildPrompt(context: AIPromptContext): string {
     previousDayInfo = 'なし';
   }
 
+  // 今日の食事記録の整形
+  let todayMealsInfo = '';
+  if (context.todayMeals && context.todayMeals.length > 0) {
+    todayMealsInfo = context.todayMeals
+      .map(m => `${m.type}: ${m.content}`)
+      .join('\n');
+  } else {
+    todayMealsInfo = 'まだ記録なし';
+  }
+
   // リクエストタイプ別のプロンプト
   const requestPrompts: Record<typeof context.requestType, string> = {
     'morning_plan': `
@@ -581,12 +591,12 @@ ${profile.mealsPerDay === 2 ? '※2食設定のため昼食フィードバック
 3. 調整ルール：朝食・昼食の内容を踏まえた夕食の調整
 `}`,
     'consultation': `
-${context.previousDayData?.meals && context.previousDayData.meals.length > 0 ? `
+${context.todayMeals && context.todayMeals.length > 0 ? `
 記録された食事内容をもとにフィードバックをお願いします。
-今日の食事記録: ${context.previousDayData.meals.map(m => `${m.type}: ${m.content}`).join('\\n')}
+今日の食事記録: ${context.todayMeals.map(m => `${m.type}: ${m.content}`).join('\\n')}
 
 ${// 夕食が含まれているかチェック
-context.previousDayData.meals.some(m => m.type === 'dinner') ? `
+context.todayMeals.some(m => m.type === 'dinner') ? `
 今日も1日お疲れ様でした。夕食まで記録を続けられたのは素晴らしいことです。
 
 ### 今日の振り返り
@@ -704,8 +714,11 @@ ${fridgeItemsInfo}
 コンディション: ${conditionJa || '通常'}
 メモ: ${context.todayCondition.freeMemo || 'なし'}
 
-【今日の食事記録】
+【前日の食事記録】
 ${previousDayInfo}
+
+【今日の食事記録】
+${todayMealsInfo}
 
 【リクエスト】
 ${requestPrompts[context.requestType]}

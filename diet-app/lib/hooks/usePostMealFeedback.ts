@@ -73,12 +73,36 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
               : "consultation"; // 夕食や間食は一般的な相談として扱う
 
         // 今日の食事データを整形
-        // 注意: この関数は食事記録後に呼ばれるため、
-        // todayMealsには既に現在の食事が含まれている可能性がある
-        const todayMealData = todayMeals.map((meal) => ({
+        // 既存の食事記録を取得
+        const existingMeals = todayMeals.map((meal) => ({
           type: meal.mealType,
           content: meal.text,
         }));
+
+        // 現在の食事を追加（まだDBに保存されていない場合）
+        // 既存の食事に同じタイプの食事が無い場合、または更新の場合は現在の食事を追加
+        const currentMealExists = existingMeals.some(
+          meal => meal.type === mealType && meal.content === mealText
+        );
+        
+        let todayMealData = [...existingMeals];
+        if (!currentMealExists) {
+          // 現在の食事を追加または更新
+          const existingIndex = todayMealData.findIndex(meal => meal.type === mealType);
+          if (existingIndex >= 0) {
+            // 既存の食事を更新
+            todayMealData[existingIndex] = {
+              type: mealType,
+              content: mealText,
+            };
+          } else {
+            // 新しい食事を追加
+            todayMealData.push({
+              type: mealType,
+              content: mealText,
+            });
+          }
+        }
 
         // AIにリクエスト送信
         // 現在時刻を追加
