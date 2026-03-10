@@ -72,10 +72,10 @@ export function ConditionModal({
         resetTime,
       );
 
-      // AI食事提案はcondition-feedback APIおよびPostConditionFeedbackで実施するため、ここでは何もしない
-
       // フィードバック表示用のデータを保存
       setSavedData({ tags: selectedTags, memo: memo });
+      
+      // すぐにフィードバック画面を表示（APIは非同期で呼ばれる）
       setShowFeedback(true);
 
       if (onSave) {
@@ -231,7 +231,7 @@ export function ConditionModal({
               className="flex-1"
               disabled={isSaving}
             >
-              {isSaving ? "AI提案を生成中..." : "記録する"}
+              {isSaving ? "保存中..." : "記録する"}
             </Button>
           </div>
 

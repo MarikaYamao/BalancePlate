@@ -51,6 +51,26 @@ export function useConditionFeedback(): UseConditionFeedbackResult {
   const [error, setError] = useState<string | null>(null);
 
   const generateFeedback = useCallback(async (params: ConditionFeedbackParams) => {
+    // キャッシュチェック
+    const cacheKey = `condition-feedback-${params.dateKey}`;
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        // キャッシュが1時間以内なら使用
+        const cacheAge = Date.now() - new Date(cachedData.timestamp).getTime();
+        if (cacheAge < 60 * 60 * 1000) { // 1時間
+          setFeedback(cachedData.feedback);
+          setFoodSuggestions(cachedData.foodSuggestions);
+          setMealPlans(cachedData.mealPlans);
+          return; // キャッシュを使用して早期リターン
+        }
+      } catch (e) {
+        // キャッシュ解析エラーは無視
+      }
+    }
+
     setIsLoading(true);
     setError(null);
 

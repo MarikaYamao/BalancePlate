@@ -113,6 +113,7 @@ export function useMealLogs(dateKey?: string) {
       setLastError('食事記録の削除に失敗しました');
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mealLogs', targetDateKey] });
       queryClient.invalidateQueries({ queryKey: ['todaySummary'] });
     },
   });

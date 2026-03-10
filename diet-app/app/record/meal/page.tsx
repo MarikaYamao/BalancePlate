@@ -279,6 +279,20 @@ function MealRecordPageContent() {
 
   const todayMealCount = mealLogs.length;
 
+  const onClickBack = () => {
+    if (editingMeal) {
+      // 編集モードまたは入力中の場合は、状態をリセット
+      setEditingMeal(null);
+      setSelectedType(null);
+      clearTempMealText();
+      setError(null);
+      setSuccessMessage(null);
+    } else {
+      // 何も編集していない場合はホームに戻る
+      router.push("/home");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-xl mx-auto px-4">
@@ -286,7 +300,7 @@ function MealRecordPageContent() {
         <div className="py-6">
           <div className="flex items-center justify-between mb-6">
             <button
-              onClick={() => router.push("/home")}
+              onClick={onClickBack}
               className="text-gray-500 hover:text-gray-700 inline-flex items-center gap-1.5 text-sm"
             >
               <svg
@@ -302,7 +316,7 @@ function MealRecordPageContent() {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
               </svg>
-              戻る
+              {editingMeal ? "キャンセル" : "戻る"}
             </button>
 
             <span className="text-xs text-gray-500">
@@ -347,7 +361,12 @@ function MealRecordPageContent() {
                     <button
                       key={type}
                       onClick={() => {
-                        if (isActuallyRecorded) {
+                        // クリック時に最新のmealLogsから記録済みかを確認
+                        const currentlyRecorded = mealLogs.some(
+                          (m) => m.mealType === type,
+                        );
+
+                        if (currentlyRecorded) {
                           // 実際に記録済みの場合は編集モードに
                           const existingMeal = mealLogs.find(
                             (m) => m.mealType === type,
@@ -355,9 +374,6 @@ function MealRecordPageContent() {
                           if (existingMeal) {
                             handleEdit(existingMeal);
                           }
-                        } else if (isImplicitlyCompleted) {
-                          // 暗黙的完了の場合は何もしない（視覚的フィードバックのみ）
-                          return;
                         } else {
                           // 未記録の場合は通常の選択
                           setSelectedType(isSelected ? null : (type as any));

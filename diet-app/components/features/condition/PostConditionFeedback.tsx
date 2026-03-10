@@ -49,6 +49,11 @@ export function PostConditionFeedback({
           <h2 className="text-xl font-bold text-gray-800">
             コンディションを記録しました
           </h2>
+          {isLoading && (
+            <p className="text-sm text-gray-600 mt-1">
+              AIがあなたに合ったアドバイスを作成中...
+            </p>
+          )}
         </div>
 
         {/* 記録内容サマリー */}

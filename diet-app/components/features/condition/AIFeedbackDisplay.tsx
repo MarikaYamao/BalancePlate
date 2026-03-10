@@ -13,8 +13,18 @@ export function AIFeedbackDisplay({
 }: AIFeedbackDisplayProps) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+      <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-4 rounded-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600"></div>
+          <h3 className="font-medium text-gray-800">
+            AIがアドバイスを生成中...
+          </h3>
+        </div>
+        <div className="animate-pulse space-y-2">
+          <div className="h-3 bg-teal-100 rounded w-full"></div>
+          <div className="h-3 bg-teal-100 rounded w-4/5"></div>
+          <div className="h-3 bg-teal-100 rounded w-3/4"></div>
+        </div>
       </div>
     );
   }

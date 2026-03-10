@@ -8,7 +8,7 @@ import { MealDetailHeader } from "./MealDetailHeader";
 import { MealContentSection } from "./MealContentSection";
 import { MealAnalysisSection } from "./MealAnalysisSection";
 import { AIFeedbackSection } from "./AIFeedbackSection";
-import { MealDetailActions } from "./MealDetailActions";
+import { Button } from "@/components/ui/Button";
 
 interface MealDetailModalProps {
   isOpen: boolean;
@@ -196,20 +196,13 @@ export function MealDetailModal({
     };
   }, [isOpen, onClose]);
 
-
   if (!isOpen || !mealLog) return null;
-
-  const handleEdit = () => {
-    onClose();
-    router.push(`/record/meal?edit=${mealLog.id}`);
-  };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
-
 
   const modalContent = (
     <div
@@ -224,12 +217,14 @@ export function MealDetailModal({
           <MealDetailHeader mealLog={mealLog} onClose={onClose} />
           <MealContentSection mealLog={mealLog} />
           <MealAnalysisSection mealLog={mealLog} />
-          <AIFeedbackSection 
-            loadingAI={loadingAI} 
-            loadedAIResponse={loadedAIResponse} 
-            recordedMealType={recordedMealType} 
+          <AIFeedbackSection
+            loadingAI={loadingAI}
+            loadedAIResponse={loadedAIResponse}
+            recordedMealType={recordedMealType}
           />
-          <MealDetailActions onEdit={handleEdit} onClose={onClose} />
+          <Button onClick={onClose} variant="outline" className="flex-1 w-full">
+            閉じる
+          </Button>
         </div>
       </div>
     </div>
