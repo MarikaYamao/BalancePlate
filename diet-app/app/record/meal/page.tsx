@@ -56,8 +56,10 @@ function MealRecordPageContent() {
     isLoading: mealsLoading,
     createMealLog,
     updateMealLog,
+    deleteMealLog,
     isCreating,
     isUpdating,
+    isDeleting,
   } = useMealLogs(todayKey);
 
   // 実際に記録されたタイプ + 暗黙的に完了とみなすタイプ
@@ -337,9 +339,8 @@ function MealRecordPageContent() {
                   const isActuallyRecorded = mealLogs.some(
                     (m) => m.mealType === type,
                   );
-                  const isImplicitlyCompleted =
-                    actualRecordedTypes.includes(type as any) &&
-                    !isActuallyRecorded;
+                  // 削除後は暗黙的完了扱いにしない
+                  const isImplicitlyCompleted = false;
                   const isSelected = selectedType === type;
 
                   return (
@@ -470,35 +471,33 @@ function MealRecordPageContent() {
                       キャンセル
                     </button>
                   )}
-                  <button
-                    onClick={() => setShowHistory(true)}
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    今日の一覧を見る
-                  </button>
                 </div>
               </div>
             </div>
           )}
 
           {/* 今日の一覧表示 */}
-          {showHistory && (
+          {!editingMeal && (
             <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  今日の食事
-                </h2>
-                <button
-                  onClick={() => setShowHistory(false)}
-                  className="text-sm text-teal-600 hover:text-teal-700"
-                >
-                  新規記録
-                </button>
-              </div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                今日の食事
+              </h2>
               <MealHistory
                 dateKey={todayKey}
+                mealLogs={mealLogs}
                 onEdit={handleEdit}
-                onDelete={() => {}}
+                onDelete={(meal) => {
+                  // TanStack QueryのdeleteMealLogを使用
+                  deleteMealLog(meal.id, {
+                    onSuccess: () => {
+                      // 削除後に編集モードをクリア
+                      setEditingMeal(null);
+                      setSelectedType(null);
+                      clearTempMealText();
+                    },
+                  });
+                }}
+                isDeleting={isDeleting}
               />
             </div>
           )}

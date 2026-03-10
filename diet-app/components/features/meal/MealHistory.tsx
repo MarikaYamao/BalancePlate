@@ -8,19 +8,33 @@ import { MEAL_TYPE_INFO } from "@/lib/constants/mealTypes";
 
 interface MealHistoryProps {
   dateKey: string;
+  mealLogs?: MealLog[];
   onEdit?: (meal: MealLog) => void;
   onDelete?: (meal: MealLog) => void;
+  isDeleting?: boolean;
 }
 
-export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
+export function MealHistory({ dateKey, mealLogs, onEdit, onDelete, isDeleting }: MealHistoryProps) {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadMeals();
-  }, [dateKey]);
+    if (mealLogs) {
+      // 親コンポーネントからmealLogsが渡される場合はそれを使用
+      const filteredMeals = mealLogs.filter((meal) => !isMealSkipped(meal));
+      const sortedMeals = filteredMeals.sort((a, b) => {
+        const typeOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
+        return typeOrder[a.mealType] - typeOrder[b.mealType];
+      });
+      setMeals(sortedMeals);
+      setLoading(false);
+    } else {
+      // 渡されない場合は自前でロード
+      loadMeals();
+    }
+  }, [dateKey, mealLogs]);
 
   const loadMeals = async () => {
     try {
@@ -49,18 +63,26 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
       return;
     }
 
-    try {
+    if (onDelete) {
+      // 親コンポーネントのonDeleteハンドラを呼ぶ
       setDeletingId(meal.id);
-      await mealLogRepository.delete(meal.id);
-      await loadMeals(); // リロード
-      if (onDelete) {
-        onDelete(meal);
+      onDelete(meal);
+      // isDeletingが渡されている場合は、それを使うので、ローカルの状態はリセット
+      if (isDeleting !== undefined) {
+        setTimeout(() => setDeletingId(null), 100);
       }
-    } catch (err) {
-      console.error("Failed to delete meal:", err);
-      alert("削除に失敗しました");
-    } finally {
-      setDeletingId(null);
+    } else {
+      // onDeleteが無い場合は従来通り自前で削除
+      try {
+        setDeletingId(meal.id);
+        await mealLogRepository.delete(meal.id);
+        await loadMeals(); // リロード
+      } catch (err) {
+        console.error("Failed to delete meal:", err);
+        alert("削除に失敗しました");
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
 
@@ -109,7 +131,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
     <div className="space-y-3">
       {meals.map((meal) => {
         const typeInfo = MEAL_TYPE_INFO[meal.mealType];
-        const isDeleting = deletingId === meal.id;
+        const isCurrentlyDeleting = deletingId === meal.id || (isDeleting && deletingId === meal.id);
         const hasFeedback =
           meal.aiAnalysis || checkStoredFeedback(dateKey, meal.actualTime);
 
@@ -118,7 +140,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
             key={meal.id}
             className={`
               p-4 border rounded-lg transition-all
-              ${isDeleting ? "opacity-50" : ""}
+              ${isCurrentlyDeleting ? "opacity-50" : ""}
               ${
                 hasFeedback
                   ? "bg-blue-50 border-blue-200 hover:bg-blue-100"
@@ -141,7 +163,7 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
               </div>
 
               <div className="flex gap-2">
-                {onEdit && !isDeleting && (
+                {onEdit && !isCurrentlyDeleting && (
                   <button
                     onClick={() => onEdit(meal)}
                     className="text-blue-600 hover:text-blue-800 text-sm"
@@ -152,10 +174,10 @@ export function MealHistory({ dateKey, onEdit, onDelete }: MealHistoryProps) {
                 {onDelete && (
                   <button
                     onClick={() => handleDelete(meal)}
-                    disabled={isDeleting}
+                    disabled={isCurrentlyDeleting}
                     className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
                   >
-                    {isDeleting ? "削除中..." : "削除"}
+                    {isCurrentlyDeleting ? "削除中..." : "削除"}
                   </button>
                 )}
               </div>
