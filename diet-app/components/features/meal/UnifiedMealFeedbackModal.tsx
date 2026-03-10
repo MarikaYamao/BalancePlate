@@ -43,7 +43,7 @@ export function UnifiedMealFeedbackModal({
         dateKey: now.toISOString().split('T')[0],
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
-        aiResponse: feedback.response, // フィードバックデータをaiResponseとして設定
+        aiResponse: feedback.response || JSON.stringify(feedback), // フィードバックデータをaiResponseとして設定
       };
       setMockMealLog(mockLog);
     }

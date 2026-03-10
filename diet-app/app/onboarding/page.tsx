@@ -195,7 +195,6 @@ export default function OnboardingPage() {
             measurementTiming: 'morning',
             note: '初期設定時の体重',
           });
-          console.log('Initial weight saved successfully');
         } catch (error) {
           console.error('Failed to save initial weight:', error);
           // エラーがあっても続行

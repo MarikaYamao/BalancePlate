@@ -65,7 +65,6 @@ export default function ClientOnlyHome() {
         );
         
         const latestConsultation = consultationWithResponse || consultations[consultations.length - 1];
-        console.log("latestConsultation", latestConsultation);
 
         if (latestConsultation && latestConsultation.response) {
           try {

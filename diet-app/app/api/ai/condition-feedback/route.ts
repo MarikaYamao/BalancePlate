@@ -53,10 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // クライアントから送信されたデータを使用
-    console.log('📦 Using data from client request');
     const actualMealsPerDay = mealsPerDay || 3;
-    console.log('🍽️ Meals per day:', actualMealsPerDay);
-    console.log('🥦 Available ingredients:', availableIngredients?.length || 0);
 
     // コンディションタグの詳細情報を取得
     const tagDetails = conditionTags
@@ -173,11 +170,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
     const isRealAPIKey = process.env.OPENAI_API_KEY && 
                         !process.env.OPENAI_API_KEY.includes('your_openai_api_key_here');
     
-    console.log('🔑 API Key check:', {
-      hasKey: !!process.env.OPENAI_API_KEY,
-      isRealKey: isRealAPIKey,
-      mockEnabled: isMockEnabled()
-    });
     
     if (!isRealAPIKey && !isMockEnabled()) {
       console.error('OPENAI_API_KEY is not set and mock is disabled');
@@ -189,11 +181,9 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
 
     if (!isRealAPIKey || isMockEnabled()) {
       // モックレスポンスを生成
-      console.log('🎭 Using mock response');
       await delay(1500);
       response = JSON.stringify(generateMockConditionResponse(conditionTags, actualMealsPerDay, availableIngredients || [], userProfile));
     } else {
-      console.log('🤖 Calling OpenAI API...');
       // 実際のOpenAI API呼び出し
       try {
         const completion = await openai.chat.completions.create({
@@ -207,8 +197,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
           response_format: { type: "json_object" },
           seed: 42, // 出力を安定させる
         });
-        console.log('✅ OpenAI API response received');
-
         const aiContent = completion.choices[0]?.message?.content;
         
         if (!aiContent) {
@@ -216,7 +204,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
         }
         
         response = aiContent;
-        console.log('📦 AI response content length:', response.length);
       } catch (openaiError) {
         console.error('🔴 OpenAI API error:', openaiError);
         throw openaiError;
@@ -226,9 +213,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
     // AIレスポンスをJSONとしてパース
     let parsedResponse;
     try {
-      // レスポンスの最初の500文字を確認（デバッグ用）
-      console.log('📝 Response preview (first 500 chars):', response.substring(0, 500));
-      console.log('📏 Response length:', response.length);
       
       // JSONの前処理: マークダウンと制御文字の削除
       let cleanedResponse = response
@@ -242,7 +226,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
       
       // JSONパースを試みる
       parsedResponse = JSON.parse(cleanedResponse);
-      console.log('✅ Successfully parsed AI response');
       
       // 必須フィールドの検証
       if (!parsedResponse.feedback || !parsedResponse.foodSuggestions || !parsedResponse.mealPlans) {
@@ -270,7 +253,6 @@ ${availableIngredients.map((item: string) => `- ${item}`).join('\n')}
       }
       
       // パースエラーの場合はモックレスポンスを使用
-      console.log('🎭 Using fallback mock response due to parse error');
       parsedResponse = generateMockConditionResponse(conditionTags, actualMealsPerDay, availableIngredients || [], userProfile);
     }
 

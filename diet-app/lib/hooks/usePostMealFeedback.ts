@@ -72,18 +72,13 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
               ? "after_lunch"
               : "consultation"; // 夕食や間食は一般的な相談として扱う
 
-        // 今日の食事データを整形（現在記録した食事も含む）
-        const todayMealData = [
-          ...todayMeals.map((meal) => ({
-            type: meal.mealType,
-            content: meal.text,
-          })),
-          // 現在記録した食事を追加
-          {
-            type: mealType,
-            content: mealText,
-          },
-        ];
+        // 今日の食事データを整形
+        // 注意: この関数は食事記録後に呼ばれるため、
+        // todayMealsには既に現在の食事が含まれている可能性がある
+        const todayMealData = todayMeals.map((meal) => ({
+          type: meal.mealType,
+          content: meal.text,
+        }));
 
         // AIにリクエスト送信
         // 現在時刻を追加
@@ -135,7 +130,6 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
         }
 
         const data = await response.json();
-        console.log("generateFeedback", data);
         setFeedback(data);
 
         // AI相談データをローカルストレージに保存（履歴で表示するため）
@@ -192,7 +186,7 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
                   timestamp: actualTimestamp,
                   mealType: sectionMealType,
                   mealText: section,
-                  response: data.response || null,
+                  response: data.response || data,
                   requestType,
                   isIntegratedFeedback: true,
                   dateKey,
@@ -211,10 +205,11 @@ export function usePostMealFeedback(): UsePostMealFeedbackResult {
               timestamp: currentTime.toISOString(),
               mealType,
               mealText,
-              response: data.response || null,
+              response: data.response || data,
               requestType,
               dateKey,
             };
+            
             consultationStorage.save(dateKey, consultationData);
           }
         } catch (storageError) {

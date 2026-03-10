@@ -138,8 +138,22 @@ export default function DiaryPage() {
         const integratedFeedback = consultationStorage.findIntegrated(
           meal.dateKey,
         );
+        
         if (integratedFeedback) {
-          mealWithFeedback.aiResponse = integratedFeedback.response;
+          // responseが文字列の場合はそのまま、オブジェクトの場合は適切な形式に変換
+          const response = integratedFeedback.response;
+          
+          if (typeof response === 'string') {
+            // JSON文字列の場合はパースを試行
+            try {
+              const parsed = JSON.parse(response);
+              mealWithFeedback.aiResponse = parsed;
+            } catch {
+              mealWithFeedback.aiResponse = response;
+            }
+          } else if (response && typeof response === 'object') {
+            mealWithFeedback.aiResponse = response;
+          }
         } else {
           // 個別フィードバックがある場合
           const individualFeedback = consultationStorage.findNearestByTimestamp(
@@ -147,8 +161,20 @@ export default function DiaryPage() {
             new Date(meal.actualTime).getTime(),
             4,
           );
+          
           if (individualFeedback) {
-            mealWithFeedback.aiResponse = individualFeedback.response;
+            const response = individualFeedback.response;
+            
+            if (typeof response === 'string') {
+              try {
+                const parsed = JSON.parse(response);
+                mealWithFeedback.aiResponse = parsed;
+              } catch {
+                mealWithFeedback.aiResponse = response;
+              }
+            } else if (response && typeof response === 'object') {
+              mealWithFeedback.aiResponse = response;
+            }
           }
         }
       }

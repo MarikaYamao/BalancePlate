@@ -400,7 +400,9 @@ export function PostMealFeedback({
               {/* フィードバック内容 */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="prose prose-sm max-w-none">
-                  {renderStructuredFeedback(feedback.response)}
+                  {renderStructuredFeedback(
+                    feedback.response || JSON.stringify(feedback)
+                  )}
                 </div>
               </div>
 
