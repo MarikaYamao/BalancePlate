@@ -6,10 +6,10 @@ interface AIFeedbackSectionProps {
   recordedMealType?: string;
 }
 
-export function AIFeedbackSection({ 
-  loadingAI, 
-  loadedAIResponse, 
-  recordedMealType 
+export function AIFeedbackSection({
+  loadingAI,
+  loadedAIResponse,
+  recordedMealType,
 }: AIFeedbackSectionProps) {
   const formatStructuredFeedback = (data: any): React.ReactNode => {
     return (
@@ -36,7 +36,7 @@ export function AIFeedbackSection({
                 総合フィードバック
               </h4>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+            <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
               {data.feedback.overall}
             </p>
             <div className="mt-3 border-t border-gray-100"></div>
@@ -136,8 +136,8 @@ export function AIFeedbackSection({
         )}
 
         {data.mealSuggestions && (
-          <MealSuggestions 
-            mealSuggestions={data.mealSuggestions} 
+          <MealSuggestions
+            mealSuggestions={data.mealSuggestions}
             recordedMealType={recordedMealType}
           />
         )}

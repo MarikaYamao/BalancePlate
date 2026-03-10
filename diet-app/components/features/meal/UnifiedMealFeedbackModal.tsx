@@ -24,12 +24,32 @@ export function UnifiedMealFeedbackModal({
   const { settings } = useUserSettings();
   const { feedback, loading, error, generateFeedback } = usePostMealFeedback();
   const [mockMealLog, setMockMealLog] = useState<any>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      generateFeedback(mealType, mealText);
+    if (isOpen && !hasInitialized) {
+      // React.StrictModeの影響を回避するため、AbortControllerを使用
+      const abortController = new AbortController();
+      
+      // 少し遅延を入れて、StrictModeの2回目の呼び出しをキャンセル
+      const timeoutId = setTimeout(() => {
+        if (!abortController.signal.aborted) {
+          generateFeedback(mealType, mealText);
+          setHasInitialized(true);
+        }
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+        abortController.abort();
+      };
     }
-  }, [isOpen, mealType, mealText, generateFeedback]);
+    
+    // モーダルが閉じられたら、次回のためにフラグをリセット
+    if (!isOpen && hasInitialized) {
+      setHasInitialized(false);
+    }
+  }, [isOpen, mealType, mealText]); // generateFeedbackとhasInitializedを依存配列から除外
 
   // フィードバックが取得できたら、MealDetailModal用のMockMealLogを作成
   useEffect(() => {
